@@ -12,7 +12,43 @@ $action = $_POST['action'] ?? '';
 try {
     $pdo = getConnection();
 
+
     switch ($action) {
+        case 'withdraw':
+            $id = intval($_POST['id'] ?? 0);
+            $cantidad = intval($_POST['cantidad'] ?? 0);
+
+            if ($id <= 0) {
+                throw new Exception('ID de producto inválido.');
+            }
+
+            if ($cantidad <= 0) {
+                throw new Exception('La cantidad a retirar debe ser mayor a 0.');
+            }
+
+            // Verificar stock actual
+            $product = query("SELECT producto, cantidad FROM inventario WHERE id = ?", [$id]);
+            if (empty($product)) {
+                throw new Exception('El producto no existe.');
+            }
+
+            $currentStock = intval($product[0]['cantidad']);
+            $productName = $product[0]['producto'];
+
+            if ($cantidad > $currentStock) {
+                throw new Exception("No hay suficiente stock de '{$productName}'. Stock actual: {$currentStock}");
+            }
+
+            // Descontar inventario
+            $sql = "UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$cantidad, $id]);
+
+            // (Opcional) Aquí se podría registrar en un log de movimientos si existiera la tabla
+
+            header('Location: ../inventario.php?success=Se retiraron ' . $cantidad . ' unidades de ' . urlencode($productName));
+            exit;
+
         case 'create':
             $producto = trim($_POST['producto'] ?? '');
             $cantidad = intval($_POST['cantidad'] ?? 0);
