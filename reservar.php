@@ -787,9 +787,9 @@ $pageTitle = 'Reservar Cita';
                     document.querySelector('.booking-container').innerHTML = `
                     <div style="text-align:center; padding-top:50px;">
                         <div style="font-size:4rem; color:var(--gold); margin-bottom:20px;">✓</div>
-                        <h1 style="color:white; margin-bottom:10px;">¡Reserva Exitosa!</h1>
-                        <p style="color:#aaa; margin-bottom:30px;">Tu cita ha sido agendada correctamente.</p>
-                        <a href="index.html" class="btn btn-next" style="text-decoration:none;">Vover al Inicio</a>
+                        <h1 style="color:var(--text-primary); margin-bottom:10px;">¡Reserva Exitosa!</h1>
+                        <p style="color:var(--text-muted); margin-bottom:30px;">Tu cita ha sido agendada correctamente.</p>
+                        <a href="index.html" class="btn btn-next" style="text-decoration:none;">Volver al Inicio</a>
                     </div>
                 `;
                 } else {
