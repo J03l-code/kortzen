@@ -791,7 +791,7 @@ $pageTitle = 'Reservar Cita';
                         <p style="color:var(--text-muted); margin-bottom:30px;">Tu cita ha sido agendada correctamente.</p>
                         <a href="index.html" class="btn btn-next" style="text-decoration:none;">Volver al Inicio</a>
                         <br><br>
-                        <a href="#" target="_blank" onclick="alert('Por favor configura el link de Google Maps en reservar.php'); return false;" style="color:var(--gold); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                        <a href="https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu" target="_blank" style="color:var(--gold); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
                             <span style="font-size:1.2rem;">⭐</span> Califícanos en Google
                         </a>
                     </div>
