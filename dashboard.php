@@ -312,10 +312,15 @@ include 'includes/header.php';
                            JOIN clientes cli ON c.cliente_id = cli.id
                            WHERE c.sucursal_id = ? AND DATE(c.fecha_hora) = ?
                            ORDER BY c.fecha_hora ASC", [$sucursal_id, $hoy]);
+
+    // 5. Total Valor Inventario (Activos)
+    $inventarioStats = query("SELECT SUM(cantidad * precio) as total_valor, SUM(cantidad) as total_items FROM inventario WHERE sucursal_id = ?", [$sucursal_id]);
+    $valorInventario = $inventarioStats[0]['total_valor'] ?? 0;
+    $totalItems = $inventarioStats[0]['total_items'] ?? 0;
     ?>
 
     <?php
-    // 5. Gráfica 7 Días (CSS Puro)
+    // 6. Gráfica 7 Días (CSS Puro)
     $last7Days = [];
     $diasEsp = ['Sun' => 'Dom', 'Mon' => 'Lun', 'Tue' => 'Mar', 'Wed' => 'Mie', 'Thu' => 'Jue', 'Fri' => 'Vie', 'Sat' => 'Sab'];
 
@@ -334,7 +339,7 @@ include 'includes/header.php';
     $maxVal = max(array_column($last7Days, 'val'));
     $maxVal = $maxVal > 0 ? $maxVal : 1;
 
-    // 6. Tasa de Retención (Hoy)
+    // 7. Tasa de Retención (Hoy)
     $totalHoyCitas = count($agendaGlobal);
     $recurrentes = 0;
     foreach ($agendaGlobal as $c) {
@@ -349,6 +354,35 @@ include 'includes/header.php';
     $mesActual = $meses[date('F')] ?? date('F');
     ?>
 
+    <style>
+        .earnings-card {
+            background: #FFFFFF !important;
+            border: 1px solid #E5E5E5 !important;
+            color: #111 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .earnings-card .earnings-title {
+            color: #666;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .earnings-card .earnings-amount {
+            color: #111;
+            font-weight: 800;   
+        }
+        .earnings-card .trend-indicator {
+            color: var(--primary-gold);
+            font-weight: 600;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+    </style>
+
     <div class="dashboard-grid">
         <!-- Venta Día -->
         <div class="earnings-card">
@@ -360,27 +394,30 @@ include 'includes/header.php';
         </div>
 
         <!-- Recaudación Mensual -->
-        <div class="earnings-card" style="border-color: rgba(255,255,255,0.1);">
+        <div class="earnings-card">
             <div class="earnings-title">Recaudación Mensual</div>
             <div class="earnings-amount">$<?php echo number_format($ventaMes, 2); ?></div>
-            <div class="trend-indicator trend-up">
+            <div class="trend-indicator">
                 <span><?php echo $mesActual; ?></span>
             </div>
         </div>
 
-        <!-- Retención -->
-        <div class="earnings-card" style="background: linear-gradient(135deg, #2C3E50 0%, #000000 100%);">
+        <!-- Valor Inventario (NUEVO) -->
+        <div class="earnings-card">
+            <div class="earnings-title">Valor en Productos</div>
+            <div class="earnings-amount">$<?php echo number_format($valorInventario, 2); ?></div>
+            <div class="trend-indicator">
+                <span><?php echo $totalItems; ?> unidades en stock</span>
+            </div>
+        </div>
+
+        <!-- Fidelización -->
+        <div class="earnings-card">
             <div class="earnings-title">Fidelización Hoy</div>
             <div class="earnings-amount"><?php echo $retentionRate; ?>%</div>
             <div class="trend-indicator">
                 <span><?php echo $recurrentes; ?> clientes recurrentes</span>
             </div>
-        </div>
-
-        <!-- Pendientes -->
-        <div class="stat-card" style="background: #2D2D2D; border: none;">
-            <div class="stat-value"><?php echo $citasStats['pendientes']; ?></div>
-            <div class="stat-label">Citas Pendientes</div>
         </div>
     </div>
 
