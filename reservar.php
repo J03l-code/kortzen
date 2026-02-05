@@ -405,12 +405,51 @@ $pageTitle = 'Reservar Cita';
                     </div>
                 </div>
 
+                <div class="policy-section"
+                    style="margin-bottom: 25px; padding: 15px; background: #fff5e6; border-left: 4px solid var(--gold); border-radius: 4px;">
+                    <h4 style="margin-top: 0; color: #b38600; font-size: 0.95rem;">POLÍTICA DE RESERVAS</h4>
+                    <ul style="font-size: 0.85rem; color: #555; padding-left: 20px; margin-bottom: 10px;">
+                        <li style="margin-bottom: 5px;">Si no puede llegar a su cita, informar con 1 hora de
+                            anticipación, caso contrario tendrá un recargo adicional en su próxima cita.</li>
+                        <li>Si llega 10 minutos tarde, pierde el servicio de toalla caliente y limpieza facial.</li>
+                    </ul>
+                    <div style="display: flex; align-items: flex-start; gap: 10px; margin-top: 10px;">
+                        <input type="checkbox" id="policyCheckbox"
+                            style="margin-top: 3px; transform: scale(1.2); cursor: pointer;">
+                        <label for="policyCheckbox" style="font-size: 0.9rem; font-weight: 600; cursor: pointer;">
+                            He leído y acepto los términos y condiciones.
+                        </label>
+                    </div>
+                </div>
+
                 <button id="btnConfirmBooking" class="btn btn-next"
-                    style="width:100%; font-size:1.1rem; padding: 15px;">
+                    style="width:100%; font-size:1.1rem; padding: 15px; opacity: 0.5; cursor: not-allowed;" disabled>
                     CONFIRMAR RESERVA
                 </button>
             </div>
         </div>
+
+        <script>
+            // Policy Checkbox Logic (Inline for immediate effect, though will be moved to main script block if preferred)
+            document.addEventListener('DOMContentLoaded', () => {
+                const checkbox = document.getElementById('policyCheckbox');
+                const btnConfirm = document.getElementById('btnConfirmBooking');
+
+                if (checkbox && btnConfirm) {
+                    checkbox.addEventListener('change', (e) => {
+                        if (e.target.checked) {
+                            btnConfirm.disabled = false;
+                            btnConfirm.style.opacity = '1';
+                            btnConfirm.style.cursor = 'pointer';
+                        } else {
+                            btnConfirm.disabled = true;
+                            btnConfirm.style.opacity = '0.5';
+                            btnConfirm.style.cursor = 'not-allowed';
+                        }
+                    });
+                }
+            });
+        </script>
 
         <div class="wizard-nav">
             <button id="btnPrev" class="btn btn-prev" disabled>Atrás</button>
