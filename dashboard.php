@@ -176,98 +176,250 @@ include 'includes/header.php';
 </style>
 
 <?php if ($currentUser['rol'] === 'admin'): ?>
-    <!-- VISTA ADMIN (Mantenida Original + Mejoras visuales si aplica, pero priorizamos Barbero) -->
-    <?php include 'includes/dashboard_admin.php'; // Si existiera, o el código inline original ?>
-    <!-- (Por brevedad y seguridad, pego la lógica original de Admin aquí abajo si no la hemos extraído) -->
-
+    <!-- VISTA ADMIN GLOBAL (Técnico) - DASHBOARD COMPLETO -->
     <?php
-    // ... LOGICA ORIGINAL DE ADMIN ...
-    // (Resume de estadísticas básicas)
-    $stats = [
-        'sucursales' => query("SELECT COUNT(*) as total FROM sucursales")[0]['total'],
-        'usuarios' => query("SELECT COUNT(*) as total FROM usuarios")[0]['total'],
-        'productos' => query("SELECT COUNT(*) as total FROM inventario")[0]['total'],
-        'inventario_total' => query("SELECT SUM(cantidad * precio) as total FROM inventario")[0]['total'] ?? 0
-    ];
-    $ultimas_sucursales = query("SELECT * FROM sucursales ORDER BY fecha_creacion DESC LIMIT 5");
+    $hoy = date('Y-m-d');
+    $mesInicio = date('Y-m-01');
+    $mesFin = date('Y-m-t');
+
+    // 1. KPI GLOBAL: Citas y Ventas
+    $citasStats = query("SELECT 
+        COUNT(*) as total, 
+        SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
+        SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) as completadas,
+        SUM(CASE WHEN estado = 'completada' AND DATE(fecha_hora) = ? THEN precio_final ELSE 0 END) as venta_dia
+    FROM citas WHERE DATE(fecha_hora) = ?", [$hoy, $hoy])[0];
+
+    // Venta Mes Global
+    $ventaMes = query("SELECT SUM(precio_final) as total FROM citas WHERE estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$mesInicio, $mesFin])[0]['total'] ?? 0;
+
+    // 2. Ranking Barberos Global (Mes)
+    $topBarberos = query("SELECT u.nombre, s.nombre as sucursal, COUNT(c.id) as citas, SUM(c.precio_final) as total
+                          FROM usuarios u
+                          JOIN citas c ON u.id = c.barbero_id
+                          LEFT JOIN sucursales s ON u.sucursal_id = s.id
+                          WHERE c.estado = 'completada'
+                          AND DATE(c.fecha_hora) BETWEEN ? AND ?
+                          GROUP BY u.id
+                          ORDER BY total DESC LIMIT 5", [$mesInicio, $mesFin]);
+
+    // 3. Inventario Bajo Global
+    $lowStock = query("SELECT i.producto, i.cantidad, i.stock_minimo, s.nombre as sucursal 
+                       FROM inventario i
+                       JOIN sucursales s ON i.sucursal_id = s.id
+                       WHERE i.cantidad <= i.stock_minimo 
+                       ORDER BY i.cantidad ASC LIMIT 5");
+
+    // 4. Agenda Global (Hoy) - Todas las sucursales
+    $agendaGlobal = query("SELECT c.*, u.nombre as barbero, s.nombre as servicio, suc.nombre as sucursal_nombre, cli.nombre as cliente, cli.telefono, cli.id as cliente_id 
+                           FROM citas c
+                           JOIN usuarios u ON c.barbero_id = u.id
+                           JOIN servicios s ON c.servicio_id = s.id
+                           JOIN sucursales suc ON c.sucursal_id = suc.id
+                           JOIN clientes cli ON c.cliente_id = cli.id
+                           WHERE DATE(c.fecha_hora) = ?
+                           ORDER BY c.fecha_hora ASC", [$hoy]);
+
+    // 5. Valor Inventario Global
+    $inventarioStats = query("SELECT SUM(cantidad * precio) as total_valor, SUM(cantidad) as total_items FROM inventario");
+    $valorInventario = $inventarioStats[0]['total_valor'] ?? 0;
+    $totalItems = $inventarioStats[0]['total_items'] ?? 0;
+
+    // 6. Gráfica 7 Días Global
+    $last7Days = [];
+    $diasEsp = ['Sun' => 'Dom', 'Mon' => 'Lun', 'Tue' => 'Mar', 'Wed' => 'Mie', 'Thu' => 'Jue', 'Fri' => 'Vie', 'Sat' => 'Sab'];
+
+    for ($i = 6; $i >= 0; $i--) {
+        $d = date('Y-m-d', strtotime("-$i days"));
+        $total = query("SELECT SUM(precio_final) as t FROM citas WHERE estado = 'completada' AND DATE(fecha_hora) = ?", [$d])[0]['t'] ?? 0;
+        $dayName = date('D', strtotime($d));
+        $last7Days[] = ['date' => $diasEsp[$dayName], 'val' => $total];
+    }
+    $maxVal = max(array_column($last7Days, 'val'));
+    $maxVal = $maxVal > 0 ? $maxVal : 1;
+
+    // 7. Retención Global
+    $totalHoyCitas = count($agendaGlobal);
+    $recurrentes = 0;
+    foreach ($agendaGlobal as $c) {
+        $historial = query("SELECT COUNT(*) as n FROM citas WHERE cliente_id = ? AND estado = 'completada'", [$c['cliente_id']])[0]['n'];
+        if ($historial > 1) $recurrentes++;
+    }
+    $retentionRate = $totalHoyCitas > 0 ? round(($recurrentes / $totalHoyCitas) * 100) : 0;
+
+    $meses = ['January' => 'Enero', 'February' => 'Febrero', 'March' => 'Marzo', 'April' => 'Abril', 'May' => 'Mayo', 'June' => 'Junio', 'July' => 'Julio', 'August' => 'Agosto', 'September' => 'Septiembre', 'October' => 'Octubre', 'November' => 'Noviembre', 'December' => 'Diciembre'];
+    $mesActual = $meses[date('F')] ?? date('F');
     ?>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-value"><?php echo number_format($stats['sucursales']); ?></div>
-            <div class="stat-label">Sucursales</div>
+
+    <style>
+        .earnings-card {
+            background: #FFFFFF !important;
+            border: 1px solid #E5E5E5 !important;
+            color: #111 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .earnings-card .earnings-title {
+            color: #666;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .earnings-card .earnings-amount {
+            color: #111;
+            font-weight: 800;   
+        }
+        .earnings-card .trend-indicator {
+            color: var(--primary-gold);
+            font-weight: 600;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+    </style>
+
+    <div class="dashboard-grid">
+        <!-- Venta Día -->
+        <div class="earnings-card">
+            <div class="earnings-title">Venta Global (Hoy)</div>
+            <div class="earnings-amount">$<?php echo number_format($citasStats['venta_dia'] ?? 0, 2); ?></div>
+            <div class="trend-indicator">
+                <span><?php echo $citasStats['completadas']; ?> citas finalizadas</span>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value"><?php echo number_format($stats['usuarios']); ?></div>
-            <div class="stat-label">Usuarios</div>
+
+        <!-- Recaudación Mensual -->
+        <div class="earnings-card">
+            <div class="earnings-title">Recaudación Global (Mes)</div>
+            <div class="earnings-amount">$<?php echo number_format($ventaMes, 2); ?></div>
+            <div class="trend-indicator trend-up">
+                <span><?php echo $mesActual; ?></span>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value"><?php echo number_format($stats['productos']); ?></div>
-            <div class="stat-label">Productos</div>
+
+        <!-- Valor Inventario -->
+        <div class="earnings-card">
+            <div class="earnings-title">Valor Stock Global</div>
+            <div class="earnings-amount">$<?php echo number_format($valorInventario, 2); ?></div>
+            <div class="trend-indicator">
+                <span><?php echo $totalItems; ?> items totales</span>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value">$<?php echo number_format($stats['inventario_total'], 0); ?></div>
-            <div class="stat-label">Valor Inventario</div>
+        
+        <!-- Ventas Productos Hoy -->
+        <?php
+            $ventasProdHoy = query("SELECT SUM(precio_unitario * cantidad) as total, SUM(cantidad) as items 
+                                    FROM ventas_productos 
+                                    WHERE DATE(fecha) = ?", [$hoy]);
+            $totalVentasProd = $ventasProdHoy[0]['total'] ?? 0;
+            $itemsVendidos = $ventasProdHoy[0]['items'] ?? 0;
+        ?>
+        <div class="earnings-card">
+            <div class="earnings-title">Ventas Productos (Hoy)</div>
+            <div class="earnings-amount">$<?php echo number_format($totalVentasProd, 2); ?></div>
+            <div class="trend-indicator">
+                <span><?php echo $itemsVendidos; ?> items vendidos</span>
+            </div>
+        </div>
+
+        <!-- Fidelización -->
+        <div class="earnings-card" style="background: linear-gradient(135deg, #2C3E50 0%, #000000 100%) !important; color: #FFF !important;">
+            <div class="earnings-title" style="color: #AAA !important;">Fidelización Hoy</div>
+            <div class="earnings-amount" style="color: #FFF !important;"><?php echo $retentionRate; ?>%</div>
+            <div class="trend-indicator">
+                <span><?php echo $recurrentes; ?> recurrentes</span>
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-title">Últimas Sucursales</div>
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Dirección</th>
-                        <th>Teléfono</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($ultimas_sucursales as $s): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($s['nombre']); ?></td>
-                            <td><?php echo htmlspecialchars($s['direccion']); ?></td>
-                            <td><?php echo htmlspecialchars($s['telefono']); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+    <!-- GRÁFICO DE BARRAS SEMANAL -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title">Tendencia de Ventas (7 Días) - Global</div>
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 150px; padding-top: 20px;">
+            <?php foreach ($last7Days as $day):
+                $height = ($day['val'] / $maxVal) * 100;
+                $color = $day['val'] > 0 ? 'var(--primary-gold)' : '#333';
+                ?>
+                <div style="text-align: center; width: 100%;">
+                    <div style="font-size: 10px; color: #BBB; margin-bottom: 5px;">$<?php echo (int) $day['val']; ?></div>
+                    <div style="height: <?php echo $height; ?>%; background: <?php echo $color; ?>; width: 60%; margin: 0 auto; border-radius: 4px 4px 0 0; min-height: 4px;"></div>
+                    <div style="margin-top: 8px; font-size: 11px; color: #888;"><?php echo $day['date']; ?></div>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
 
-    <!-- NUEVO: Últimos Clientes Registrados -->
-    <?php
-    $ultimos_clientes = query("SELECT * FROM clientes ORDER BY fecha_creacion DESC LIMIT 5");
-    ?>
-    <div class="card" style="margin-top: 24px;">
-        <div class="card-title">
-            Últimos Clientes
-            <a href="clientes.php" class="btn btn-sm btn-secondary" style="float: right; font-size: 12px;">Ver Todos</a>
-        </div>
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Email</th>
-                        <th>Fecha Registro</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (count($ultimos_clientes) > 0): ?>
-                        <?php foreach ($ultimos_clientes as $c): ?>
+    <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
+        <!-- Ranking Barberos -->
+        <div style="flex: 1; min-width: 300px;">
+            <div class="card">
+                <div class="card-title">🏆 Top Barberos Global (Mes)</div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
                             <tr>
-                                <td><?php echo htmlspecialchars($c['nombre']); ?></td>
-                                <td><?php echo $c['email'] ? htmlspecialchars($c['email']) : '-'; ?></td>
-                                <td><?php echo date('d/m/Y', strtotime($c['fecha_creacion'])); ?></td>
+                                <th>Barbero / Sede</th>
+                                <th style="text-align: right;">Ventas</th>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="3" style="text-align:center; color:#888;">No hay clientes recientes</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                        </thead>
+                        <tbody>
+                            <?php if ($topBarberos): ?>
+                                <?php foreach ($topBarberos as $b): ?>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: bold;"><?php echo htmlspecialchars($b['nombre']); ?></div>
+                                            <div style="font-size: 10px; color: #888;"><?php echo htmlspecialchars($b['sucursal']); ?></div>
+                                        </td>
+                                        <td style="text-align: right; color: var(--primary-gold); font-weight: bold;">
+                                            $<?php echo number_format($b['total'], 0); ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="2" style="text-align: center; color: #666;">Sin datos aún</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventario Bajo -->
+        <div style="flex: 1; min-width: 300px;">
+            <div class="card">
+                <div class="card-title">⚠️ Alerta Stock Global</div>
+                 <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto / Sede</th>
+                                <th>Cant.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($lowStock): ?>
+                                <?php foreach ($lowStock as $p): ?>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: bold;"><?php echo htmlspecialchars($p['producto']); ?></div>
+                                            <div style="font-size: 10px; color: #888;"><?php echo htmlspecialchars($p['sucursal']); ?></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-cancelada" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c;">
+                                                <?php echo $p['cantidad']; ?> / <?php echo $p['stock_minimo']; ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="2" style="text-align: center;">Todo en orden</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
