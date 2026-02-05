@@ -430,8 +430,6 @@ $pageTitle = 'Reservar Cita';
             barberId: null,
             barberName: null,
             date: null,
-            barberName: null,
-            date: null,
             time: null,
             phone: null
         };
@@ -611,7 +609,6 @@ $pageTitle = 'Reservar Cita';
                     updateNavButtons();
                 }
             });
-        });
         }
 
         // Input changed listener
@@ -705,8 +702,6 @@ $pageTitle = 'Reservar Cita';
 
             updateNavButtons();
 
-            updateNavButtons();
-
             if (step === 5) {
                 updateSummary();
             }
@@ -720,8 +715,6 @@ $pageTitle = 'Reservar Cita';
 
             // Logic next button
             let canNext = false;
-            if (currentStep === 1 && bookingData.serviceId) canNext = true;
-            if (currentStep === 2 && bookingData.barberId) canNext = true;
             if (currentStep === 1 && bookingData.serviceId) canNext = true;
             if (currentStep === 2 && bookingData.barberId) canNext = true;
             if (currentStep === 3 && bookingData.date && bookingData.time) canNext = true;
@@ -738,7 +731,6 @@ $pageTitle = 'Reservar Cita';
         function updateSummary() {
             document.getElementById('confirmService').textContent = bookingData.serviceName;
             document.getElementById('confirmBarber').textContent = bookingData.barberName;
-            document.getElementById('confirmBarber').textContent = bookingData.barberName;
             document.getElementById('confirmDateTime').textContent = `${bookingData.date} a las ${bookingData.time}`;
             document.getElementById('confirmPrice').textContent = `$${bookingData.servicePrice}`;
 
@@ -746,7 +738,6 @@ $pageTitle = 'Reservar Cita';
             const phoneDiv = document.createElement('div');
             phoneDiv.innerHTML = `<span style="color:var(--text-secondary); font-size:0.9rem;">TELEFONO</span><div style="font-size:1.2rem; margin-top:5px;">${bookingData.phone}</div>`;
             // Append if needed implementation
-        }
         }
     </script>
 
