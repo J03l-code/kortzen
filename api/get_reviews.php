@@ -1,6 +1,10 @@
 <?php
 require_once '../config.php';
 
+// Prevent HTML error output from corrupting JSON
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+
 header('Content-Type: application/json');
 
 try {
