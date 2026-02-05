@@ -42,6 +42,12 @@ if ($barberoId) {
             "SELECT * FROM dias_bloqueados WHERE barbero_id = ? AND fecha >= CURDATE() ORDER BY fecha ASC",
             [$barberoId]
         );
+
+        // Obtener BLOQUEOS POR HORA (próximos 60 días)
+        $bloqueosHoras = query(
+            "SELECT * FROM bloqueos_horas WHERE barbero_id = ? AND fecha >= CURDATE() ORDER BY fecha ASC, hora_inicio ASC",
+            [$barberoId]
+        );
     }
 }
 
@@ -520,6 +526,79 @@ input:focus + .slider {
                     
                     <button type="submit" class="btn btn-secondary" style="height: 48px; border: 1px solid rgba(0,0,0,0.15);">
                         + AÑADIR DÍA
+                    </button>
+                </form>
+            </div>
+
+            <!-- BLOQUEO POR HORAS -->
+            <div style="margin-top: 60px; margin-bottom: 60px;">
+                <div class="section-header" style="border: none; padding-bottom: 0;">
+                    <h2 class="section-title">Bloqueo Parcial (Horas)</h2>
+                    <p class="section-desc">Bloquea franjas horarias específicas (ej: permisos, médico).</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <?php if (count($bloqueosHoras ?? []) > 0): ?>
+                        <?php foreach ($bloqueosHoras as $bh): ?>
+                            <div class="bloqueo-card" style="border-left: 3px solid var(--primary-gold);">
+                                <div>
+                                    <div class="bloqueo-date">
+                                        <?php 
+                                            $date = new DateTime($bh['fecha']);
+                                            $formatter = new IntlDateFormatter('es_ES', IntlDateFormatter::NONE, IntlDateFormatter::NONE); 
+                                            // Fallback date format if Intl not avail
+                                            echo $date->format('d/m/Y'); 
+                                        ?>
+                                        <span style="font-weight: 400; font-size: 0.9em; margin-left: 8px;">
+                                            <?php echo substr($bh['hora_inicio'], 0, 5) . ' - ' . substr($bh['hora_fin'], 0, 5); ?>
+                                        </span>
+                                    </div>
+                                    <div style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">
+                                        <?php echo htmlspecialchars($bh['motivo']); ?>
+                                    </div>
+                                </div>
+                                <form method="POST" action="api/horarios_action.php" style="margin: 0;">
+                                    <input type="hidden" name="action" value="eliminar_bloqueo_hora">
+                                    <input type="hidden" name="bloqueo_id" value="<?php echo $bh['id']; ?>">
+                                    <input type="hidden" name="barbero_id" value="<?php echo $barberoId; ?>">
+                                    <button type="submit" class="btn-icon" title="Eliminar bloqueo">
+                                        ✕
+                                    </button>
+                                </form>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Formulario Horas -->
+                <form method="POST" action="api/horarios_action.php" style="background: rgba(0,0,0,0.02); padding: 24px; border-radius: 12px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+                    <input type="hidden" name="action" value="agregar_bloqueo_hora">
+                    <input type="hidden" name="barbero_id" value="<?php echo $barberoId; ?>">
+                    
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Fecha</label>
+                        <input type="date" name="fecha" class="form-input" required 
+                               min="<?php echo date('Y-m-d'); ?>" style="width: 100%;">
+                    </div>
+
+                    <div style="flex: 0.5; min-width: 100px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Inicio</label>
+                        <input type="time" name="hora_inicio" class="form-input" required style="width: 100%;">
+                    </div>
+
+                    <div style="flex: 0.5; min-width: 100px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Fin</label>
+                        <input type="time" name="hora_fin" class="form-input" required style="width: 100%;">
+                    </div>
+                    
+                    <div style="flex: 2; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Motivo</label>
+                        <input type="text" name="motivo" class="form-input" 
+                               placeholder="Ej: Permiso médico" style="width: 100%;">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-secondary" style="height: 48px; border: 1px solid rgba(0,0,0,0.15);">
+                        + RANGO
                     </button>
                 </form>
             </div>

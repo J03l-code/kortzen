@@ -90,6 +90,47 @@ try {
             header('Location: ../horarios.php?barbero=' . $barberoId . '&success=' . urlencode('Día bloqueado eliminado'));
             exit;
 
+        case 'agregar_bloqueo_hora':
+            $fecha = $_POST['fecha'] ?? '';
+            $horaInicio = $_POST['hora_inicio'] ?? '';
+            $horaFin = $_POST['hora_fin'] ?? '';
+            $motivo = trim($_POST['motivo'] ?? 'Bloqueo parcial');
+
+            if (empty($fecha) || empty($horaInicio) || empty($horaFin)) {
+                throw new Exception('Fecha y horas son obligatorias.');
+            }
+
+            if (strtotime($fecha) < strtotime(date('Y-m-d'))) {
+                throw new Exception('No se pueden bloquear fechas pasadas.');
+            }
+
+            if (strtotime($horaFin) <= strtotime($horaInicio)) {
+                throw new Exception('La hora de fin debe ser posterior a la de inicio.');
+            }
+
+            $sql = "INSERT INTO bloqueos_horas (barbero_id, fecha, hora_inicio, hora_fin, motivo, creado_por) VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$barberoId, $fecha, $horaInicio, $horaFin, $motivo, $_SESSION['user_id']]);
+
+            registrarLog('INSERT', 'bloqueos_horas', $pdo->lastInsertId(), "Bloqueo hora: $fecha ($horaInicio-$horaFin) - $motivo");
+            header('Location: ../horarios.php?barbero=' . $barberoId . '&success=' . urlencode('Bloqueo por horas agregado'));
+            exit;
+
+        case 'eliminar_bloqueo_hora':
+            $bloqueoId = intval($_POST['bloqueo_id'] ?? 0);
+
+            if ($bloqueoId <= 0) {
+                throw new Exception('Bloqueo no válido.');
+            }
+
+            $sql = "DELETE FROM bloqueos_horas WHERE id = ? AND barbero_id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$bloqueoId, $barberoId]);
+
+            registrarLog('DELETE', 'bloqueos_horas', $bloqueoId, 'Bloqueo por horas eliminado');
+            header('Location: ../horarios.php?barbero=' . $barberoId . '&success=' . urlencode('Bloqueo por horas eliminado'));
+            exit;
+
         default:
             throw new Exception('Acción no válida.');
     }

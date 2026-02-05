@@ -46,6 +46,11 @@ try {
         exit;
     }
 
+    // 3.5. Obtener bloqueos por horas (NUEVO)
+    $stmtBloqueoHoras = $pdo->prepare("SELECT hora_inicio, hora_fin FROM bloqueos_horas WHERE barbero_id = ? AND fecha = ?");
+    $stmtBloqueoHoras->execute([$barberoId, $fecha]);
+    $bloqueosParciales = $stmtBloqueoHoras->fetchAll();
+
     // Definir límites del día
     $horaInicioStr = $horarioBase['hora_inicio']; // Ej: "10:00:00"
     $horaFinStr = $horarioBase['hora_fin'];       // Ej: "20:00:00"
@@ -82,6 +87,13 @@ try {
         $duracionCita = intval($cita['duracion_minutos']);
         $fin = $inicio + ($duracionCita * 60);
         $ocupados[] = ['inicio' => $inicio, 'fin' => $fin];
+    }
+
+    // Agregar bloqueos parciales a ocupados
+    foreach ($bloqueosParciales as $bp) {
+        $inicioBloqueo = strtotime("$fecha " . $bp['hora_inicio']);
+        $finBloqueo = strtotime("$fecha " . $bp['hora_fin']);
+        $ocupados[] = ['inicio' => $inicioBloqueo, 'fin' => $finBloqueo];
     }
 
     // 5. Generar slots disponibles (SOLO HORAS EN PUNTO)
