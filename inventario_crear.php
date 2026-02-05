@@ -172,6 +172,12 @@ include 'includes/header.php';
         </div>
 
         <div class="form-group">
+            <label class="form-label">Stock Mínimo (Alerta)</label>
+            <input type="number" name="stock_minimo" class="form-input"
+                value="<?php echo $isEdit ? $producto['stock_minimo'] : '5'; ?>" placeholder="5" min="0" required>
+        </div>
+
+        <div class="form-group">
             <label class="form-label">Sucursal</label>
             <select name="sucursal_id" class="form-select" required>
                 <option value="">Seleccionar sucursal</option>

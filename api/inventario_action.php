@@ -17,6 +17,7 @@ try {
             $producto = trim($_POST['producto'] ?? '');
             $cantidad = intval($_POST['cantidad'] ?? 0);
             $precio = floatval($_POST['precio'] ?? 0);
+            $stock_minimo = intval($_POST['stock_minimo'] ?? 5); // Default 5
             $sucursal_id = intval($_POST['sucursal_id'] ?? 0);
 
             // Validaciones
@@ -36,15 +37,19 @@ try {
                 throw new Exception('El precio no puede ser negativo.');
             }
 
+            if ($stock_minimo < 0) {
+                throw new Exception('El stock mínimo no puede ser negativo.');
+            }
+
             // Verificar que la sucursal existe
             $check = query("SELECT COUNT(*) as count FROM sucursales WHERE id = ?", [$sucursal_id]);
             if ($check[0]['count'] == 0) {
                 throw new Exception('La sucursal seleccionada no existe.');
             }
 
-            $sql = "INSERT INTO inventario (producto, cantidad, precio, sucursal_id) VALUES (?, ?, ?, ?)";
+            $sql = "INSERT INTO inventario (producto, cantidad, precio, stock_minimo, sucursal_id) VALUES (?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$producto, $cantidad, $precio, $sucursal_id]);
+            $stmt->execute([$producto, $cantidad, $precio, $stock_minimo, $sucursal_id]);
 
             header('Location: ../inventario.php?success=Producto agregado exitosamente');
             exit;
@@ -54,6 +59,7 @@ try {
             $producto = trim($_POST['producto'] ?? '');
             $cantidad = intval($_POST['cantidad'] ?? 0);
             $precio = floatval($_POST['precio'] ?? 0);
+            $stock_minimo = intval($_POST['stock_minimo'] ?? 5);
             $sucursal_id = intval($_POST['sucursal_id'] ?? 0);
 
             if ($id <= 0) {
@@ -76,15 +82,19 @@ try {
                 throw new Exception('El precio no puede ser negativo.');
             }
 
+            if ($stock_minimo < 0) {
+                throw new Exception('El stock mínimo no puede ser negativo.');
+            }
+
             // Verificar que la sucursal existe
             $check = query("SELECT COUNT(*) as count FROM sucursales WHERE id = ?", [$sucursal_id]);
             if ($check[0]['count'] == 0) {
                 throw new Exception('La sucursal seleccionada no existe.');
             }
 
-            $sql = "UPDATE inventario SET producto = ?, cantidad = ?, precio = ?, sucursal_id = ? WHERE id = ?";
+            $sql = "UPDATE inventario SET producto = ?, cantidad = ?, precio = ?, stock_minimo = ?, sucursal_id = ? WHERE id = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$producto, $cantidad, $precio, $sucursal_id, $id]);
+            $stmt->execute([$producto, $cantidad, $precio, $stock_minimo, $sucursal_id, $id]);
 
             header('Location: ../inventario.php?success=Producto actualizado exitosamente');
             exit;
