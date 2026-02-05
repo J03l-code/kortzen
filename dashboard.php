@@ -411,12 +411,29 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <!-- Fidelización -->
-        <div class="earnings-card">
+        <!-- Retención -->
+        <div class="earnings-card" style="background: linear-gradient(135deg, #2C3E50 0%, #000000 100%);">
             <div class="earnings-title">Fidelización Hoy</div>
             <div class="earnings-amount"><?php echo $retentionRate; ?>%</div>
             <div class="trend-indicator">
                 <span><?php echo $recurrentes; ?> clientes recurrentes</span>
+            </div>
+        </div>
+        
+        <!-- PRODUCTOS VENDIDOS (HOY) -->
+        <?php
+            // Calcular productos vendidos HOY
+            $ventasProdHoy = query("SELECT SUM(precio_unitario * cantidad) as total, SUM(cantidad) as items 
+                                    FROM ventas_productos 
+                                    WHERE sucursal_id = ? AND DATE(fecha) = ?", [$sucursal_id, $hoy]);
+            $totalVentasProd = $ventasProdHoy[0]['total'] ?? 0;
+            $itemsVendidos = $ventasProdHoy[0]['items'] ?? 0;
+        ?>
+        <div class="earnings-card">
+            <div class="earnings-title">Ventas Productos (Hoy)</div>
+            <div class="earnings-amount">$<?php echo number_format($totalVentasProd, 2); ?></div>
+            <div class="trend-indicator">
+                <span><?php echo $itemsVendidos; ?> items vendidos</span>
             </div>
         </div>
     </div>

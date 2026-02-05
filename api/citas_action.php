@@ -86,23 +86,39 @@ try {
             $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada' WHERE id = ?");
             $stmtComp->execute([$id]);
 
-            // 2. Procesar inventario
-            // Logs de consumo se guardan en una tabla nueva 'consumos_citas' o simplemente actualizamos stock
-            // Para simplicidad por ahora: Update directo a stock + Log general
+            // Obtener sucursal de la cita
+            $stmtCitaInfo = $pdo->prepare("SELECT sucursal_id FROM citas WHERE id = ?");
+            $stmtCitaInfo->execute([$id]);
+            $citaInfo = $stmtCitaInfo->fetch();
+            $sucursal_id = $citaInfo['sucursal_id'] ?? 0;
+            $usuario_id = $_SESSION['user_id']; // Quién completó la cita (vendedor)
+
+            // 2. Procesar inventario y Registrar Venta
             if (!empty($materiales)) {
                 $stmtStock = $pdo->prepare("UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?");
+                $stmtPrice = $pdo->prepare("SELECT precio FROM inventario WHERE id = ?");
+                $stmtVenta = $pdo->prepare("INSERT INTO ventas_productos (cita_id, producto_id, cantidad, precio_unitario, sucursal_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?)");
 
                 for ($i = 0; $i < count($materiales); $i++) {
                     $prodId = intval($materiales[$i]);
                     $cant = floatval($cantidades[$i]);
 
                     if ($prodId > 0 && $cant > 0) {
+                        // Actualizar Stock
                         $stmtStock->execute([$cant, $prodId]);
-                        // Opcional: Registrar consumo (si existiera tabla)
-                        // registrarConsumo($id, $prodId, $cant);
+
+                        // Obtener precio actual
+                        $stmtPrice->execute([$prodId]);
+                        $prodInfo = $stmtPrice->fetch();
+                        $precioUnitario = $prodInfo['precio'] ?? 0;
+
+                        // Registrar Venta/Consumo
+                        if ($sucursal_id > 0) {
+                            $stmtVenta->execute([$id, $prodId, $cant, $precioUnitario, $sucursal_id, $usuario_id]);
+                        }
                     }
                 }
-                registrarLog('UPDATE', 'inventario', $id, 'Materiales consumidos al completar cita');
+                registrarLog('UPDATE', 'inventario', $id, 'Materiales consumidos/vendidos en cita');
             }
 
             header('Location: ' . $redirect_url . '?success=' . urlencode('Cita completada y stock actualizado.'));
