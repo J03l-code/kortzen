@@ -41,7 +41,8 @@ async function loadTestimonials() {
   if (!track) return;
 
   try {
-    const response = await fetch('/api/get_reviews.php');
+    const response = await fetch('/api/get_reviews.php?t=' + Date.now());
+    if (!response.ok) throw new Error('Network response was not ok');
     const data = await response.json();
 
     if (data.success && data.reviews.length > 0) {
