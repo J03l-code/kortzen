@@ -512,12 +512,15 @@ $pageTitle = 'Reservar Cita';
                     el.className = 'option-card';
                     el.onclick = () => selectBarber(b.id, b.nombre, el);
                     let avatarHtml = '';
-                    // Use a placeholder or actual photo if we had it. The API returns email as 'foto_perfil' temporarily or we can use a generic avatar
-                    // For now, let's keep the initial but maybe add a class to style it better
-                    avatarHtml = `
-                    <div class="barber-avatar" style="width:60px; height:60px; border-radius:50%; background:#333; color:white; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:10px; border:2px solid var(--color-gold);">
-                        ${b.nombre.charAt(0)}
-                    </div>`;
+                    if (b.foto_perfil && b.foto_perfil.length > 5) {
+                        avatarHtml = `
+                        <div class="barber-avatar" style="width:60px; height:60px; border-radius:50%; background-image:url('${b.foto_perfil}'); background-size:cover; background-position:center; margin-bottom:10px; border:2px solid var(--color-gold);"></div>`;
+                    } else {
+                        avatarHtml = `
+                        <div class="barber-avatar" style="width:60px; height:60px; border-radius:50%; background:#333; color:white; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:10px; border:2px solid var(--color-gold);">
+                            ${b.nombre.charAt(0)}
+                        </div>`;
+                    }
 
                     el.innerHTML = `
                     <div style="display:flex; flex-direction:column; align-items:center;">
@@ -640,6 +643,12 @@ $pageTitle = 'Reservar Cita';
             document.querySelectorAll('#barbersGrid .option-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             updateNavButtons();
+
+            // Auto-advance to Step 3 (Date)
+            setTimeout(() => {
+                currentStep = 3;
+                showStep(currentStep);
+            }, 300);
         }
 
         function selectTime(time, el) {
@@ -648,6 +657,18 @@ $pageTitle = 'Reservar Cita';
             document.querySelectorAll('.time-slot').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             updateNavButtons();
+
+            // Auto-advance to Step 4 (Client Info) or 5 (Summary) depending on logic
+            setTimeout(() => {
+                // Logic mimics btnNext click
+                // Skip step 4 if client already has phone
+                if (hasExistingPhone) {
+                    currentStep = 5;
+                } else {
+                    currentStep = 4;
+                }
+                showStep(currentStep);
+            }, 300);
         }
 
         function initDatePicker() {

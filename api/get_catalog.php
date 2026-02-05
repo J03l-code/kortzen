@@ -12,7 +12,7 @@ try {
         $sucursalId = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
 
         // Return user photo if available
-        $sql = "SELECT u.id, u.nombre, s.nombre as sucursal_nombre, u.email as foto_perfil
+        $sql = "SELECT u.id, u.nombre, s.nombre as sucursal_nombre, u.foto_url as foto_perfil
                 FROM usuarios u 
                 LEFT JOIN sucursales s ON u.sucursal_id = s.id 
                 WHERE u.rol = 'barbero' AND u.activo = 1";
