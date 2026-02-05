@@ -25,11 +25,11 @@ $pageTitle = 'Reservar Cita';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
     <style>
         :root {
-            --gold: #333333;
-            --dark-bg: #121212;
-            --card-bg: #1A1A1A;
-            --text-primary: #FFFFFF;
-            --text-secondary: #AAAAAA;
+            --gold: #C9A96E;
+            --dark-bg: #F4F4F9;
+            --card-bg: #FFFFFF;
+            --text-primary: #333333;
+            --text-secondary: #666666;
         }
 
         body {
@@ -85,8 +85,8 @@ $pageTitle = 'Reservar Cita';
             width: 30px;
             height: 30px;
             border-radius: 50%;
-            background: #333;
-            color: #666;
+            background: #EEEEEE;
+            color: #999;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -99,8 +99,8 @@ $pageTitle = 'Reservar Cita';
 
         .step-dot.active {
             background: var(--gold);
-            color: #000;
-            box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
+            color: #FFF;
+            box-shadow: 0 0 10px rgba(201, 169, 110, 0.3);
         }
 
         .step-dot.completed {
@@ -140,7 +140,7 @@ $pageTitle = 'Reservar Cita';
         /* Service Card */
         .option-card {
             background: var(--card-bg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid #E0E0E0;
             border-radius: 12px;
             padding: 20px;
             cursor: pointer;
@@ -219,7 +219,7 @@ $pageTitle = 'Reservar Cita';
         .time-slot {
             padding: 10px;
             background: var(--card-bg);
-            border: 1px solid #333;
+            border: 1px solid #DDD;
             border-radius: 8px;
             text-align: center;
             cursor: pointer;
@@ -352,7 +352,7 @@ $pageTitle = 'Reservar Cita';
         <div class="wizard-step" id="step4">
             <h2 style="margin-bottom: 20px;">Datos de Contacto</h2>
             <div
-                style="background:var(--card-bg); padding:30px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width: 500px; margin: 0 auto;">
+                style="background:var(--card-bg); padding:30px; border-radius:12px; border:1px solid #E0E0E0; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                 <p style="color:var(--text-secondary); margin-bottom:20px;">Necesitamos un número de contacto para
                     confirmar tu cita.</p>
 
@@ -360,30 +360,31 @@ $pageTitle = 'Reservar Cita';
                     <label
                         style="display:block; margin-bottom:8px; color:var(--text-secondary); font-size: 0.9rem;">Nombre</label>
                     <input type="text" id="clientName" readonly
-                        style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid #333; color: #888; border-radius: 6px; cursor: not-allowed;">
+                        style="width: 100%; padding: 12px; background: #F5F5F5; border: 1px solid #DDD; color: #555; border-radius: 6px; cursor: not-allowed;">
                 </div>
 
                 <div style="margin-bottom: 20px;">
                     <label
                         style="display:block; margin-bottom:8px; color:var(--text-secondary); font-size: 0.9rem;">Email</label>
                     <input type="text" id="clientEmail" readonly
-                        style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid #333; color: #888; border-radius: 6px; cursor: not-allowed;">
+                        style="width: 100%; padding: 12px; background: #F5F5F5; border: 1px solid #DDD; color: #555; border-radius: 6px; cursor: not-allowed;">
                 </div>
 
                 <div style="margin-bottom: 10px;">
                     <label style="display:block; margin-bottom:8px; color:var(--gold); font-size: 0.9rem;">Teléfono /
                         WhatsApp *</label>
                     <input type="tel" id="clientPhone" placeholder="Ej: 0991234567"
-                        style="width: 100%; padding: 12px; background: #fff; border: 2px solid var(--gold); color: #000; border-radius: 6px; font-weight: bold; font-size: 1.1rem;">
+                        style="width: 100%; padding: 12px; background: #FFF; border: 2px solid var(--gold); color: #333; border-radius: 6px; font-weight: bold; font-size: 1.1rem;">
                 </div>
-                <p style="font-size: 0.8rem; color: #666;">* Obligatorio para notificaciones de la cita.</p>
+                <p style="font-size: 0.8rem; color: #999;">* Obligatorio para notificaciones de la cita.</p>
             </div>
         </div>
 
         <!-- Step 5: Confirm -->
         <div class="wizard-step" id="step5">
             <h2 style="margin-bottom: 20px;">Confirma tu Reserva</h2>
-            <div style="background:var(--card-bg); padding:30px; border-radius:12px; border:1px solid #333;">
+            <div
+                style="background:var(--card-bg); padding:30px; border-radius:12px; border:1px solid #E0E0E0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                 <div style="display:grid; gap:15px; margin-bottom:30px;">
                     <div>
                         <span style="color:var(--text-secondary); font-size:0.9rem;">SERVICIO</span>

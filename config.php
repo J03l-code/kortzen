@@ -57,7 +57,18 @@ function getConnection()
             // Log del error (en producción, usa error_log)
             error_log("Error de conexión a la base de datos: " . $e->getMessage());
 
-            // Mostrar mensaje amigable al usuario
+            // Si es una petición API o AJAX, devolver JSON
+            $isApiResult = (strpos($_SERVER['REQUEST_URI'], '/api/') !== false) ||
+                (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+
+            if ($isApiResult) {
+                header('Content-Type: application/json');
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Error de conexión a base de datos', 'error' => $e->getMessage()]);
+                exit;
+            }
+
+            // Mostrar mensaje amigable al usuario (HTML)
             die("
                 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 100px auto; padding: 20px; border: 2px solid #dc3545; border-radius: 8px; background: #f8d7da; color: #721c24;'>
                     <h2>⚠️ Error de Conexión a la Base de Datos</h2>
