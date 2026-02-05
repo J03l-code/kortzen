@@ -435,6 +435,7 @@ $pageTitle = 'Reservar Cita';
         };
 
         let currentStep = 1;
+        let hasExistingPhone = false; // Track if client already has phone
 
         // Load Data
         document.addEventListener('DOMContentLoaded', async () => {
@@ -553,9 +554,10 @@ $pageTitle = 'Reservar Cita';
                 if (res.success && res.cliente) {
                     document.getElementById('clientName').value = res.cliente.nombre;
                     document.getElementById('clientEmail').value = res.cliente.email;
-                    if (res.cliente.telefono) {
+                    if (res.cliente.telefono && res.cliente.telefono.length > 6) {
                         document.getElementById('clientPhone').value = res.cliente.telefono;
                         bookingData.phone = res.cliente.telefono;
+                        hasExistingPhone = true; // Will skip step 4
                     }
                 }
             } catch (e) {
@@ -621,13 +623,25 @@ $pageTitle = 'Reservar Cita';
 
         document.getElementById('btnPrev').addEventListener('click', () => {
             if (currentStep > 1) {
-                currentStep--;
+                // Skip step 4 going backwards if phone exists
+                if (currentStep === 5 && hasExistingPhone) {
+                    currentStep = 3;
+                } else {
+                    currentStep--;
+                }
                 showStep(currentStep);
             }
         });
 
         document.getElementById('btnNext').addEventListener('click', () => {
             if (currentStep < 5) {
+
+                // Skip step 4 if client already has phone
+                if (currentStep === 3 && hasExistingPhone) {
+                    currentStep = 5;
+                    showStep(currentStep);
+                    return;
+                }
 
                 // Validation Step 4
                 if (currentStep === 4) {
@@ -652,7 +666,6 @@ $pageTitle = 'Reservar Cita';
             try {
                 const formData = new FormData();
                 formData.append('servicio_id', bookingData.serviceId);
-                formData.append('barbero_id', bookingData.barberId);
                 formData.append('barbero_id', bookingData.barberId);
                 formData.append('fecha', bookingData.date);
                 formData.append('hora', bookingData.time);
