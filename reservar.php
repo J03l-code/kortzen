@@ -439,8 +439,11 @@ $pageTitle = 'Reservar Cita';
 
         // Load Data
         document.addEventListener('DOMContentLoaded', async () => {
+            // Get selected branch from localStorage
+            const branchId = localStorage.getItem('kortzen_selected_branch') || 1;
+            
             await loadServices();
-            await loadBarbers();
+            await loadBarbers(branchId);
             await loadClientProfile();
             initDatePicker();
             updateNavButtons();
@@ -489,9 +492,9 @@ $pageTitle = 'Reservar Cita';
             }
         }
 
-        async function loadBarbers() {
+        async function loadBarbers(branchId = 1) {
             try {
-                const response = await fetch('api/get_catalog.php?type=barbers');
+                const response = await fetch(`api/get_catalog.php?type=barbers&sucursal_id=${branchId}`);
                 const data = await response.json();
 
                 const grid = document.getElementById('barbersGrid');
@@ -571,9 +574,36 @@ $pageTitle = 'Reservar Cita';
             bookingData.serviceId = id;
             bookingData.serviceName = name;
             bookingData.servicePrice = price;
+            bookingData.barberId = null; // Reset barber when service changes
+            bookingData.barberName = null;
 
             document.querySelectorAll('#servicesGrid .option-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
+
+            // Auto-select "Barbería con Mateo" logic
+            // Assuming the service name contains "Mateo"
+            if (name.toLowerCase().includes('mateo')) {
+                // Find Mateo in the loaded barbers
+                // We need to access the loaded barbers list. 
+                // A better way is to find the barber card with "Mateo" in the text
+                const barbersGrid = document.getElementById('barbersGrid');
+                const mateoCard = Array.from(barbersGrid.children).find(card => 
+                    card.querySelector('h3').textContent.toLowerCase().includes('mateo')
+                );
+
+                if (mateoCard) {
+                    // Trigger click on Mateo's card to select him
+                    mateoCard.click();
+                    // Auto-advance is handled in button click, but we want to skip step 2
+                    // We can set a flag or just force next step
+                    setTimeout(() => {
+                        // Skip step 2 (Barbers) and go to Step 3 (Date)
+                        currentStep = 3;
+                        showStep(currentStep);
+                    }, 500); 
+                }
+            }
+
             updateNavButtons();
         }
 
