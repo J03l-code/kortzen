@@ -77,13 +77,22 @@ function initTestimonialsSlider() {
   const slides = track.querySelectorAll('.testimonial');
   const dotsContainer = slider.querySelector('.testimonials-dots');
 
-  if (slides.length <= 1) return;
+  // Clear existing dots and listeners if any (simple reset)
+  dotsContainer.innerHTML = '';
+  const oldClone = track.cloneNode(true);
+  track.parentNode.replaceChild(oldClone, track);
+  const newTrack = slider.querySelector('.testimonials-track');
+
+  // Re-select slides from new track
+  const newSlides = newTrack.querySelectorAll('.testimonial');
+
+  if (newSlides.length <= 1) return;
 
   let currentSlide = 0;
   let autoplayInterval;
 
   // Create dots
-  slides.forEach((_, index) => {
+  newSlides.forEach((_, index) => {
     const dot = document.createElement('button');
     dot.classList.add('testimonials-dot');
     if (index === 0) dot.classList.add('testimonials-dot--active');
@@ -96,7 +105,7 @@ function initTestimonialsSlider() {
 
   function goToSlide(index) {
     currentSlide = index;
-    track.style.transform = `translateX(-${currentSlide * 100}%)`;
+    newTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
 
     dots.forEach((dot, i) => {
       dot.classList.toggle('testimonials-dot--active', i === currentSlide);
@@ -104,12 +113,14 @@ function initTestimonialsSlider() {
   }
 
   function nextSlide() {
-    const next = (currentSlide + 1) % slides.length;
+    const next = (currentSlide + 1) % newSlides.length;
     goToSlide(next);
   }
 
   // Autoplay
   function startAutoplay() {
+    // Clear any existing interval just in case
+    clearInterval(autoplayInterval);
     autoplayInterval = setInterval(nextSlide, 5000);
   }
 
