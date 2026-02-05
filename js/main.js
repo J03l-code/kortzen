@@ -13,23 +13,60 @@ import { initForms } from './forms.js';
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize navigation (header scroll, mobile menu)
   initNavigation();
-  
+
   // Initialize gallery lightbox if on gallery page
   if (document.querySelector('.gallery-grid')) {
     initGallery();
   }
-  
+
   // Initialize form validation
   initForms();
-  
+
   // Initialize testimonials slider if present
   if (document.querySelector('.testimonials-slider')) {
-    initTestimonialsSlider();
+    loadTestimonials().then(() => {
+      initTestimonialsSlider();
+    });
   }
-  
+
   // Add scroll reveal animations
   initScrollReveal();
 });
+
+/**
+ * Load testimonials from API
+ */
+async function loadTestimonials() {
+  const track = document.getElementById('testimonials-track');
+  if (!track) return;
+
+  try {
+    const response = await fetch('/api/get_reviews.php');
+    const data = await response.json();
+
+    if (data.success && data.reviews.length > 0) {
+      track.innerHTML = ''; // Clear fallback
+      data.reviews.forEach(review => {
+        const div = document.createElement('div');
+        div.className = 'testimonial';
+
+        // Stars logic not needed in design but can be added if desired. 
+        // Design uses quote style.
+
+        div.innerHTML = `
+                  <blockquote class="testimonial__quote">
+                    "${review.comentario}"
+                  </blockquote>
+                  <cite class="testimonial__author">— ${review.cliente_nombre}</cite>
+                `;
+        track.appendChild(div);
+      });
+    }
+  } catch (e) {
+    console.error('Error loading reviews:', e);
+    // Fallback content in case of error is handled by existing HTML or empty
+  }
+}
 
 /**
  * Initialize testimonials slider
@@ -39,12 +76,12 @@ function initTestimonialsSlider() {
   const track = slider.querySelector('.testimonials-track');
   const slides = track.querySelectorAll('.testimonial');
   const dotsContainer = slider.querySelector('.testimonials-dots');
-  
+
   if (slides.length <= 1) return;
-  
+
   let currentSlide = 0;
   let autoplayInterval;
-  
+
   // Create dots
   slides.forEach((_, index) => {
     const dot = document.createElement('button');
@@ -54,35 +91,35 @@ function initTestimonialsSlider() {
     dot.addEventListener('click', () => goToSlide(index));
     dotsContainer.appendChild(dot);
   });
-  
+
   const dots = dotsContainer.querySelectorAll('.testimonials-dot');
-  
+
   function goToSlide(index) {
     currentSlide = index;
     track.style.transform = `translateX(-${currentSlide * 100}%)`;
-    
+
     dots.forEach((dot, i) => {
       dot.classList.toggle('testimonials-dot--active', i === currentSlide);
     });
   }
-  
+
   function nextSlide() {
     const next = (currentSlide + 1) % slides.length;
     goToSlide(next);
   }
-  
+
   // Autoplay
   function startAutoplay() {
     autoplayInterval = setInterval(nextSlide, 5000);
   }
-  
+
   function stopAutoplay() {
     clearInterval(autoplayInterval);
   }
-  
+
   slider.addEventListener('mouseenter', stopAutoplay);
   slider.addEventListener('mouseleave', startAutoplay);
-  
+
   startAutoplay();
 }
 
@@ -91,9 +128,9 @@ function initTestimonialsSlider() {
  */
 function initScrollReveal() {
   const revealElements = document.querySelectorAll('[data-reveal]');
-  
+
   if (!revealElements.length) return;
-  
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -108,7 +145,7 @@ function initScrollReveal() {
       rootMargin: '0px 0px -50px 0px',
     }
   );
-  
+
   revealElements.forEach((el) => {
     el.classList.add('reveal-hidden');
     observer.observe(el);

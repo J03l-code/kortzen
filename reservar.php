@@ -790,6 +790,10 @@ $pageTitle = 'Reservar Cita';
                         <h1 style="color:var(--text-primary); margin-bottom:10px;">¡Reserva Exitosa!</h1>
                         <p style="color:var(--text-muted); margin-bottom:30px;">Tu cita ha sido agendada correctamente.</p>
                         <a href="index.html" class="btn btn-next" style="text-decoration:none;">Volver al Inicio</a>
+                        <br><br>
+                        <a href="#" target="_blank" onclick="alert('Por favor configura el link de Google Maps en reservar.php'); return false;" style="color:var(--gold); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem;">⭐</span> Califícanos en Google
+                        </a>
                     </div>
                 `;
                 } else {
