@@ -215,6 +215,22 @@ include 'includes/header.php';
         </div>
 
         <div class="form-group">
+            <label class="form-label">Comisión Diario (%)</label>
+            <input type="number" name="comision_porcentaje" class="form-input"
+                value="<?php echo $isEdit && isset($usuario['comision_porcentaje']) ? $usuario['comision_porcentaje'] : '50.00'; ?>"
+                min="0" max="100" step="0.01" placeholder="Ej. 50">
+            <small style="color: var(--text-muted); font-size: 0.8em;">Lun - Vie</small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Comisión Fin de Semana (%)</label>
+            <input type="number" name="comision_fin_semana" class="form-input"
+                value="<?php echo $isEdit && isset($usuario['comision_fin_semana']) ? $usuario['comision_fin_semana'] : '50.00'; ?>"
+                min="0" max="100" step="0.01" placeholder="Ej. 60">
+            <small style="color: var(--text-muted); font-size: 0.8em;">Sáb - Dom (y Festivos)</small>
+        </div>
+
+        <div class="form-group">
             <label class="form-label">Sucursal</label>
             <select name="sucursal_id" class="form-select">
                 <option value="">Todas las sucursales</option>
