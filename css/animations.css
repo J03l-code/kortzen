@@ -7,11 +7,23 @@
     transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
     display: block;
     /* Changed from inline-block to block to ensure vertical stacking */
+    /* Fallback: Auto-reveal after 2 seconds if JS fails */
+    animation: autoReveal 1s ease forwards;
+    animation-delay: 2s;
 }
 
 [data-reveal-text].is-revealed {
     opacity: 1;
     transform: translateY(0);
+    /* Cancel the fallback animation when JS works */
+    animation: none;
+}
+
+@keyframes autoReveal {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Stagger delay classes (generated or utility) */
