@@ -1,5 +1,6 @@
 # Archivos de configuración sensibles
-config.php
+# Archivos de configuración sensibles
+# config.php (Comentado para subir a este repo privado)
 
 # Archivos temporales y de sistema
 *.log
