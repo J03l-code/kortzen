@@ -441,7 +441,7 @@ $pageTitle = 'Reservar Cita';
         document.addEventListener('DOMContentLoaded', async () => {
             // Get selected branch from localStorage
             const branchId = localStorage.getItem('kortzen_selected_branch') || 1;
-            
+
             await loadServices(branchId);
             await loadBarbers(branchId);
             await loadClientProfile();
@@ -478,7 +478,14 @@ $pageTitle = 'Reservar Cita';
                     const el = document.createElement('div');
                     el.className = 'option-card';
                     el.onclick = () => selectService(s.id, s.nombre, s.precio, el);
+
+                    let imageHtml = '';
+                    if (s.foto_url) {
+                        imageHtml = `<div class="service-image" style="width:100%; height:120px; background-image:url('${s.foto_url}'); background-size:cover; background-position:center; border-radius:8px 8px 0 0; margin-bottom:10px;"></div>`;
+                    }
+
                     el.innerHTML = `
+                    ${imageHtml}
                     <h3>${s.nombre}</h3>
                     <p>${s.duracion_minutos} min</p>
                     <span class="price">$${s.precio}</span>
@@ -504,12 +511,20 @@ $pageTitle = 'Reservar Cita';
                     const el = document.createElement('div');
                     el.className = 'option-card';
                     el.onclick = () => selectBarber(b.id, b.nombre, el);
-                    el.innerHTML = `
-                    <div class="barber-avatar" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;color:white;background:#333">
+                    let avatarHtml = '';
+                    // Use a placeholder or actual photo if we had it. The API returns email as 'foto_perfil' temporarily or we can use a generic avatar
+                    // For now, let's keep the initial but maybe add a class to style it better
+                    avatarHtml = `
+                    <div class="barber-avatar" style="width:60px; height:60px; border-radius:50%; background:#333; color:white; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:10px; border:2px solid var(--color-gold);">
                         ${b.nombre.charAt(0)}
+                    </div>`;
+
+                    el.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        ${avatarHtml}
+                        <h3>${b.nombre}</h3>
+                        <p style="font-size:0.9rem; color:#666;">${b.sucursal_nombre || 'Kortzen'}</p>
                     </div>
-                    <h3>${b.nombre}</h3>
-                    <p>${b.sucursal_nombre || 'Kortzen General'}</p>
                 `;
                     grid.appendChild(el);
                 });
@@ -587,7 +602,7 @@ $pageTitle = 'Reservar Cita';
                 // We need to access the loaded barbers list. 
                 // A better way is to find the barber card with "Mateo" in the text
                 const barbersGrid = document.getElementById('barbersGrid');
-                const mateoCard = Array.from(barbersGrid.children).find(card => 
+                const mateoCard = Array.from(barbersGrid.children).find(card =>
                     card.querySelector('h3').textContent.toLowerCase().includes('mateo')
                 );
 
@@ -600,11 +615,22 @@ $pageTitle = 'Reservar Cita';
                         // Skip step 2 (Barbers) and go to Step 3 (Date)
                         currentStep = 3;
                         showStep(currentStep);
-                    }, 500); 
+                    }, 500);
                 }
             }
 
             updateNavButtons();
+
+            // Auto-advance to next step (Step 2: Barbers)
+            // Wait a small delay for visual feedback
+            setTimeout(() => {
+                const serviceName = name.toLowerCase();
+                if (!serviceName.includes('mateo')) {
+                    // Only auto-advance if NOT Mateo (Mateo logic handles its own skip)
+                    currentStep = 2;
+                    showStep(currentStep);
+                }
+            }, 300);
         }
 
         function selectBarber(id, name, el) {
