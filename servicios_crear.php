@@ -193,6 +193,26 @@ include 'includes/header.php';
         </div>
 
         <div class="form-group">
+            <label class="form-label">Sucursales Disponibles</label>
+            <div
+                style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px;">
+                <?php
+                $sucursales = query("SELECT id, nombre FROM sucursales WHERE activo = 1 ORDER BY nombre ASC");
+                foreach ($sucursales as $sucursal):
+                    ?>
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px;">
+                        <input type="checkbox" name="sucursales[]" value="<?php echo $sucursal['id']; ?>" checked
+                            style="margin-right: 10px; transform: scale(1.2);">
+                        <?php echo htmlspecialchars($sucursal['nombre']); ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.8em; margin-top: 5px; display: block;">
+                Selecciona las sucursales donde se ofrecerá este servicio.
+            </small>
+        </div>
+
+        <div class="form-group">
             <label class="form-label">Estado</label>
             <select name="activo" class="form-select" required>
                 <option value="1" <?php echo ($isEdit && $servicio['activo']) ? 'selected' : ''; ?>>Activo</option>

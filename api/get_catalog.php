@@ -23,7 +23,18 @@ try {
         $data = query($sql);
         echo json_encode(['barberos' => $data]);
     } else {
-        $sql = "SELECT id, nombre, precio, duracion_minutos FROM servicios WHERE activo = 1";
+        $sucursalId = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
+
+        $sql = "SELECT s.id, s.nombre, s.precio, s.duracion_minutos 
+                FROM servicios s";
+
+        if ($sucursalId > 0) {
+            $sql .= " INNER JOIN servicios_sucursales ss ON s.id = ss.servicio_id 
+                      WHERE s.activo = 1 AND ss.sucursal_id = $sucursalId";
+        } else {
+            $sql .= " WHERE s.activo = 1";
+        }
+
         $data = query($sql);
         echo json_encode(['servicios' => $data]);
     }

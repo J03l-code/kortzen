@@ -442,7 +442,7 @@ $pageTitle = 'Reservar Cita';
             // Get selected branch from localStorage
             const branchId = localStorage.getItem('kortzen_selected_branch') || 1;
             
-            await loadServices();
+            await loadServices(branchId);
             await loadBarbers(branchId);
             await loadClientProfile();
             initDatePicker();
@@ -451,11 +451,11 @@ $pageTitle = 'Reservar Cita';
 
         // --- API Calls ---
 
-        async function loadServices() {
+        async function loadServices(branchId = 1) {
             const grid = document.getElementById('servicesGrid');
 
             try {
-                const response = await fetch('api/get_catalog.php');
+                const response = await fetch(`api/get_catalog.php?sucursal_id=${branchId}`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);

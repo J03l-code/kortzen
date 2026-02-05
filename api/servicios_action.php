@@ -16,12 +16,12 @@ try {
             $nombre = trim($_POST['nombre'] ?? '');
             $descripcion = trim($_POST['descripcion'] ?? '');
             $precio = floatval($_POST['precio'] ?? 0);
-            $precio = floatval($_POST['precio'] ?? 0);
             $duracion_minutos = intval($_POST['duracion_minutos'] ?? 30);
             $categoria = trim($_POST['categoria'] ?? 'General');
             $foto_url = trim($_POST['foto_url'] ?? '');
             $activo = intval($_POST['activo'] ?? 1);
             $destacado = isset($_POST['destacado']) ? 1 : 0;
+            $sucursales = $_POST['sucursales'] ?? [];
 
             if (empty($nombre)) {
                 throw new Exception('El nombre del servicio es obligatorio.');
@@ -31,12 +31,30 @@ try {
                 throw new Exception('El precio debe ser mayor o igual a 0.');
             }
 
-            $sql = "INSERT INTO servicios (nombre, descripcion, precio, duracion_minutos, categoria, foto_url, activo, destacado) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$nombre, $descripcion, $precio, $duracion_minutos, $categoria, $foto_url, $activo, $destacado]);
+            $pdo->beginTransaction();
 
-            header('Location: ../servicios.php?success=Servicio creado exitosamente');
+            try {
+                $sql = "INSERT INTO servicios (nombre, descripcion, precio, duracion_minutos, categoria, foto_url, activo, destacado) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$nombre, $descripcion, $precio, $duracion_minutos, $categoria, $foto_url, $activo, $destacado]);
+                $servicioId = $pdo->lastInsertId();
+
+                // Save branch associations
+                if (!empty($sucursales)) {
+                    $insertSql = "INSERT INTO servicios_sucursales (servicio_id, sucursal_id) VALUES (?, ?)";
+                    $insertStmt = $pdo->prepare($insertSql);
+                    foreach ($sucursales as $sucursalId) {
+                        $insertStmt->execute([$servicioId, $sucursalId]);
+                    }
+                }
+
+                $pdo->commit();
+                header('Location: ../servicios.php?success=Servicio creado exitosamente');
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                throw $e;
+            }
             exit;
 
         case 'update':
@@ -44,12 +62,12 @@ try {
             $nombre = trim($_POST['nombre'] ?? '');
             $descripcion = trim($_POST['descripcion'] ?? '');
             $precio = floatval($_POST['precio'] ?? 0);
-            $precio = floatval($_POST['precio'] ?? 0);
             $duracion_minutos = intval($_POST['duracion_minutos'] ?? 30);
             $categoria = trim($_POST['categoria'] ?? 'General');
             $foto_url = trim($_POST['foto_url'] ?? '');
             $activo = intval($_POST['activo'] ?? 1);
             $destacado = isset($_POST['destacado']) ? 1 : 0;
+            $sucursales = $_POST['sucursales'] ?? [];
 
             if ($id <= 0) {
                 throw new Exception('ID de servicio inválido.');
@@ -59,13 +77,35 @@ try {
                 throw new Exception('El nombre del servicio es obligatorio.');
             }
 
-            $sql = "UPDATE servicios 
-                    SET nombre = ?, descripcion = ?, precio = ?, duracion_minutos = ?, categoria = ?, foto_url = ?, activo = ?, destacado = ? 
-                    WHERE id = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$nombre, $descripcion, $precio, $duracion_minutos, $categoria, $foto_url, $activo, $destacado, $id]);
+            $pdo->beginTransaction();
 
-            header('Location: ../servicios.php?success=Servicio actualizado exitosamente');
+            try {
+                $sql = "UPDATE servicios 
+                        SET nombre = ?, descripcion = ?, precio = ?, duracion_minutos = ?, categoria = ?, foto_url = ?, activo = ?, destacado = ? 
+                        WHERE id = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$nombre, $descripcion, $precio, $duracion_minutos, $categoria, $foto_url, $activo, $destacado, $id]);
+
+                // Update branch associations
+                // First delete existing
+                $deleteStmt = $pdo->prepare("DELETE FROM servicios_sucursales WHERE servicio_id = ?");
+                $deleteStmt->execute([$id]);
+
+                // Then insert new ones
+                if (!empty($sucursales)) {
+                    $insertSql = "INSERT INTO servicios_sucursales (servicio_id, sucursal_id) VALUES (?, ?)";
+                    $insertStmt = $pdo->prepare($insertSql);
+                    foreach ($sucursales as $sucursalId) {
+                        $insertStmt->execute([$id, $sucursalId]);
+                    }
+                }
+
+                $pdo->commit();
+                header('Location: ../servicios.php?success=Servicio actualizado exitosamente');
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                throw $e;
+            }
             exit;
 
         case 'delete':
