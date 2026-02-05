@@ -1,0 +1,115 @@
+/* Advanced Animations & Marquee */
+
+/* Reveal Animations */
+[data-reveal-text] {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    display: block;
+    /* Changed from inline-block to block to ensure vertical stacking */
+}
+
+[data-reveal-text].is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Stagger delay classes (generated or utility) */
+.delay-100 {
+    transition-delay: 0.1s;
+}
+
+.delay-200 {
+    transition-delay: 0.2s;
+}
+
+.delay-300 {
+    transition-delay: 0.3s;
+}
+
+/* Image Parallax (Simple CSS-only version or base for JS) */
+.parallax-container {
+    overflow: hidden;
+}
+
+.parallax-image {
+    transform: scale(1.1);
+    transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.parallax-image.is-in-view {
+    transform: scale(1);
+}
+
+
+/* Infinite Marquee */
+.marquee-section {
+    padding: var(--space-8) 0;
+    background-color: var(--color-black);
+    border-top: 1px solid var(--color-gold-light);
+    border-bottom: 1px solid var(--color-gold-light);
+    overflow: hidden;
+    position: relative;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    /* Full width hack */
+}
+
+.marquee-content {
+    display: flex;
+    width: fit-content;
+    animation: marquee-scroll 30s linear infinite;
+}
+
+.marquee-item {
+    font-family: var(--font-heading);
+    font-size: 3rem;
+    font-weight: 300;
+    color: var(--color-gold);
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 0 4rem;
+    letter-spacing: 2px;
+    position: relative;
+}
+
+.marquee-item::after {
+    content: '✦';
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: var(--color-white);
+    opacity: 0.5;
+}
+
+@keyframes marquee-scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+
+    /* Assumes content is duplicated once */
+}
+
+/* Fade In animation general */
+.fade-in-up {
+    animation: fadeInUp 0.8s ease forwards;
+    opacity: 0;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -1,0 +1,28 @@
+# Archivos de configuración sensibles
+config.php
+
+# Archivos temporales y de sistema
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Carpeta de uploads (se mantiene en servidor)
+uploads/
+
+# IDE y editores
+.vscode/
+.idea/
+*.sublime-*
+
+# Archivos de debug/instalación (no subir a producción)
+debug_*.php
+fix_*.php
+install_*.php
+check_*.php
+update_db*.php
+diagnostico.php
+
+# Dependencias (si usas npm/composer)
+node_modules/
+vendor/

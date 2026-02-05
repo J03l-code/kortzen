@@ -1,0 +1,171 @@
+/* =====================================================
+   KORTZEN - Design System Variables
+   Premium Barbershop - Luxury Minimalism
+   ===================================================== */
+
+:root {
+  /* =================== COLOR PALETTE =================== */
+
+  /* Primary - Light Foundations */
+  --color-black-matte: #FFFFFF;
+  --color-charcoal: #F5F5F5;
+  --color-charcoal-light: #E8E8E8;
+
+  /* Accent - Elegant Dark Gray */
+  --color-gold: #333333;
+  --color-gold-light: #555555;
+  --color-gold-dark: #1A1A1A;
+  --color-bronze: #444444;
+
+  /* Text Colors */
+  --color-white-off: #1A1A1A;
+  --color-white-pure: #000000;
+  --color-gray-light: #555555;
+  --color-gray: #666666;
+  --color-gray-dark: #999999;
+
+  /* Semantic Colors */
+  --color-success: #4A7C59;
+  --color-error: #8B3A3A;
+  --color-warning: #8B7355;
+
+  /* =================== TYPOGRAPHY =================== */
+
+  /* Font Families */
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Montserrat', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+
+  /* Font Sizes - Mobile First */
+  --text-xs: 0.75rem;
+  /* 12px */
+  --text-sm: 0.875rem;
+  /* 14px */
+  --text-base: 1rem;
+  /* 16px */
+  --text-lg: 1.125rem;
+  /* 18px */
+  --text-xl: 1.25rem;
+  /* 20px */
+  --text-2xl: 1.5rem;
+  /* 24px */
+  --text-3xl: 2rem;
+  /* 32px */
+  --text-4xl: 2.5rem;
+  /* 40px */
+  --text-5xl: 3rem;
+  /* 48px */
+  --text-6xl: 4rem;
+  /* 64px */
+
+  /* Font Weights */
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Line Heights */
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* Letter Spacing */
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.1em;
+  --tracking-widest: 0.2em;
+
+  /* =================== SPACING =================== */
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 0.75rem;
+  /* 12px */
+  --space-4: 1rem;
+  /* 16px */
+  --space-5: 1.25rem;
+  /* 20px */
+  --space-6: 1.5rem;
+  /* 24px */
+  --space-8: 2rem;
+  /* 32px */
+  --space-10: 2.5rem;
+  /* 40px */
+  --space-12: 3rem;
+  /* 48px */
+  --space-16: 4rem;
+  /* 64px */
+  --space-20: 5rem;
+  /* 80px */
+  --space-24: 6rem;
+  /* 96px */
+  --space-32: 8rem;
+  /* 128px */
+
+  /* =================== LAYOUT =================== */
+
+  /* Container */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1440px;
+
+  /* Breakpoints (for reference) */
+  --bp-sm: 480px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+  --bp-2xl: 1440px;
+
+  /* =================== BORDERS =================== */
+
+  --border-width: 1px;
+  --border-width-2: 2px;
+  --border-radius-sm: 2px;
+  --border-radius: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+  --border-radius-full: 9999px;
+
+  /* =================== SHADOWS =================== */
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.6);
+  --shadow-gold: 0 0 20px rgba(224, 224, 224, 0.3);
+
+  /* =================== TRANSITIONS =================== */
+
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 700ms;
+
+  --transition-fast: var(--duration-fast) var(--ease-in-out);
+  --transition-base: var(--duration-base) var(--ease-in-out);
+  --transition-slow: var(--duration-slow) var(--ease-in-out);
+
+  /* =================== Z-INDEX =================== */
+
+  --z-below: -1;
+  --z-base: 0;
+  --z-above: 10;
+  --z-sticky: 100;
+  --z-fixed: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-tooltip: 500;
+}

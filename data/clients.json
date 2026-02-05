@@ -1,0 +1,104 @@
+{
+    "clients": [
+        {
+            "id": 1,
+            "name": "Carlos Rodríguez",
+            "email": "carlos.rodriguez@email.com",
+            "phone": "+34 612 345 678",
+            "lastVisit": "2026-01-15",
+            "favoriteService": "Corte Clásico",
+            "totalVisits": 12,
+            "notes": "Prefiere corte bajo en los lados. Alérgico a productos con alcohol."
+        },
+        {
+            "id": 2,
+            "name": "Alejandro Martínez",
+            "email": "a.martinez@email.com",
+            "phone": "+34 623 456 789",
+            "lastVisit": "2026-01-10",
+            "favoriteService": "Afeitado Real",
+            "totalVisits": 8,
+            "notes": "Cliente VIP. Empresario local."
+        },
+        {
+            "id": 3,
+            "name": "David García",
+            "email": "david.garcia@email.com",
+            "phone": "+34 634 567 890",
+            "lastVisit": "2026-01-08",
+            "favoriteService": "Corte Premium",
+            "totalVisits": 15,
+            "notes": "Siempre pide el mismo estilo. Muy puntual."
+        },
+        {
+            "id": 4,
+            "name": "Roberto Sánchez",
+            "email": "roberto.s@email.com",
+            "phone": "+34 645 678 901",
+            "lastVisit": "2026-01-05",
+            "favoriteService": "Pack Barba Completo",
+            "totalVisits": 6,
+            "notes": "Director creativo. Le gustan los estilos modernos."
+        },
+        {
+            "id": 5,
+            "name": "Miguel Fernández",
+            "email": "miguel.f@email.com",
+            "phone": "+34 656 789 012",
+            "lastVisit": "2026-01-21",
+            "favoriteService": "Corte Clásico",
+            "totalVisits": 20,
+            "notes": "Cliente desde la apertura. Recomendar productos premium."
+        },
+        {
+            "id": 6,
+            "name": "Pablo Ruiz",
+            "email": "pablo.ruiz@email.com",
+            "phone": "+34 667 890 123",
+            "lastVisit": "2025-12-20",
+            "favoriteService": "Ritual Black Tie",
+            "totalVisits": 4,
+            "notes": "Viene para ocasiones especiales."
+        },
+        {
+            "id": 7,
+            "name": "Javier López",
+            "email": "javier.l@email.com",
+            "phone": "+34 678 901 234",
+            "lastVisit": "2026-01-18",
+            "favoriteService": "Afeitado Express",
+            "totalVisits": 25,
+            "notes": "Ejecutivo. Prefiere citas rápidas. Agenda ocupada."
+        },
+        {
+            "id": 8,
+            "name": "Antonio Moreno",
+            "email": "antonio.m@email.com",
+            "phone": "+34 689 012 345",
+            "lastVisit": "2026-01-12",
+            "favoriteService": "Corte Clásico",
+            "totalVisits": 10,
+            "notes": ""
+        },
+        {
+            "id": 9,
+            "name": "Fernando Díaz",
+            "email": "fernando.d@email.com",
+            "phone": "+34 690 123 456",
+            "lastVisit": "2025-12-28",
+            "favoriteService": "Perfilado de Barba",
+            "totalVisits": 3,
+            "notes": "Barba muy espesa. Requiere más tiempo."
+        },
+        {
+            "id": 10,
+            "name": "Luis Hernández",
+            "email": "luis.h@email.com",
+            "phone": "+34 601 234 567",
+            "lastVisit": "2026-01-02",
+            "favoriteService": "Facial Revitalizante",
+            "totalVisits": 7,
+            "notes": "Interesado en tratamientos de spa. Ofrecer nuevos servicios."
+        }
+    ]
+}

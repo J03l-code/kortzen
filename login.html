@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Acceso al portal de KORTZEN.">
+    <title>Acceso | KORTZEN</title>
+    <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/pages.css">
+</head>
+
+<body>
+    <main class="login-page">
+        <div class="login-card">
+            <div class="login-card__logo">
+                <h1 class="login-card__title">KORT<span>ZEN</span></h1>
+                <p class="login-card__subtitle">Portal de Acceso</p>
+            </div>
+
+            <div class="login-card__error" role="alert" aria-live="polite"></div>
+
+            <form class="login-card__form" id="login-form">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="tu@email.com" required
+                        autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="••••••••"
+                        required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn--primary" style="width: 100%;">Iniciar Sesión</button>
+            </form>
+
+            <div class="login-card__footer">
+                <a href="/">← Volver al sitio</a>
+            </div>
+
+            <!-- Demo credentials -->
+            <div
+                style="margin-top: var(--space-8); padding: var(--space-4); background: rgba(192, 160, 98, 0.1); border: 1px solid rgba(192, 160, 98, 0.3); font-size: var(--text-sm); color: var(--color-gray);">
+                <strong style="color: var(--color-gold);">Credenciales Demo:</strong>
+                <table style="width: 100%; margin-top: var(--space-2); font-size: var(--text-xs);">
+                    <tr>
+                        <td style="color: var(--color-gray-light);">Barbero:</td>
+                        <td>barbero@kortzen.com</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--color-gray-light);">Admin Técnico:</td>
+                        <td>tech@kortzen.com</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--color-gray-light);">Admin Locales:</td>
+                        <td>admin@kortzen.com</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="padding-top: 4px;"><em>Contraseña: demo123</em></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initLoginForm } from '/js/auth.js';
+        document.addEventListener('DOMContentLoaded', initLoginForm);
+    </script>
+</body>
+
+</html>

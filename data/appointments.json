@@ -1,0 +1,114 @@
+{
+  "appointments": [
+    {
+      "id": 1,
+      "clientName": "Carlos Rodríguez",
+      "clientId": 1,
+      "service": "Corte Clásico",
+      "date": "2026-01-21",
+      "time": "10:00",
+      "duration": 45,
+      "status": "scheduled",
+      "notes": ""
+    },
+    {
+      "id": 2,
+      "clientName": "Alejandro Martínez",
+      "clientId": 2,
+      "service": "Afeitado Real",
+      "date": "2026-01-21",
+      "time": "11:00",
+      "duration": 45,
+      "status": "scheduled",
+      "notes": "Primera visita"
+    },
+    {
+      "id": 3,
+      "clientName": "David García",
+      "clientId": 3,
+      "service": "Corte Premium",
+      "date": "2026-01-21",
+      "time": "12:00",
+      "duration": 60,
+      "status": "scheduled",
+      "notes": ""
+    },
+    {
+      "id": 4,
+      "clientName": "Roberto Sánchez",
+      "clientId": 4,
+      "service": "Pack Barba Completo",
+      "date": "2026-01-21",
+      "time": "14:00",
+      "duration": 45,
+      "status": "scheduled",
+      "notes": "Preparación para evento"
+    },
+    {
+      "id": 5,
+      "clientName": "Miguel Fernández",
+      "clientId": 5,
+      "service": "Corte Clásico",
+      "date": "2026-01-21",
+      "time": "15:00",
+      "duration": 45,
+      "status": "completed",
+      "notes": ""
+    },
+    {
+      "id": 6,
+      "clientName": "Pablo Ruiz",
+      "clientId": 6,
+      "service": "Ritual Black Tie",
+      "date": "2026-01-21",
+      "time": "16:00",
+      "duration": 120,
+      "status": "scheduled",
+      "notes": "Boda el sábado"
+    },
+    {
+      "id": 7,
+      "clientName": "Javier López",
+      "clientId": 7,
+      "service": "Afeitado Express",
+      "date": "2026-01-22",
+      "time": "10:00",
+      "duration": 20,
+      "status": "scheduled",
+      "notes": ""
+    },
+    {
+      "id": 8,
+      "clientName": "Antonio Moreno",
+      "clientId": 8,
+      "service": "Corte Clásico",
+      "date": "2026-01-22",
+      "time": "11:00",
+      "duration": 45,
+      "status": "scheduled",
+      "notes": ""
+    },
+    {
+      "id": 9,
+      "clientName": "Fernando Díaz",
+      "clientId": 9,
+      "service": "Perfilado de Barba",
+      "date": "2026-01-22",
+      "time": "12:30",
+      "duration": 30,
+      "status": "cancelled",
+      "notes": "Cliente canceló"
+    },
+    {
+      "id": 10,
+      "clientName": "Luis Hernández",
+      "clientId": 10,
+      "service": "Facial Revitalizante",
+      "date": "2026-01-23",
+      "time": "10:00",
+      "duration": 45,
+      "status": "scheduled",
+      "notes": ""
+    }
+  ]
+}

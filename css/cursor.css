@@ -1,0 +1,39 @@
+/* Custom Cursor Styles - Simplified */
+body {
+  cursor: none;
+  /* Hide default cursor */
+}
+
+/* Single cursor element */
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-gold);
+  border: 1.5px solid #000000;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 99999999;
+  pointer-events: none;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.2);
+  /* Subtle contrast */
+}
+
+/* Optional: Slight hover effect just to indicate interactivity, but keeping it simple */
+body.hovering .cursor-dot {
+  transform: translate(-50%, -50%) scale(1.5);
+  background-color: var(--color-gold-light);
+}
+
+/* Hide on mobile/touch devices */
+@media (max-width: 1024px) {
+  body {
+    cursor: auto;
+  }
+
+  .cursor-dot {
+    display: none;
+  }
+}

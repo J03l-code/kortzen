@@ -1,0 +1,132 @@
+/**
+ * KORTZEN - Main JavaScript Entry Point
+ * Premium Barbershop Website
+ */
+
+import { initNavigation } from './navigation.js';
+import { initGallery } from './gallery.js';
+import { initForms } from './forms.js';
+
+/**
+ * Initialize all modules when DOM is ready
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize navigation (header scroll, mobile menu)
+  initNavigation();
+  
+  // Initialize gallery lightbox if on gallery page
+  if (document.querySelector('.gallery-grid')) {
+    initGallery();
+  }
+  
+  // Initialize form validation
+  initForms();
+  
+  // Initialize testimonials slider if present
+  if (document.querySelector('.testimonials-slider')) {
+    initTestimonialsSlider();
+  }
+  
+  // Add scroll reveal animations
+  initScrollReveal();
+});
+
+/**
+ * Initialize testimonials slider
+ */
+function initTestimonialsSlider() {
+  const slider = document.querySelector('.testimonials-slider');
+  const track = slider.querySelector('.testimonials-track');
+  const slides = track.querySelectorAll('.testimonial');
+  const dotsContainer = slider.querySelector('.testimonials-dots');
+  
+  if (slides.length <= 1) return;
+  
+  let currentSlide = 0;
+  let autoplayInterval;
+  
+  // Create dots
+  slides.forEach((_, index) => {
+    const dot = document.createElement('button');
+    dot.classList.add('testimonials-dot');
+    if (index === 0) dot.classList.add('testimonials-dot--active');
+    dot.setAttribute('aria-label', `Ir al testimonio ${index + 1}`);
+    dot.addEventListener('click', () => goToSlide(index));
+    dotsContainer.appendChild(dot);
+  });
+  
+  const dots = dotsContainer.querySelectorAll('.testimonials-dot');
+  
+  function goToSlide(index) {
+    currentSlide = index;
+    track.style.transform = `translateX(-${currentSlide * 100}%)`;
+    
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('testimonials-dot--active', i === currentSlide);
+    });
+  }
+  
+  function nextSlide() {
+    const next = (currentSlide + 1) % slides.length;
+    goToSlide(next);
+  }
+  
+  // Autoplay
+  function startAutoplay() {
+    autoplayInterval = setInterval(nextSlide, 5000);
+  }
+  
+  function stopAutoplay() {
+    clearInterval(autoplayInterval);
+  }
+  
+  slider.addEventListener('mouseenter', stopAutoplay);
+  slider.addEventListener('mouseleave', startAutoplay);
+  
+  startAutoplay();
+}
+
+/**
+ * Initialize scroll reveal animations using Intersection Observer
+ */
+function initScrollReveal() {
+  const revealElements = document.querySelectorAll('[data-reveal]');
+  
+  if (!revealElements.length) return;
+  
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px',
+    }
+  );
+  
+  revealElements.forEach((el) => {
+    el.classList.add('reveal-hidden');
+    observer.observe(el);
+  });
+}
+
+// Add CSS for scroll reveal
+const style = document.createElement('style');
+style.textContent = `
+  .reveal-hidden {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  
+  .revealed {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+`;
+document.head.appendChild(style);

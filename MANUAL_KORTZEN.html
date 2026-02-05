@@ -1,0 +1,112 @@
+
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+    <meta charset="utf-8">
+    <title>Document</title>
+    <style>
+        body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.6; }
+        h1 { color: #2E74B5; font-size: 24pt; border-bottom: 2px solid #2E74B5; padding-bottom: 10px; }
+        h2 { color: #1F4D78; font-size: 18pt; margin-top: 20px; }
+        h3 { color: #1F4D78; font-size: 14pt; margin-top: 15px; }
+        p { margin-bottom: 10px; }
+        ul { margin-bottom: 10px; }
+        li { margin-bottom: 5px; }
+        code { background-color: #f0f0f0; padding: 2px 5px; font-family: 'Consolas', monospace; }
+        blockquote { border-left: 4px solid #ccc; padding-left: 10px; color: #666; font-style: italic; }
+    </style>
+    </head>
+    <body>
+    <h1>Manual de Usuario - Plataforma KORTZEN</h1>
+<p>Este documento sirve como guía de referencia para los diferentes roles de usuario dentro del sistema KORTZEN.</p>
+<p>---</p>
+<h2>1. Acceso al Sistema</h2>
+<p>Para acceder al panel administrativo (Dashboard):</p>
+<p>1.  Navegue a `https://[su-dominio.com]/login.php` (o use el botón flotante "Acceso Admin" en el pie de página).</p>
+<p>2.  Ingrese su correo electrónico y contraseña.</p>
+<p>3.  Haga clic en "Ingresar".</p>
+<p>> <strong>Nota:</strong> Si es su primer ingreso, asegúrese de haber recibido sus credenciales del Administrador General.</p>
+<p>---</p>
+<h2>2. Guía para Administrador General (Super Admin)</h2>
+<p>Tiene control total sobre la plataforma.</p>
+<h3>A. Gestión de Sucursales</h3>
+<p>1.  Vaya a <strong>Sucursales</strong> en el menú lateral.</p>
+<p>2.  <strong>Crear:</strong> Haga clic en el botón `+ Nueva Sucursal`. Complete Nombre, Dirección, Teléfono y Horarios Base.</p>
+<p>3.  <strong>Editar:</strong> Use el botón de lápiz en la lista de sucursales existentes.</p>
+<p>4.  <strong>Eliminar:</strong> Use el botón de papelera (Solo posible si no tiene datos asociados críticos).</p>
+<h3>B. Gestión de Usuarios</h3>
+<p>1.  Vaya a <strong>Usuarios</strong>.</p>
+<p>2.  Haga clic en `+ Nuevo Usuario`.</p>
+<p>3.  Complete los datos:</p>
+<ul>
+<li>  <strong>Rol:</strong></li>
+<li>  `Admin`: Acceso total (como usted).</li>
+<li>  `Admin Local`: Gerente de una sucursal específica.</li>
+<li>  `Barbero`: Personal operativo.</li>
+<li>  <strong>Sucursal:</strong> Asigne la sucursal de trabajo (obligatorio para Barberos y Gerentes).</li>
+<li>  <strong>Comisión (%):</strong> Porcentaje de ganancia para el barbero (ej. 50).</li>
+</ul>
+<h3>C. Configuración de Servicios</h3>
+<p>3.  <strong>Configuración de Servicios:</strong> Vaya a <strong>Configuración</strong> > <strong>Servicios</strong>. Defina nombre, precio y duración.</p>
+<p>4.  <strong>Gestión de Galería:</strong></p>
+<ul>
+<li>  Vaya a <strong>Galería</strong> en el menú.</li>
+<li>  Suba fotos de trabajos recientes para mantener fresca la página web pública.</li>
+<li>  Categorice las fotos (Corte, Barba, etc.) para que aparezcan en la sección correcta.</li>
+</ul>
+<p>---</p>
+<h2>3. Guía para Administrador de Local (Gerente)</h2>
+<p>Responsable de la operativa diaria de UNA sucursal.</p>
+<h3>A. Monitoreo Diario</h3>
+<p>Al ingresar, verá el Dashboard con:</p>
+<ul>
+<li>  <strong>Venta del Día:</strong> Total recaudado hoy en su sucursal.</li>
+<li>  <strong>Citas Pendientes:</strong> Clientes que aún no han sido atendidos hoy.</li>
+<li>  <strong>Ranking:</strong> Qué barbero está generando más ingresos este mes.</li>
+</ul>
+<h3>B. Gestión de Inventario</h3>
+<p>1.  Vaya a <strong>Inventario</strong>.</p>
+<p>2.  <strong>Agregar Producto:</strong> Use `+ Agregar Producto`. Ingrese nombre, cantidad actual, precio y <strong>Stock Mínimo</strong>.</p>
+<p>3.  <strong>Actualizar Stock:</strong> Cuando llegue mercadería, edite el producto y sume la cantidad.</p>
+<p>4.  <strong>Alertas:</strong> Si un producto baja del "Stock Mínimo", aparecerá una alerta roja en su Dashboard avisando que debe reponer.</p>
+<h3>C. Reporte de Caja</h3>
+<p>En el Dashboard, la sección "Venta del Día" le indica cuánto dinero debería haber ingresado.</p>
+<ul>
+<li>  Puede ver el detalle desglozado por: Efectivo / Transferencia (si el sistema registra métodos de pago).</li>
+</ul>
+<p>---</p>
+<h2>4. Guía para Barberos</h2>
+<p>Su herramienta personal para gestionar su tiempo y dinero.</p>
+<h3>A. Mi Agenda (Dashboard)</h3>
+<ul>
+<li>  <strong>Next Up (Siguiente):</strong> En la parte superior verá claramente quién es su próximo cliente, a qué hora y qué servicio.</li>
+<li>  <strong>Next Up Widget:</strong> Muestra la tarjeta del cliente destacado para preparación rápida.</li>
+<li>  <strong>Calendario Mensual:</strong> Vista rápida de qué días tiene más trabajo (indicadores de puntos).</li>
+</ul>
+<h3>B. Gestionar Disponibilidad</h3>
+<p>1.  Vaya a <strong>Mi Perfil</strong> o <strong>Horarios</strong>.</p>
+<p>2.  <strong>Horario Semanal:</strong> Defina sus horas fijas (ej. Lunes 10am-8pm).</p>
+<p>3.  <strong>Bloquear Días:</strong> Si va a tener vacaciones o necesita un día libre médico:</p>
+<ul>
+<li>  Seleccione la fecha en el calendario.</li>
+<li>  Marque "Bloquear Día Completo" o seleccione un rango de horas.</li>
+<li>  Esto evitará que los clientes reserven citas en esos momentos.</li>
+</ul>
+<h3>C. Mis Ganancias</h3>
+<p>En su Dashboard principal, verá 3 tarjetas financieras SOLO visibles para usted:</p>
+<p>1.  <strong>Hoy:</strong> Cuánto ha ganado en comisión el día de hoy.</p>
+<p>2.  <strong>Semana:</strong> Acumulado de la semana actual.</p>
+<p>3.  <strong>Confirmación:</strong> Al finalizar, marque "Completar Cita" para que se sume a sus ganancias del día.</p>
+<h3>D. Mis Clientes (CRM)</h3>
+<p>1.  Vaya a <strong>Mis Clientes</strong>.</p>
+<p>2.  Verá la lista de todos los usuarios que ha atendido.</p>
+<p>3.  <strong>WhatsApp:</strong> Use el botón verde para abrir un chat directo pre-llenado.</p>
+<p>4.  <strong>Notas:</strong> Haga clic en "Notas" para guardar detalles privados sobre los gustos del cliente (visible solo internamente).</p>
+<p>---</p>
+<h2>5. Guía de Soporte</h2>
+<h3>¿Qué hacer si...?</h3>
+<ul>
+<li>  <strong>Olvidé mi contraseña:</strong> Contacte al Administrador General para que restablezca su clave desde el panel de Usuarios.</li>
+<li>  <strong>El sistema está lento:</strong> Verifique su conexión a internet. El sistema está optimizado para funcionar rápido incluso en redes móviles 4G.</li>
+<li>  <strong>Un cliente quiere cancelar fuera de hora:</strong> Busque la cita en "Citas", edítela y cambie el estado a `Cancelada`. Esto liberará el horario inmediatamente para que otro cliente pueda reservar.</li>
+</ul>
+</body></html>

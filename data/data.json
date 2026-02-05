@@ -1,0 +1,383 @@
+{
+    "branches": [
+        {
+            "id": 1,
+            "name": "KORTZEN Gran Vía",
+            "address": "Calle Gran Vía, 42 - Madrid",
+            "phone": "+34 91 123 45 67",
+            "status": "active"
+        },
+        {
+            "id": 2,
+            "name": "KORTZEN Salamanca",
+            "address": "Calle Serrano, 88 - Madrid",
+            "phone": "+34 91 234 56 78",
+            "status": "active"
+        },
+        {
+            "id": 3,
+            "name": "KORTZEN Chamberí",
+            "address": "Calle Fuencarral, 120 - Madrid",
+            "phone": "+34 91 345 67 89",
+            "status": "active"
+        }
+    ],
+    "barbers": [
+        {
+            "id": 1,
+            "name": "Carlos Méndez",
+            "email": "barbero@kortzen.com",
+            "branchId": 1,
+            "commissionRate": 0.40,
+            "specialties": [
+                "Afeitado Tradicional",
+                "Fade"
+            ]
+        },
+        {
+            "id": 2,
+            "name": "Miguel Ángel Torres",
+            "email": "miguel@kortzen.com",
+            "branchId": 1,
+            "commissionRate": 0.35,
+            "specialties": [
+                "Cortes Modernos",
+                "Barba"
+            ]
+        },
+        {
+            "id": 3,
+            "name": "Antonio Ruiz",
+            "email": "antonio@kortzen.com",
+            "branchId": 2,
+            "commissionRate": 0.38,
+            "specialties": [
+                "Corte Clásico",
+                "Tratamientos Spa"
+            ]
+        }
+    ],
+    "appointments": [
+        {
+            "id": 1,
+            "barberId": 1,
+            "branchId": 1,
+            "clientId": 1,
+            "service": "Corte Premium",
+            "date": "2026-01-21",
+            "time": "09:00",
+            "status": "completed",
+            "amount": 55
+        },
+        {
+            "id": 2,
+            "barberId": 1,
+            "branchId": 1,
+            "clientId": 2,
+            "service": "Afeitado Real",
+            "date": "2026-01-21",
+            "time": "10:00",
+            "status": "in_progress",
+            "amount": 40
+        },
+        {
+            "id": 3,
+            "barberId": 1,
+            "branchId": 1,
+            "clientId": 3,
+            "service": "Corte Clásico",
+            "date": "2026-01-21",
+            "time": "11:00",
+            "status": "pending",
+            "amount": 35
+        },
+        {
+            "id": 4,
+            "barberId": 1,
+            "branchId": 1,
+            "clientId": 4,
+            "service": "Pack Barba Completo",
+            "date": "2026-01-21",
+            "time": "12:00",
+            "status": "pending",
+            "amount": 45
+        },
+        {
+            "id": 5,
+            "barberId": 1,
+            "branchId": 1,
+            "clientId": 5,
+            "service": "Ritual Black Tie",
+            "date": "2026-01-21",
+            "time": "14:00",
+            "status": "pending",
+            "amount": 120
+        },
+        {
+            "id": 6,
+            "barberId": 2,
+            "branchId": 1,
+            "clientId": 6,
+            "service": "Corte Clásico",
+            "date": "2026-01-21",
+            "time": "09:30",
+            "status": "completed",
+            "amount": 35
+        },
+        {
+            "id": 7,
+            "barberId": 2,
+            "branchId": 1,
+            "clientId": 7,
+            "service": "Perfilado Barba",
+            "date": "2026-01-21",
+            "time": "10:30",
+            "status": "completed",
+            "amount": 20
+        },
+        {
+            "id": 8,
+            "barberId": 2,
+            "branchId": 1,
+            "clientId": 8,
+            "service": "Corte Premium",
+            "date": "2026-01-21",
+            "time": "11:30",
+            "status": "pending",
+            "amount": 55
+        },
+        {
+            "id": 9,
+            "barberId": 2,
+            "branchId": 1,
+            "clientId": 9,
+            "service": "Afeitado Real",
+            "date": "2026-01-21",
+            "time": "13:00",
+            "status": "pending",
+            "amount": 40
+        },
+        {
+            "id": 10,
+            "barberId": 2,
+            "branchId": 1,
+            "clientId": 10,
+            "service": "Facial Revitalizante",
+            "date": "2026-01-21",
+            "time": "15:00",
+            "status": "pending",
+            "amount": 50
+        },
+        {
+            "id": 11,
+            "barberId": 3,
+            "branchId": 2,
+            "clientId": 1,
+            "service": "Corte Clásico",
+            "date": "2026-01-21",
+            "time": "10:00",
+            "status": "completed",
+            "amount": 35
+        },
+        {
+            "id": 12,
+            "barberId": 3,
+            "branchId": 2,
+            "clientId": 3,
+            "service": "Afeitado Express",
+            "date": "2026-01-21",
+            "time": "11:00",
+            "status": "pending",
+            "amount": 25
+        },
+        {
+            "id": 13,
+            "barberId": 3,
+            "branchId": 2,
+            "clientId": 5,
+            "service": "Tratamiento Hidratante",
+            "date": "2026-01-21",
+            "time": "12:00",
+            "status": "pending",
+            "amount": 25
+        },
+        {
+            "id": 14,
+            "barberId": 3,
+            "branchId": 2,
+            "clientId": 7,
+            "service": "Corte Premium",
+            "date": "2026-01-21",
+            "time": "14:00",
+            "status": "pending",
+            "amount": 55
+        },
+        {
+            "id": 15,
+            "barberId": 3,
+            "branchId": 2,
+            "clientId": 9,
+            "service": "Masaje Craneal",
+            "date": "2026-01-21",
+            "time": "16:00",
+            "status": "pending",
+            "amount": 25
+        }
+    ],
+    "clients": [
+        {
+            "id": 1,
+            "name": "Carlos Rodríguez",
+            "formula": "Navaja #2, High Fade, Pomada Mate",
+            "preferences": [
+                "coffee",
+                "conversation"
+            ],
+            "totalVisits": 24
+        },
+        {
+            "id": 2,
+            "name": "Alejandro Martínez",
+            "formula": "Tijera texturizada, Taper suave",
+            "preferences": [
+                "whisky",
+                "silence"
+            ],
+            "totalVisits": 15
+        },
+        {
+            "id": 3,
+            "name": "David García",
+            "formula": "Máquina #3 lados, tijera arriba",
+            "preferences": [
+                "coffee",
+                "conversation"
+            ],
+            "totalVisits": 32
+        },
+        {
+            "id": 4,
+            "name": "Roberto Sánchez",
+            "formula": "Barba completa, aceite de argán",
+            "preferences": [
+                "whisky",
+                "conversation"
+            ],
+            "totalVisits": 12
+        },
+        {
+            "id": 5,
+            "name": "Miguel Fernández",
+            "formula": "Clásico ejecutivo, gomina clásica",
+            "preferences": [
+                "coffee"
+            ],
+            "totalVisits": 45
+        },
+        {
+            "id": 6,
+            "name": "Pablo Ruiz",
+            "formula": "Undercut largo, mousse volumen",
+            "preferences": [
+                "silence"
+            ],
+            "totalVisits": 8
+        },
+        {
+            "id": 7,
+            "name": "Javier López",
+            "formula": "Afeitado express, bálsamo calmante",
+            "preferences": [
+                "coffee",
+                "conversation"
+            ],
+            "totalVisits": 52
+        },
+        {
+            "id": 8,
+            "name": "Antonio Moreno",
+            "formula": "Corte militar, máquina #1",
+            "preferences": [
+                "silence"
+            ],
+            "totalVisits": 20
+        },
+        {
+            "id": 9,
+            "name": "Fernando Díaz",
+            "formula": "Barba espesa, doble pasada navaja",
+            "preferences": [
+                "whisky"
+            ],
+            "totalVisits": 6
+        },
+        {
+            "id": 10,
+            "name": "Luis Hernández",
+            "formula": "Facial completo, mascarilla carbón",
+            "preferences": [
+                "coffee",
+                "silence"
+            ],
+            "totalVisits": 14
+        }
+    ],
+    "global_inventory": [
+        {
+            "id": 1,
+            "branchId": 1,
+            "name": "Cuchillas Desechables",
+            "category": "consumible",
+            "stock": 45,
+            "minStock": 20
+        },
+        {
+            "id": 2,
+            "branchId": 1,
+            "name": "Aftershave Premium",
+            "category": "producto",
+            "stock": 8,
+            "minStock": 5
+        },
+        {
+            "id": 3,
+            "branchId": 1,
+            "name": "Toallas Calientes",
+            "category": "textil",
+            "stock": 30,
+            "minStock": 15
+        },
+        {
+            "id": 4,
+            "branchId": 1,
+            "name": "Espuma de Afeitar",
+            "category": "consumible",
+            "stock": 4,
+            "minStock": 8
+        },
+        {
+            "id": 5,
+            "branchId": 2,
+            "name": "Cuchillas Desechables",
+            "category": "consumible",
+            "stock": 60,
+            "minStock": 20
+        },
+        {
+            "id": 6,
+            "branchId": 2,
+            "name": "Aftershave Premium",
+            "category": "producto",
+            "stock": 3,
+            "minStock": 5
+        },
+        {
+            "id": 7,
+            "branchId": 3,
+            "name": "Toallas Calientes",
+            "category": "textil",
+            "stock": 10,
+            "minStock": 15
+        }
+    ]
+}

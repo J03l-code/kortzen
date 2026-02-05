@@ -1,0 +1,62 @@
+/* WhatsApp Floating Button - Subtle & Elegant */
+.floating-whatsapp-btn {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background-color: #25D366;
+    color: #fff;
+    border-radius: 50%;
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-weight: 600;
+    box-shadow: 0 2px 12px rgba(37, 211, 102, 0.3);
+    transition: all 0.3s ease;
+    opacity: 0.85;
+}
+
+.floating-whatsapp-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+    background-color: #20BA56;
+    color: #fff;
+    opacity: 1;
+}
+
+.floating-whatsapp-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.floating-whatsapp-btn span {
+    display: none;
+}
+
+/* Adjust sticky booking button if present to avoid overlap */
+.sticky-cta {
+    bottom: 5rem;
+}
+
+@media (max-width: 768px) {
+    .floating-whatsapp-btn {
+        bottom: 1rem;
+        right: 1rem;
+        width: 44px;
+        height: 44px;
+    }
+
+    .floating-whatsapp-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .sticky-cta {
+        bottom: 4.5rem;
+        right: 1rem;
+    }
+}

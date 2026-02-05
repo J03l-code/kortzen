@@ -1,0 +1,185 @@
+/* Interactive Features Styles */
+
+/* Sticky Booking Button */
+.sticky-cta {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 900;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.sticky-cta {
+    bottom: 5rem;
+    right: 1.5rem;
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.sticky-cta .btn {
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    justify-content: center;
+}
+
+.sticky-cta span {
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.sticky-cta svg {
+    margin: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.sticky-cta.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.sticky-cta .btn {
+    padding: 12px 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 6px;
+}
+
+/* Gentleman's Quiz Modal */
+.quiz-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10001;
+    /* Above preloader and everything */
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.quiz-modal.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.quiz-container {
+    background-color: var(--color-charcoal);
+    width: 90%;
+    max-width: 600px;
+    padding: 3rem;
+    border: 1px solid var(--color-gold-light);
+    position: relative;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: center;
+}
+
+.quiz-modal.is-open .quiz-container {
+    transform: scale(1);
+}
+
+.quiz-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--color-white);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.quiz-close:hover {
+    color: var(--color-gold);
+}
+
+.quiz-step {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.quiz-step.is-active {
+    display: block;
+}
+
+.quiz-title {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    color: var(--color-gold);
+    margin-bottom: 2rem;
+}
+
+.quiz-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .quiz-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.quiz-option-btn {
+    background-color: transparent;
+    border: 1px solid var(--color-gray);
+    color: var(--color-white);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+}
+
+.quiz-option-btn:hover {
+    border-color: var(--color-gold);
+    background-color: rgba(224, 224, 224, 0.1);
+}
+
+.quiz-result-card {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    margin-top: 1.5rem;
+    border: 1px solid var(--color-gold-dark);
+}
+
+.quiz-progress {
+    height: 2px;
+    background-color: var(--color-gray-dark);
+    margin-bottom: 2rem;
+    width: 100%;
+}
+
+.quiz-progress-bar {
+    height: 100%;
+    background-color: var(--color-gold);
+    width: 0%;
+    transition: width 0.3s ease;
+}

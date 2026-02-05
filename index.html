@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="KORTZEN - Barbería Premium. Experiencia de lujo en corte y cuidado masculino. Tradición y modernidad fusionadas.">
+  <meta name="keywords" content="barbería, corte de pelo, afeitado, tratamientos faciales, barbería premium, lujo">
+  <meta name="author" content="KORTZEN">
+
+  <title>KORTZEN | Barbería Premium</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/css/variables.css?v=17">
+  <link rel="stylesheet" href="/css/reset.css?v=17">
+  <link rel="stylesheet" href="/css/base.css?v=17">
+  <link rel="stylesheet" href="/css/components.css?v=17">
+  <link rel="stylesheet" href="/css/layout.css?v=17">
+  <link rel="stylesheet" href="/css/pages.css?v=17">
+  <link rel="stylesheet" href="/css/cursor.css?v=17"> <!-- Custom Cursor -->
+  <link rel="stylesheet" href="/css/animations.css?v=17"> <!-- Advanced Animations -->
+  <link rel="stylesheet" href="/css/preloader.css?v=17"> <!-- Preloader -->
+  <link rel="stylesheet" href="/css/video.css?v=17"> <!-- Video Hero -->
+  <link rel="stylesheet" href="/css/interactive.css?v=17"> <!-- Quiz & Sticky Button -->
+  <link rel="stylesheet" href="/css/auth.css?v=17"> <!-- Auth Modal -->
+  <link rel="stylesheet" href="/css/booking.css?v=17"> <!-- Booking Wizard -->
+  <link rel="stylesheet" href="/css/service-cards.css?v=18"> <!-- Service Cards with Images -->
+  <link rel="stylesheet" href="/css/whatsapp.css?v=17"> <!-- WhatsApp Button -->
+
+  <!-- Preconnect to Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+
+<body>
+  <!-- Preloader -->
+  <div class="preloader">
+    <div class="preloader__content">
+      <h1 class="preloader__logo">KORT<span>ZEN</span></h1>
+      <div class="preloader__line"></div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header" role="banner">
+    <div class="container header__container">
+      <!-- Logo -->
+      <a href="/" class="header__logo" aria-label="KORTZEN - Inicio">
+        <span class="header__logo-text">KORT<span>ZEN</span></span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="nav" role="navigation" aria-label="Navegación principal">
+        <a href="/" class="nav__link nav__link--active">Inicio</a>
+        <a href="/servicios.html" class="nav__link">Servicios</a>
+        <a href="/nosotros.html" class="nav__link">Equipo</a>
+        <a href="/galeria.html" class="nav__link">Galería</a>
+        <a href="/contacto.html" class="nav__link">Contacto</a>
+      </nav>
+
+      <!-- CTA Button -->
+      <a href="/cliente-login.php" class="btn btn--primary header__cta">Reservar Cita</a>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-nav">
+        <span class="menu-toggle__line"></span>
+        <span class="menu-toggle__line"></span>
+        <span class="menu-toggle__line"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Navigation -->
+  <nav class="mobile-nav" id="mobile-nav" role="navigation" aria-label="Navegación móvil">
+    <a href="/" class="mobile-nav__link">Inicio</a>
+    <a href="/servicios.html" class="mobile-nav__link">Servicios</a>
+    <a href="/nosotros.html" class="mobile-nav__link">Equipo</a>
+    <a href="/galeria.html" class="mobile-nav__link">Galería</a>
+    <a href="/contacto.html" class="mobile-nav__link">Contacto</a>
+    <a href="/cliente-login.php" class="btn btn--primary mobile-nav__cta">Reservar Cita</a>
+  </nav>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero" aria-label="Bienvenida">
+      <div class="hero__background">
+        <!-- Video Background -->
+        <video class="hero__video-bg" autoplay muted loop playsinline poster="/assets/images/hero-poster.jpg">
+          <!-- Professional barbershop video from Pexels -->
+          <source
+            src="https://player.vimeo.com/external/370467553.hd.mp4?s=3b569a1e0d8e4dd04e5c52e2d5d5f5e3e0b5e5e5&profile_id=175"
+            type="video/mp4">
+        </video>
+        <!-- Overlay Gradient (Fallback & Tint) -->
+        <div class="hero__overlay"
+          style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(245,245,245,0.98) 100%);"></div>
+      </div>
+
+      <div class="container">
+        <div class="hero__content">
+          <span class="hero__subtitle" data-reveal-text>Bienvenido a</span>
+          <h1 class="hero__title" data-reveal-text style="transition-delay: 0.1s;">El Arte del<br>Cuidado Masculino</h1>
+          <p class="hero__description" data-reveal-text style="transition-delay: 0.2s;">
+            Donde la tradición barbera se encuentra con la sofisticación moderna.
+            Una experiencia de lujo diseñada para el caballero contemporáneo.
+          </p>
+          <div class="hero__cta">
+            <a href="/cliente-login.php" class="btn btn--primary btn--lg">Agenda tu Experiencia</a>
+            <a href="/servicios.html" class="btn btn--secondary btn--lg">Ver Servicios</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__scroll">
+        <span>Descubre más</span>
+        <div class="hero__scroll-line"></div>
+      </div>
+    </section>
+
+    <!-- Infinite Marquee -->
+    <div class="marquee-section">
+      <div class="marquee-content">
+        <span class="marquee-item">Estilo</span>
+        <span class="marquee-item">Tradición</span>
+        <span class="marquee-item">Vanguardia</span>
+        <span class="marquee-item">Excelencia</span>
+        <span class="marquee-item">Lujo</span>
+      </div>
+    </div>
+
+    <!-- Introduction Section -->
+    <section class="section" aria-labelledby="intro-title">
+      <div class="container">
+        <div class="about-intro" data-reveal>
+          <div class="about-intro__content">
+            <span class="section-header__subtitle" data-reveal-text>Nuestra Filosofía</span>
+            <h2 id="intro-title" data-reveal-text style="transition-delay: 0.1s;">Más que una Barbería,<br>un Santuario
+            </h2>
+            <div class="divider"></div>
+            <p>
+              En KORTZEN, cada corte es una obra de arte. Fusionamos técnicas tradicionales
+              heredadas de generaciones con las tendencias más vanguardistas del cuidado masculino.
+            </p>
+            <p style="margin-top: var(--space-4);">
+              Nuestro espacio está diseñado para que cada visita sea un momento de relajación
+              y renovación. Aquí, el tiempo se detiene mientras nuestros maestros barberos
+              transforman tu imagen.
+            </p>
+            <div class="about-intro__actions">
+              <a href="/nosotros.html" class="btn btn--ghost">Conoce Nuestra Historia</a>
+              <button id="quiz-trigger" class="btn btn--secondary">¿Cuál es tu estilo?</button>
+            </div>
+          </div>
+          <div class="about-intro__image-wrapper">
+            <img src="/assets/images/barber-working.jpg?v=2" alt="Maestro barbero KORTZEN en acción"
+              class="about-intro__image">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="section" style="background-color: var(--color-black-matte);">
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <span class="section-header__subtitle" data-reveal-text>Nuestro Equipo</span>
+          <h2 class="section-header__title" data-reveal-text>Maestros Barberos</h2>
+        </div>
+
+        <div class="team-grid" id="team-grid">
+          <!-- Los barberos se cargarán dinámicamente aquí según la sucursal -->
+          <div class="team-loader" style="grid-column: 1/-1; text-align: center; color: var(--color-gray);">
+            <p>Cargando equipo...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Highlighted Services -->
+    <section class="section" style="background-color: var(--color-charcoal);" aria-labelledby="highlights-title">
+      <div class="container">
+        <header class="section-header" data-reveal>
+          <span class="section-header__subtitle" data-reveal-text>Servicios Destacados</span>
+          <h2 id="highlights-title" data-reveal-text style="transition-delay: 0.1s;">Excelencia en Cada Detalle</h2>
+          <p class="section-header__description" data-reveal-text style="transition-delay: 0.2s;">
+            Descubre nuestros tratamientos más solicitados, diseñados para
+            realzar tu estilo personal.
+          </p>
+        </header>
+
+        <div class="highlights-grid" id="highlighted-services">
+          <!-- Servicios destacados cargados dinámicamente -->
+        </div>
+
+        <div class="text-center" style="margin-top: var(--space-12);" data-reveal>
+          <a href="/servicios.html" class="btn btn--primary">Ver Todos los Servicios</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="section" aria-labelledby="testimonials-title">
+      <div class="container">
+        <header class="section-header" data-reveal>
+          <span class="section-header__subtitle" data-reveal-text>Testimonios</span>
+          <h2 id="testimonials-title" data-reveal-text style="transition-delay: 0.1s;">Lo Que Dicen de Nosotros</h2>
+        </header>
+
+        <div class="testimonials-slider" data-reveal>
+          <div class="testimonials-track">
+            <!-- Testimonial 1 -->
+            <div class="testimonial">
+              <blockquote class="testimonial__quote">
+                "Después de años buscando, finalmente encontré mi barbería.
+                La atención al detalle y el ambiente son incomparables."
+              </blockquote>
+              <cite class="testimonial__author">— Alejandro Martínez, Empresario</cite>
+            </div>
+
+            <!-- Testimonial 2 -->
+            <div class="testimonial">
+              <blockquote class="testimonial__quote">
+                "Cada visita es una experiencia de lujo. Los maestros barberos
+                realmente entienden lo que significa el cuidado masculino."
+              </blockquote>
+              <cite class="testimonial__author">— David García, Arquitecto</cite>
+            </div>
+
+            <!-- Testimonial 3 -->
+            <div class="testimonial">
+              <blockquote class="testimonial__quote">
+                "No es solo un corte de pelo, es un ritual. El afeitado con navaja
+                me transporta a otra época. Absoluta excelencia."
+              </blockquote>
+              <cite class="testimonial__author">— Roberto Sánchez, Director Creativo</cite>
+            </div>
+          </div>
+          <div class="testimonials-dots" role="tablist" aria-label="Navegación de testimonios"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section" style="background-color: var(--color-charcoal);" aria-labelledby="cta-title">
+      <div class="container text-center">
+        <div data-reveal>
+          <span class="section-header__subtitle" data-reveal-text>¿Listo para Transformarte?</span>
+          <h2 id="cta-title" style="margin-bottom: var(--space-4);" data-reveal-text>Reserva tu Cita Hoy</h2>
+          <p style="max-width: 500px; margin: 0 auto var(--space-8); color: var(--color-gray-light);" data-reveal-text>
+            Únete a la exclusiva comunidad de caballeros que han elevado su rutina de cuidado personal.
+          </p>
+          <a href="/cliente-login.php" class="btn btn--primary btn--lg" data-reveal-text>Agenda tu Experiencia</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Botón de Reserva Flotante -->
+  <a href="cliente-login.php" class="sticky-cta" id="sticky-booking-btn" title="Reservar Cita">
+    <div class="btn btn--primary">
+      <span>RESERVAR</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+    </div>
+  </a>
+  <!-- Gentleman's Quiz Modal -->
+  <div id="quiz-modal" class="quiz-modal">
+    <div class="quiz-container">
+      <button class="quiz-close" aria-label="Cerrar">&times;</button>
+
+      <div class="quiz-progress">
+        <div class="quiz-progress-bar"></div>
+      </div>
+
+      <!-- Step 1 -->
+      <div id="step-1" class="quiz-step is-active">
+        <h3 class="quiz-title">¿Cómo describirías tu rutina diaria?</h3>
+        <div class="quiz-options">
+          <button class="quiz-option-btn" data-next="2">Rápida y práctica</button>
+          <button class="quiz-option-btn" data-next="2">Tomó mi tiempo para arreglarme</button>
+          <button class="quiz-option-btn" data-next="2">Siempre buscando impresionar</button>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div id="step-2" class="quiz-step">
+        <h3 class="quiz-title">¿Qué estilo prefieres?</h3>
+        <div class="quiz-options">
+          <button class="quiz-option-btn" data-next="result" data-style="classic">Clásico y atemporal</button>
+          <button class="quiz-option-btn" data-next="result" data-style="modern">Moderno y arriesgado</button>
+          <button class="quiz-option-btn" data-next="result" data-style="natural">Natural y relajado</button>
+        </div>
+      </div>
+
+      <!-- Result Step -->
+      <div id="step-result" class="quiz-step">
+        <h3 class="quiz-title">Tu Estilo Ideal</h3>
+        <p style="margin-bottom: 2rem; color: var(--color-gray-light);">Analizando tus respuestas...</p>
+        <a href="/contacto.html" class="btn btn--primary">Reservar Este Estilo</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking Wizard Modal -->
+  <div id="booking-modal" class="booking-modal">
+    <div class="booking-container">
+      <div class="booking-header">
+        <span class="booking-title">Reserva tu Experiencia</span>
+        <button class="booking-close">&times;</button>
+      </div>
+
+      <div class="booking-step-indicator">
+        <div class="step-dot active"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+      </div>
+
+      <div class="booking-body">
+        <!-- Step 1: Select Barber -->
+        <div id="booking-step-1" class="booking-step-content active">
+          <h3 style="color: white; margin-bottom: 1.5rem; text-align: center;">Selecciona a tu Maestro Barbero</h3>
+          <div id="barbers-grid" class="barbers-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Step 2: Select Time -->
+        <div id="booking-step-2" class="booking-step-content">
+          <h3 id="step-2-title" style="color: white; margin-bottom: 1.5rem; text-align: center;">Selecciona un Horario
+          </h3>
+
+          <!-- Date Selector -->
+          <div id="date-selector" class="date-selector">
+            <!-- Populated by JS -->
+          </div>
+
+          <div id="time-slots" class="slots-grid">
+            <!-- Populated by JS -->
+          </div>
+          <button class="btn btn--ghost" onclick="BookingWizard.showStep(1)" style="margin-top: 2rem;">&larr;
+            Volver</button>
+        </div>
+
+        <!-- Step 3: Confirmation -->
+        <div id="booking-step-3" class="booking-step-content">
+          <div id="booking-confirmation">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="auth-modal">
+    <div class="auth-container">
+      <button class="auth-close" aria-label="Cerrar">&times;</button>
+
+      <div class="auth-logo">KORT<span>ZEN</span></div>
+      <h2 class="auth-title">Inicia Sesión</h2>
+      <p class="auth-subtitle">Para reservar tu experiencia premium, por favor identifícate.</p>
+
+      <button class="btn-google">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            fill="#4285F4" />
+          <path
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            fill="#34A853" />
+          <path
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            fill="#FBBC05" />
+          <path
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            fill="#EA4335" />
+        </svg>
+        <span>Continuar con Google</span>
+      </button>
+
+      <div class="auth-divider">o continúa con email</div>
+
+      <input type="email" placeholder="Tu correo electrónico" class="form__input"
+        style="margin-bottom: 1rem; width: 100%; box-sizing: border-box;">
+      <button class="btn btn--primary" style="width: 100%;">Continuar</button>
+
+      <p style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--color-gray-dark);">
+        Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad.
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer__grid">
+        <!-- Brand -->
+        <div class="footer__brand">
+          <h3 class="footer__logo">KORT<span>ZEN</span></h3>
+          <p class="footer__description">
+            Barbería premium donde la tradición y la innovación se unen para
+            crear experiencias únicas de cuidado masculino.
+          </p>
+          <div class="footer__social">
+            <a href="https://www.instagram.com/mateo.josue_?igsh=dTk3M3YyaTRsbmd6&utm_source=qr"
+              class="footer__social-link" aria-label="Instagram" target="_blank">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h4 class="footer__title">Navegación</h4>
+          <ul class="footer__links">
+            <li><a href="/" class="footer__link">Inicio</a></li>
+            <li><a href="/servicios.html" class="footer__link">Servicios</a></li>
+            <li><a href="/nosotros.html" class="footer__link">Equipo</a></li>
+            <li><a href="/galeria.html" class="footer__link">Galería</a></li>
+            <li><a href="/contacto.html" class="footer__link">Contacto</a></li>
+          </ul>
+        </div>
+
+        <!-- Services -->
+        <div>
+          <h4 class="footer__title">Servicios</h4>
+          <ul class="footer__links">
+            <li><a href="/servicios.html" class="footer__link">Corte Clásico</a></li>
+            <li><a href="/servicios.html" class="footer__link">Afeitado Tradicional</a></li>
+            <li><a href="/servicios.html" class="footer__link">Cuidado de Barba</a></li>
+            <li><a href="/servicios.html" class="footer__link">Tratamientos Spa</a></li>
+          </ul>
+        </div>
+
+        <!-- Schedule -->
+        <div>
+          <h4 class="footer__title">Horario de Atención</h4>
+          <div class="footer__schedule">
+            <div class="footer__schedule-item">
+              <span class="footer__schedule-day">Lun - Mar - Jue - Vie</span>
+              <span class="footer__schedule-time">02:00 PM - 09:00 PM</span>
+            </div>
+            <div class="footer__schedule-item">
+              <span class="footer__schedule-day">Miércoles y Sábado</span>
+              <span class="footer__schedule-time">10:00 AM - 09:00 PM</span>
+            </div>
+            <div class="footer__schedule-item">
+              <span class="footer__schedule-day">Domingo</span>
+              <span class="footer__schedule-time">02:00 PM - 08:00 PM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mapa de ubicación dinámico -->
+      <div class="footer__map-section">
+        <h4 class="footer__title">Nuestra Ubicación</h4>
+        <div class="footer__map-container" id="footer-map-container">
+          <!-- Mapa para Llano Chico (por defecto) -->
+          <iframe id="footer-map-iframe" class="footer__map"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7944991562387!2d-78.44389842477654!3d-0.12668623550802073!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d59a39c0f68a67%3A0x2e1e1a65e9c6c8ad!2sLlano%20Chico!5e0!3m2!1ses!2sec!4v1706072400000!5m2!1ses!2sec"
+            width="100%" height="250" style="border:0; border-radius: 12px;" allowfullscreen="" loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+        </div>
+      </div>
+
+      <!-- Footer Bottom -->
+      <div class="footer__bottom">
+        <p class="footer__copyright">
+          © 2026 KORTZEN. Todos los derechos reservados.
+        </p>
+        <div class="footer__dev" style="margin: 10px 0;">
+          <span style="color: var(--color-gray-light);">Desarrollado Por </span>
+          <a href="https://jiyanedesign.com" target="_blank"
+            style="color: #D4AF37; text-decoration: none; font-weight: 600; font-family: var(--font-primary); letter-spacing: 0.5px; transition: all 0.3s ease;">JiyaneDesign</a>
+        </div>
+        <div class="footer__legal">
+          <a href="#" class="footer__legal-link">Política de Privacidad</a>
+          <a href="#" class="footer__legal-link">Términos de Uso</a>
+          <a href="login.php" class="footer__legal-link">Acceso Barberos</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Botón de Login Flotante Premium -->
+  <a href="login.php" class="floating-login-btn" title="Acceso al Sistema">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+      <polyline points="10 17 15 12 10 7"></polyline>
+      <line x1="15" y1="12" x2="3" y2="12"></line>
+    </svg>
+    <span>Acceso Admin</span>
+  </a>
+
+  <!-- Botón de WhatsApp Flotante -->
+  <a href="https://wa.me/5930988422770" class="floating-whatsapp-btn" target="_blank" title="Contáctanos por WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path
+        d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
+      </path>
+    </svg>
+    <span>WhatsApp</span>
+  </a>
+
+  <style>
+    .floating-login-btn {
+      position: fixed;
+      bottom: 30px;
+      left: 30px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, #D4AF37, #AA8A2E);
+      color: #0A0A0A;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 15px;
+      box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4), 0 0 0 1px rgba(212, 175, 55, 0.3);
+      z-index: 9999;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
+    }
+
+    .floating-login-btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 15px 50px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.4);
+    }
+
+    .floating-login-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .floating-login-btn::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(135deg, #D4AF37, #F5E6D3, #D4AF37);
+      border-radius: 50px;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .floating-login-btn:hover::before {
+      opacity: 1;
+      animation: glow-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes glow-pulse {
+
+      0%,
+      100% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .floating-login-btn {
+        bottom: 20px;
+        left: 20px;
+        padding: 14px 20px;
+        font-size: 14px;
+      }
+
+      .floating-login-btn span {
+        display: none;
+      }
+
+      .floating-login-btn {
+        width: 56px;
+        height: 56px;
+        justify-content: center;
+        border-radius: 50%;
+      }
+    }
+  </style>
+
+  <!-- JavaScript -->
+  <script src="/js/api-service.js"></script> <!-- API Service (antes de auth) -->
+  <script src="/js/branch-selector.js?v=3"></script>
+  <script src="/js/preloader.js"></script> <!-- Preloader -->
+  <script src="/js/auth.js"></script> <!-- Auth Simulation -->
+  <script src="/js/booking-data.js"></script> <!-- Mock Data -->
+  <script src="/js/booking-wizard.js"></script> <!-- Booking Logic -->
+  <script src="/js/interactive.js"></script> <!-- Quiz & Sticky Button -->
+  <script src="/js/cursor.js"></script> <!-- Custom Cursor -->
+  <script src="/js/animations.js"></script> <!-- Advanced Animations -->
+  <script src="/js/client-auth.js"></script> <!-- Client Auth State -->
+
+  <!-- EmailJS SDK -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script src="/js/email-service.js"></script> <!-- Email Logic -->
+
+  <script type="module" src="/js/main.js"></script>
+  <script src="/js/team-loader.js?v=2"></script>
+  <script src="/js/services-loader.js?v=4"></script>
+  <script>
+    // Cargar servicios destacados dinámicamente cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.KortzenServices) {
+        window.KortzenServices.renderHighlightedServicesHome();
+      }
+
+      // Actualizar mapa del footer según la sucursal seleccionada
+      updateFooterMap();
+    });
+
+    // URLs de mapas para cada sucursal
+    const BRANCH_MAPS = {
+      1: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7944991562387!2d-78.44389842477654!3d-0.12668623550802073!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d59a39c0f68a67%3A0x2e1e1a65e9c6c8ad!2sLlano%20Chico!5e0!3m2!1ses!2sec!4v1706072400000!5m2!1ses!2sec", // Llano Chico
+      2: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d63834.41653196529!2d-78.52495639999999!3d-0.1806532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d59aaddaf89bd3%3A0x6c16c4b36a81dab8!2sLa%20Mariscal%2C%20Quito!5e0!3m2!1ses!2sec!4v1706072500000!5m2!1ses!2sec" // La Mariscal, Quito
+    };
+
+    function updateFooterMap() {
+      const mapIframe = document.getElementById('footer-map-iframe');
+      if (!mapIframe) return;
+
+      // Obtener sucursal seleccionada
+      const selectedBranchId = localStorage.getItem('kortzen_selected_branch');
+      const branchId = selectedBranchId ? parseInt(selectedBranchId) : 1;
+
+      // Actualizar src del mapa
+      const mapUrl = BRANCH_MAPS[branchId] || BRANCH_MAPS[1];
+      if (mapIframe.src !== mapUrl) {
+        mapIframe.src = mapUrl;
+      }
+    }
+
+    // Escuchar cambios de sucursal
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'kortzen_selected_branch') {
+        updateFooterMap();
+      }
+    });
+
+
+  </script>
+
+
+</html>

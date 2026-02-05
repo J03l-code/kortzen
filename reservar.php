@@ -1,0 +1,659 @@
+<?php
+require_once 'config.php';
+
+// Si no hay cliente logueado, redirigir a login de cliente (o google auth)
+// Nota: Asumimos que existe un index.html con botón de login o similar.
+// Por ahora, si no está logueado, mostramos advertencia o forzamos login.
+if (!isClienteLoggedIn()) {
+    // Redirigir a la página de login de clientes
+    header('Location: cliente-login.php');
+    exit;
+}
+
+$cliente = getCurrentCliente();
+$pageTitle = 'Reservar Cita';
+?>
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservar Cita - KORTZEN</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <style>
+        :root {
+            --gold: #333333;
+            --dark-bg: #121212;
+            --card-bg: #1A1A1A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #AAAAAA;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container & Header */
+        .booking-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .booking-header {
+            text-align: center;
+            margin-bottom: 40px;
+            margin-top: 20px;
+        }
+
+        .booking-title {
+            font-size: 2rem;
+            color: var(--gold);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Wizard Steps Progress */
+        .steps-progress {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .steps-progress::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #333;
+            z-index: 1;
+        }
+
+        .step-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #333;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+            z-index: 2;
+            border: 2px solid var(--dark-bg);
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: var(--gold);
+            color: #000;
+            box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
+        }
+
+        .step-dot.completed {
+            background: var(--gold);
+            color: #000;
+        }
+
+        /* Wizard Sections */
+        .wizard-step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .wizard-step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards Grid */
+        .grid-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        /* Service Card */
+        .option-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .option-card:hover {
+            border-color: var(--gold);
+            background: rgba(201, 169, 110, 0.05);
+        }
+
+        .option-card.selected {
+            background: var(--gold);
+            border-color: var(--gold);
+        }
+
+        .option-card.selected h3,
+        .option-card.selected p,
+        .option-card.selected .price {
+            color: #000;
+        }
+
+        .option-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .option-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .price {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: var(--gold);
+            font-size: 1.2rem;
+        }
+
+        /* Barber Card */
+        .barber-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #333;
+            margin: 0 auto 15px;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid var(--gold);
+        }
+
+        /* Date & Time */
+        .datetime-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 700px) {
+            .datetime-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .time-slot {
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .time-slot:hover:not(.disabled) {
+            border-color: var(--gold);
+        }
+
+        .time-slot.selected {
+            background: var(--gold);
+            color: #000;
+            border-color: var(--gold);
+            font-weight: bold;
+        }
+
+        .time-slot.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: #111;
+        }
+
+        /* Navigation Buttons */
+        .wizard-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-prev {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid #333;
+        }
+
+        .btn-prev:hover {
+            border-color: #666;
+            color: var(--text-primary);
+        }
+
+        .btn-next {
+            background: var(--gold);
+            color: #000;
+        }
+
+        .btn-next:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="booking-container">
+        <div class="booking-header">
+            <h1 class="booking-title">Tu Cita</h1>
+            <p>Hola,
+                <?php echo htmlspecialchars($cliente['nombre']); ?>. Vamos a agendar tu próximo corte.
+            </p>
+        </div>
+
+        <!-- Progress -->
+        <div class="steps-progress">
+            <div class="step-dot active" data-step="1">1</div>
+            <div class="step-dot" data-step="2">2</div>
+            <div class="step-dot" data-step="3">3</div>
+            <div class="step-dot" data-step="4">4</div>
+        </div>
+
+        <!-- Step 1: Services -->
+        <div class="wizard-step active" id="step1">
+            <h2 style="margin-bottom: 20px;">Elige tu Servicio</h2>
+            <div class="grid-options" id="servicesGrid">
+                <!-- Cargado vía JS -->
+                <p>Cargando servicios...</p>
+            </div>
+        </div>
+
+        <!-- Step 2: Barbers -->
+        <div class="wizard-step" id="step2">
+            <h2 style="margin-bottom: 20px;">Elige tu Barbero</h2>
+            <div class="grid-options" id="barbersGrid">
+                <!-- Cargado vía JS -->
+            </div>
+        </div>
+
+        <!-- Step 3: Date & Time -->
+        <div class="wizard-step" id="step3">
+            <h2 style="margin-bottom: 20px;">Elige Fecha y Hora</h2>
+            <div class="datetime-wrapper">
+                <div>
+                    <label style="display:block; margin-bottom:10px; color:var(--text-secondary);">Selecciona el
+                        día</label>
+                    <input type="text" id="datePicker" placeholder="Seleccionar fecha"
+                        style="width: 100%; padding: 15px; background: #1A1A1A; border: 1px solid #333; color: white; border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:10px; color:var(--text-secondary);">Horarios
+                        Disponibles</label>
+                    <div id="slotsGrid" class="slots-grid">
+                        <p style="color:#666; grid-column: 1/-1;">Selecciona una fecha primero</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Confirm -->
+        <div class="wizard-step" id="step4">
+            <h2 style="margin-bottom: 20px;">Confirma tu Reserva</h2>
+            <div style="background:var(--card-bg); padding:30px; border-radius:12px; border:1px solid #333;">
+                <div style="display:grid; gap:15px; margin-bottom:30px;">
+                    <div>
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">SERVICIO</span>
+                        <div id="confirmService" style="font-size:1.2rem; margin-top:5px;">-</div>
+                    </div>
+                    <div>
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">BARBERO</span>
+                        <div id="confirmBarber" style="font-size:1.2rem; margin-top:5px;">-</div>
+                    </div>
+                    <div>
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">FECHA Y HORA</span>
+                        <div id="confirmDateTime"
+                            style="font-size:1.2rem; margin-top:5px; color:var(--gold); font-weight:bold;">-</div>
+                    </div>
+                    <div>
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">PRECIO ESTIMADO</span>
+                        <div id="confirmPrice" style="font-size:1.2rem; margin-top:5px;">-</div>
+                    </div>
+                </div>
+
+                <button id="btnConfirmBooking" class="btn btn-next"
+                    style="width:100%; font-size:1.1rem; padding: 15px;">
+                    CONFIRMAR RESERVA
+                </button>
+            </div>
+        </div>
+
+        <div class="wizard-nav">
+            <button id="btnPrev" class="btn btn-prev" disabled>Atrás</button>
+            <button id="btnNext" class="btn btn-next" disabled>Siguiente</button>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script>
+        // State
+        const bookingData = {
+            serviceId: null,
+            serviceName: null,
+            servicePrice: null,
+            barberId: null,
+            barberName: null,
+            date: null,
+            time: null
+        };
+
+        let currentStep = 1;
+
+        // Load Data
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadServices();
+            await loadBarbers();
+            initDatePicker();
+            updateNavButtons();
+        });
+
+        // --- API Calls ---
+
+        async function loadServices() {
+            // En un entorno real, esto vendría de una API. Aquí simularemos fetch a la BD 
+            // pero usaremos un endpoint simple o inyectaremos los datos con PHP si es más rapido.
+            // Para hacerlo limpio, crearemos un endpoint rapido inline o usaremos datos mockeados si no hay endpoint.
+            // Mejor: Crear un endpoint para esto o usar PHP para renderizar initial state.
+            // Por simplicidad para el usuario, usaré PHP para poblar JS variables o un endpoint simple.
+
+            // Vamos a hacer fetch a api_helpers.php (que crearemos rapido) o simular.
+            // Simularemos llamada a un endpoint que crearemos despues: api/get_catalog.php
+
+            try {
+                const response = await fetch('api/get_catalog.php');
+                const data = await response.json();
+
+                const grid = document.getElementById('servicesGrid');
+                grid.innerHTML = '';
+
+                data.servicios.forEach(s => {
+                    const el = document.createElement('div');
+                    el.className = 'option-card';
+                    el.onclick = () => selectService(s.id, s.nombre, s.precio, el);
+                    el.innerHTML = `
+                    <h3>${s.nombre}</h3>
+                    <p>${s.duracion_minutos} min</p>
+                    <span class="price">$${s.precio}</span>
+                `;
+                    grid.appendChild(el);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadBarbers() {
+            try {
+                const response = await fetch('api/get_catalog.php?type=barbers');
+                const data = await response.json();
+
+                const grid = document.getElementById('barbersGrid');
+                grid.innerHTML = '';
+
+                data.barberos.forEach(b => {
+                    const el = document.createElement('div');
+                    el.className = 'option-card';
+                    el.onclick = () => selectBarber(b.id, b.nombre, el);
+                    el.innerHTML = `
+                    <div class="barber-avatar" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;color:white;background:#333">
+                        ${b.nombre.charAt(0)}
+                    </div>
+                    <h3>${b.nombre}</h3>
+                    <p>${b.sucursal_nombre || 'Kortzen General'}</p>
+                `;
+                    grid.appendChild(el);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadSlots(date) {
+            if (!bookingData.barberId) return;
+
+            const grid = document.getElementById('slotsGrid');
+            grid.innerHTML = '<p style="color:#888">Cargando...</p>';
+
+            try {
+                const url = `api/get_disponibilidad.php?fecha=${date}&barbero_id=${bookingData.barberId}&servicio_id=${bookingData.serviceId}`;
+                const response = await fetch(url);
+                const slots = await response.json();
+
+                grid.innerHTML = '';
+
+                if (slots.length === 0) {
+                    grid.innerHTML = '<p style="grid-column:1/-1; color:#ff5555; text-align:center;">No hay horarios disponibles para este día.</p>';
+                    return;
+                }
+
+                slots.forEach(time => {
+                    const el = document.createElement('div');
+                    el.className = 'time-slot';
+                    el.textContent = time;
+                    el.onclick = () => selectTime(time, el);
+                    grid.appendChild(el);
+                });
+
+            } catch (e) {
+                grid.innerHTML = '<p style="color:red">Error al cargar horarios</p>';
+            }
+        }
+
+        // --- Actions ---
+
+        function selectService(id, name, price, el) {
+            bookingData.serviceId = id;
+            bookingData.serviceName = name;
+            bookingData.servicePrice = price;
+
+            document.querySelectorAll('#servicesGrid .option-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            updateNavButtons();
+        }
+
+        function selectBarber(id, name, el) {
+            bookingData.barberId = id;
+            bookingData.barberName = name;
+
+            document.querySelectorAll('#barbersGrid .option-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            updateNavButtons();
+        }
+
+        function selectTime(time, el) {
+            bookingData.time = time;
+
+            document.querySelectorAll('.time-slot').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            updateNavButtons();
+        }
+
+        function initDatePicker() {
+            flatpickr("#datePicker", {
+                locale: "es",
+                minDate: "today",
+                maxDate: new Date().fp_incr(30), // 30 días adelante
+                disable: [
+                    function (date) {
+                        return (date.getDay() === 0); // Deshabilitar domingos si cerrados
+                    }
+                ],
+                onChange: function (selectedDates, dateStr, instance) {
+                    bookingData.date = dateStr;
+                    bookingData.time = null; // Reset time
+                    loadSlots(dateStr);
+                    updateNavButtons();
+                }
+            });
+        }
+
+        // --- Navigation & Confirmation ---
+
+        document.getElementById('btnPrev').addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+
+        document.getElementById('btnNext').addEventListener('click', () => {
+            if (currentStep < 4) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        });
+
+        document.getElementById('btnConfirmBooking').addEventListener('click', async () => {
+            const btn = document.getElementById('btnConfirmBooking');
+            btn.disabled = true;
+            btn.textContent = "Procesando...";
+
+            try {
+                const formData = new FormData();
+                formData.append('servicio_id', bookingData.serviceId);
+                formData.append('barbero_id', bookingData.barberId);
+                formData.append('fecha', bookingData.date);
+                formData.append('hora', bookingData.time);
+
+                const req = await fetch('api/crear_cita_cliente.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const res = await req.json();
+
+                if (res.success) {
+                    // Success UI
+                    document.querySelector('.booking-container').innerHTML = `
+                    <div style="text-align:center; padding-top:50px;">
+                        <div style="font-size:4rem; color:var(--gold); margin-bottom:20px;">✓</div>
+                        <h1 style="color:white; margin-bottom:10px;">¡Reserva Exitosa!</h1>
+                        <p style="color:#aaa; margin-bottom:30px;">Tu cita ha sido agendada correctamente.</p>
+                        <a href="index.html" class="btn btn-next" style="text-decoration:none;">Vover al Inicio</a>
+                    </div>
+                `;
+                } else {
+                    alert('Error: ' + res.message);
+                    btn.disabled = false;
+                    btn.textContent = "CONFIRMAR RESERVA";
+                }
+
+            } catch (e) {
+                alert('Error de conexión');
+                btn.disabled = false;
+                btn.textContent = "CONFIRMAR RESERVA";
+            }
+        });
+
+        function showStep(step) {
+            document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+
+            // Update dots
+            document.querySelectorAll('.step-dot').forEach(d => {
+                const s = parseInt(d.dataset.step);
+                d.classList.remove('active', 'completed');
+                if (s === step) d.classList.add('active');
+                if (s < step) d.classList.add('completed');
+            });
+
+            updateNavButtons();
+
+            if (step === 4) {
+                updateSummary();
+            }
+        }
+
+        function updateNavButtons() {
+            const prev = document.getElementById('btnPrev');
+            const next = document.getElementById('btnNext');
+
+            prev.disabled = currentStep === 1;
+
+            // Logic next button
+            let canNext = false;
+            if (currentStep === 1 && bookingData.serviceId) canNext = true;
+            if (currentStep === 2 && bookingData.barberId) canNext = true;
+            if (currentStep === 3 && bookingData.date && bookingData.time) canNext = true;
+
+            if (currentStep === 4) {
+                next.classList.add('hidden'); // Hide next on last step
+            } else {
+                next.classList.remove('hidden');
+                next.disabled = !canNext;
+            }
+        }
+
+        function updateSummary() {
+            document.getElementById('confirmService').textContent = bookingData.serviceName;
+            document.getElementById('confirmBarber').textContent = bookingData.barberName;
+            document.getElementById('confirmDateTime').textContent = `${bookingData.date} a las ${bookingData.time}`;
+            document.getElementById('confirmPrice').textContent = `$${bookingData.servicePrice}`;
+        }
+    </script>
+
+</body>
+
+</html>

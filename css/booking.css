@@ -1,0 +1,295 @@
+/* Booking Wizard Styles */
+.booking-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 26000;
+    /* Highest priority */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.85);
+    /* Darker backdrop */
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.booking-modal.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.booking-container {
+    background: linear-gradient(145deg, #FFFFFF, #F5F5F5);
+    border: 1px solid var(--color-gold);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    height: 85vh;
+    /* Fixed height for consistent layout */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.booking-modal.is-open .booking-container {
+    transform: scale(1);
+}
+
+.booking-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.booking-title {
+    color: var(--color-gold);
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+}
+
+.booking-close {
+    background: none;
+    border: none;
+    color: var(--color-gray-light);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.booking-close:hover {
+    color: var(--color-white);
+}
+
+.booking-step-indicator {
+    padding: 1rem 2rem;
+    display: flex;
+    gap: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+}
+
+.step-dot {
+    width: 33%;
+    height: 4px;
+    background-color: var(--color-gray-dark);
+    border-radius: 2px;
+    transition: background-color 0.3s;
+}
+
+.step-dot.active {
+    background-color: var(--color-gold);
+}
+
+.booking-body {
+    padding: 2rem;
+    flex: 1;
+    overflow-y: auto;
+    /* Internal scrolling */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gold) #F5F5F5;
+}
+
+/* Steps */
+.booking-step-content {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+
+.booking-step-content.active {
+    display: block;
+}
+
+/* Step 1: Barbers Grid */
+.barbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.barber-card {
+    background-color: rgba(0, 0, 0, 0.03);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    padding-bottom: 1rem;
+}
+
+.barber-card:hover {
+    border-color: var(--color-gold);
+    background-color: rgba(224, 224, 224, 0.05);
+    transform: translateY(-5px);
+}
+
+.barber-card.selected {
+    border-color: var(--color-gold);
+    background-color: rgba(224, 224, 224, 0.1);
+    box-shadow: 0 0 15px rgba(224, 224, 224, 0.2);
+}
+
+.barber-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    filter: grayscale(100%);
+    transition: filter 0.3s;
+}
+
+.barber-card:hover .barber-img,
+.barber-card.selected .barber-img {
+    filter: grayscale(0%);
+}
+
+.barber-info {
+    padding: 1rem;
+}
+
+.barber-name {
+    color: var(--color-white);
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.barber-role {
+    color: var(--color-gold);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Step 2: Date & Time Selection */
+
+/* Date Scroller */
+.date-selector {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gold) #F5F5F5;
+}
+
+.date-card {
+    min-width: 80px;
+    padding: 1rem 0.5rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--color-gray-dark);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-white);
+}
+
+.date-card:hover {
+    border-color: var(--color-gold);
+    background-color: rgba(224, 224, 224, 0.1);
+}
+
+.date-card.selected {
+    background-color: var(--color-gold);
+    color: var(--color-black);
+    border-color: var(--color-gold);
+}
+
+.date-day-name {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+}
+
+.date-day-number {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Time Slots */
+.time-slots-container {
+    text-align: center;
+}
+
+.slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.time-slot {
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--color-gray-dark);
+    border-radius: 8px;
+    color: var(--color-white);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.time-slot:hover:not(.disabled) {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+}
+
+.time-slot.selected {
+    background-color: var(--color-gold);
+    color: var(--color-black);
+    border-color: var(--color-gold);
+    font-weight: bold;
+}
+
+.time-slot.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    background-color: rgba(255, 0, 0, 0.05);
+}
+
+.slot-status {
+    font-size: 0.7rem;
+    display: block;
+    margin-top: 0.2rem;
+}
+
+.no-slots-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: var(--color-gray);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+/* Step 3: Success */
+.success-message {
+    text-align: center;
+    padding: 2rem;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background-color: rgba(52, 168, 83, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: #34A853;
+}
