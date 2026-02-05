@@ -51,16 +51,14 @@ try {
     $horaFinStr = $horarioBase['hora_fin'];       // Ej: "20:00:00"
 
     // Convertir a timestamps para el día específico
-    $startOfDay = strtotime("$fecha $horaInicioStr");
+    // Asegurar que empiece en hora exacta (xx:00:00)
+    $startOfDay = ceil(strtotime("$fecha $horaInicioStr") / 3600) * 3600;
     $endOfDay = strtotime("$fecha $horaFinStr");
 
     // Si es hoy, filtrar horas pasadas
     if ($fecha === date('Y-m-d')) {
         $now = time();
-        if ($startOfDay < $now) {
-            // Redondear a la siguiente media hora para empezar
-            $startOfDay = ceil($now / 1800) * 1800;
-        }
+        $startOfDay = max($startOfDay, ceil($now / 3600) * 3600); // Próxima hora en punto
     }
 
     // 4. Obtener citas existentes para ese barbero y fecha
@@ -86,9 +84,9 @@ try {
         $ocupados[] = ['inicio' => $inicio, 'fin' => $fin];
     }
 
-    // 5. Generar slots disponibles
+    // 5. Generar slots disponibles (SOLO HORAS EN PUNTO)
     $slots = [];
-    $intervalo = 30 * 60; // Slots cada 30 minutos
+    $intervalo = 60 * 60; // Slots cada 60 minutos (Horas en punto)
 
     $current = $startOfDay;
 
