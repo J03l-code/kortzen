@@ -26,7 +26,7 @@ try {
     } else {
         $sucursalId = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
 
-        $sql = "SELECT s.id, s.nombre, s.precio, s.duracion_minutos, s.foto_url 
+        $sql = "SELECT s.id, s.nombre, s.descripcion, s.precio, s.duracion_minutos, s.foto_url, s.categoria 
                 FROM servicios s";
 
         if ($sucursalId > 0) {

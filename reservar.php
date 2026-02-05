@@ -473,25 +473,52 @@ $pageTitle = 'Reservar Cita';
                     return;
                 }
 
-                grid.innerHTML = '';
+                // Group by category
+                const servicesByCategory = {};
                 data.servicios.forEach(s => {
-                    const el = document.createElement('div');
-                    el.className = 'option-card';
-                    el.onclick = () => selectService(s.id, s.nombre, s.precio, el);
-
-                    let imageHtml = '';
-                    if (s.foto_url) {
-                        imageHtml = `<div class="service-image" style="width:100%; height:120px; background-image:url('${s.foto_url}'); background-size:cover; background-position:center; border-radius:8px 8px 0 0; margin-bottom:10px;"></div>`;
+                    const cat = s.categoria || 'General';
+                    if (!servicesByCategory[cat]) {
+                        servicesByCategory[cat] = [];
                     }
-
-                    el.innerHTML = `
-                    ${imageHtml}
-                    <h3>${s.nombre}</h3>
-                    <p>${s.duracion_minutos} min</p>
-                    <span class="price">$${s.precio}</span>
-                `;
-                    grid.appendChild(el);
+                    servicesByCategory[cat].push(s);
                 });
+
+                grid.innerHTML = '';
+
+                // Iterate categories
+                for (const [category, services] of Object.entries(servicesByCategory)) {
+                    // Create Category Header
+                    const catHeader = document.createElement('h3');
+                    catHeader.style.cssText = 'grid-column: 1/-1; margin: 20px 0 10px 0; color: var(--color-gold); border-bottom: 1px solid #ddd; padding-bottom: 5px; text-transform: uppercase; font-size: 1.1rem;';
+                    catHeader.textContent = category;
+                    grid.appendChild(catHeader);
+
+                    // Create Service Cards
+                    services.forEach(s => {
+                        const el = document.createElement('div');
+                        el.className = 'option-card';
+                        el.onclick = () => selectService(s.id, s.nombre, s.precio, el);
+
+                        let imageHtml = '';
+                        if (s.foto_url && s.foto_url.trim() !== '') {
+                            // Ensure path is correct. If it starts with 'upload/', prepend nothing? Or assume relative?
+                            // Let's assume the user puts a valid URL or path.
+                            imageHtml = `<div class="service-image" style="width:100%; height:140px; background-image:url('${s.foto_url}'); background-size:cover; background-position:center; border-radius:8px 8px 0 0; margin-bottom:10px;"></div>`;
+                        } else {
+                            // Placeholder if no image? Or just no image area?
+                            // User wants images. If missing, maybe a subtle gradient placeholder?
+                            imageHtml = `<div class="service-image" style="width:100%; height:140px; background: linear-gradient(to bottom right, #333, #555); display:flex; align-items:center; justify-content:center; border-radius:8px 8px 0 0; margin-bottom:10px;"><span style="color:rgba(255,255,255,0.2); font-size:2rem;">✂️</span></div>`;
+                        }
+
+                        el.innerHTML = `
+                        ${imageHtml}
+                        <h3 style="margin:5px 0;">${s.nombre}</h3>
+                        <p style="font-size:0.9rem; color:#666; margin-bottom:5px;">${s.duracion_minutos} min</p>
+                        <span class="price" style="font-size:1.1rem;">$${s.precio}</span>
+                    `;
+                        grid.appendChild(el);
+                    });
+                }
             } catch (e) {
                 console.error('Error cargando servicios:', e);
                 grid.innerHTML = `<p style="color:#cc0000; grid-column:1/-1;">Error al cargar servicios. Revisa la consola (F12).</p>`;
