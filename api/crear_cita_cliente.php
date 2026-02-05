@@ -16,14 +16,24 @@ $servicioId = intval($_POST['servicio_id'] ?? 0);
 $barberoId = intval($_POST['barbero_id'] ?? 0);
 $fecha = $_POST['fecha'] ?? '';
 $hora = $_POST['hora'] ?? '';
+$telefono = isset($_POST['telefono']) ? trim($_POST['telefono']) : '';
 
 if (!$servicioId || !$barberoId || empty($fecha) || empty($hora)) {
     echo json_encode(['success' => false, 'message' => 'Faltan datos de la reserva.']);
     exit;
 }
 
+if (empty($telefono)) {
+    echo json_encode(['success' => false, 'message' => 'El teléfono es obligatorio.']);
+    exit;
+}
+
 try {
     $pdo = getConnection();
+
+    // 0. Actualizar teléfono del cliente
+    $stmtUpdate = $pdo->prepare("UPDATE clientes SET telefono = ? WHERE id = ?");
+    $stmtUpdate->execute([$telefono, $clienteId]);
 
     // 1. Validar disponibilidad (Doble check para concurrencia)
     $fechaHora = "$fecha $hora:00";

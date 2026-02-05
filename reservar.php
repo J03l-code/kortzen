@@ -308,6 +308,7 @@ $pageTitle = 'Reservar Cita';
             <div class="step-dot" data-step="2">2</div>
             <div class="step-dot" data-step="3">3</div>
             <div class="step-dot" data-step="4">4</div>
+            <div class="step-dot" data-step="5">5</div>
         </div>
 
         <!-- Step 1: Services -->
@@ -347,8 +348,40 @@ $pageTitle = 'Reservar Cita';
             </div>
         </div>
 
-        <!-- Step 4: Confirm -->
+        <!-- Step 4: Personal Details -->
         <div class="wizard-step" id="step4">
+            <h2 style="margin-bottom: 20px;">Datos de Contacto</h2>
+            <div
+                style="background:var(--card-bg); padding:30px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width: 500px; margin: 0 auto;">
+                <p style="color:var(--text-secondary); margin-bottom:20px;">Necesitamos un número de contacto para
+                    confirmar tu cita.</p>
+
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display:block; margin-bottom:8px; color:var(--text-secondary); font-size: 0.9rem;">Nombre</label>
+                    <input type="text" id="clientName" readonly
+                        style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid #333; color: #888; border-radius: 6px; cursor: not-allowed;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display:block; margin-bottom:8px; color:var(--text-secondary); font-size: 0.9rem;">Email</label>
+                    <input type="text" id="clientEmail" readonly
+                        style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid #333; color: #888; border-radius: 6px; cursor: not-allowed;">
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="display:block; margin-bottom:8px; color:var(--gold); font-size: 0.9rem;">Teléfono /
+                        WhatsApp *</label>
+                    <input type="tel" id="clientPhone" placeholder="Ej: 0991234567"
+                        style="width: 100%; padding: 12px; background: #fff; border: 2px solid var(--gold); color: #000; border-radius: 6px; font-weight: bold; font-size: 1.1rem;">
+                </div>
+                <p style="font-size: 0.8rem; color: #666;">* Obligatorio para notificaciones de la cita.</p>
+            </div>
+        </div>
+
+        <!-- Step 5: Confirm -->
+        <div class="wizard-step" id="step5">
             <h2 style="margin-bottom: 20px;">Confirma tu Reserva</h2>
             <div style="background:var(--card-bg); padding:30px; border-radius:12px; border:1px solid #333;">
                 <div style="display:grid; gap:15px; margin-bottom:30px;">
@@ -396,7 +429,10 @@ $pageTitle = 'Reservar Cita';
             barberId: null,
             barberName: null,
             date: null,
-            time: null
+            barberName: null,
+            date: null,
+            time: null,
+            phone: null
         };
 
         let currentStep = 1;
@@ -405,6 +441,7 @@ $pageTitle = 'Reservar Cita';
         document.addEventListener('DOMContentLoaded', async () => {
             await loadServices();
             await loadBarbers();
+            await loadClientProfile();
             initDatePicker();
             updateNavButtons();
         });
@@ -501,6 +538,24 @@ $pageTitle = 'Reservar Cita';
             }
         }
 
+        async function loadClientProfile() {
+            try {
+                const response = await fetch('api/get_client_profile.php');
+                const res = await response.json();
+
+                if (res.success && res.cliente) {
+                    document.getElementById('clientName').value = res.cliente.nombre;
+                    document.getElementById('clientEmail').value = res.cliente.email;
+                    if (res.cliente.telefono) {
+                        document.getElementById('clientPhone').value = res.cliente.telefono;
+                        bookingData.phone = res.cliente.telefono;
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading profile", e);
+            }
+        }
+
         // --- Actions ---
 
         function selectService(id, name, price, el) {
@@ -547,7 +602,14 @@ $pageTitle = 'Reservar Cita';
                     updateNavButtons();
                 }
             });
+        });
         }
+
+        // Input changed listener
+        document.getElementById('clientPhone').addEventListener('input', (e) => {
+            bookingData.phone = e.target.value.trim();
+            updateNavButtons();
+        });
 
         // --- Navigation & Confirmation ---
 
@@ -559,7 +621,18 @@ $pageTitle = 'Reservar Cita';
         });
 
         document.getElementById('btnNext').addEventListener('click', () => {
-            if (currentStep < 4) {
+            if (currentStep < 5) {
+
+                // Validation Step 4
+                if (currentStep === 4) {
+                    const phone = document.getElementById('clientPhone').value.trim();
+                    if (!phone || phone.length < 7) {
+                        alert('Por favor ingresa un número de teléfono válido.');
+                        return;
+                    }
+                    bookingData.phone = phone;
+                }
+
                 currentStep++;
                 showStep(currentStep);
             }
@@ -574,8 +647,10 @@ $pageTitle = 'Reservar Cita';
                 const formData = new FormData();
                 formData.append('servicio_id', bookingData.serviceId);
                 formData.append('barbero_id', bookingData.barberId);
+                formData.append('barbero_id', bookingData.barberId);
                 formData.append('fecha', bookingData.date);
                 formData.append('hora', bookingData.time);
+                formData.append('telefono', bookingData.phone);
 
                 const req = await fetch('api/crear_cita_cliente.php', {
                     method: 'POST',
@@ -621,7 +696,9 @@ $pageTitle = 'Reservar Cita';
 
             updateNavButtons();
 
-            if (step === 4) {
+            updateNavButtons();
+
+            if (step === 5) {
                 updateSummary();
             }
         }
@@ -636,9 +713,12 @@ $pageTitle = 'Reservar Cita';
             let canNext = false;
             if (currentStep === 1 && bookingData.serviceId) canNext = true;
             if (currentStep === 2 && bookingData.barberId) canNext = true;
+            if (currentStep === 1 && bookingData.serviceId) canNext = true;
+            if (currentStep === 2 && bookingData.barberId) canNext = true;
             if (currentStep === 3 && bookingData.date && bookingData.time) canNext = true;
+            if (currentStep === 4 && bookingData.phone && bookingData.phone.length > 6) canNext = true;
 
-            if (currentStep === 4) {
+            if (currentStep === 5) {
                 next.classList.add('hidden'); // Hide next on last step
             } else {
                 next.classList.remove('hidden');
@@ -649,8 +729,15 @@ $pageTitle = 'Reservar Cita';
         function updateSummary() {
             document.getElementById('confirmService').textContent = bookingData.serviceName;
             document.getElementById('confirmBarber').textContent = bookingData.barberName;
+            document.getElementById('confirmBarber').textContent = bookingData.barberName;
             document.getElementById('confirmDateTime').textContent = `${bookingData.date} a las ${bookingData.time}`;
             document.getElementById('confirmPrice').textContent = `$${bookingData.servicePrice}`;
+
+            // Add Phone to summary if desired, or just leave it
+            const phoneDiv = document.createElement('div');
+            phoneDiv.innerHTML = `<span style="color:var(--text-secondary); font-size:0.9rem;">TELEFONO</span><div style="font-size:1.2rem; margin-top:5px;">${bookingData.phone}</div>`;
+            // Append if needed implementation
+        }
         }
     </script>
 
