@@ -409,3 +409,32 @@ function requirePermission($hasPermission, $redirectTo = 'dashboard.php')
         exit;
     }
 }
+
+/**
+ * Formatear número de teléfono para WhatsApp (Ecuador)
+ * @param string $phone
+ * @return string
+ */
+function formatPhoneForWhatsapp($phone)
+{
+    // 1. Eliminar todo lo que no sea número
+    $clean = preg_replace('/[^0-9]/', '', $phone);
+
+    // 2. Si está vacío, retornar vacío
+    if (empty($clean))
+        return '';
+
+    // 3. Lógica para Ecuador (empezar con 09 -> 5939)
+    // Si tiene 10 dígitos y empieza con 0, reemplazar 0 por 593
+    if (strlen($clean) === 10 && substr($clean, 0, 1) === '0') {
+        return '593' . substr($clean, 1);
+    }
+
+    // 4. Si ya empieza con 593 (ej: 593988...) se deja igual
+    // 5. Si es de 9 dígitos (sin el 0 inicial), agregar 593
+    if (strlen($clean) === 9) {
+        return '593' . $clean;
+    }
+
+    return $clean;
+}

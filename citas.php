@@ -283,14 +283,14 @@ include 'includes/header.php';
                         <td>
                             <div><?php echo htmlspecialchars($cita['cliente_nombre']); ?></div>
                             <?php if (($currentUser['rol'] === 'admin' || $currentUser['rol'] === 'admin_local') && !empty($cita['cliente_telefono'])):
-                                $raw_phone = preg_replace('/[^0-9]/', '', $cita['cliente_telefono']);
+                                $wa_phone = formatPhoneForWhatsapp($cita['cliente_telefono']);
                                 $wa_msg = urlencode("Hola " . explode(' ', $cita['cliente_nombre'])[0] . ", te escribo de Kortzen sobre tu cita.");
                                 ?>
                                 <div style="font-size: 11px; margin-top: 4px; display: flex; gap: 8px; align-items: center;">
                                     <span style="color:#888;"><?php echo htmlspecialchars($cita['cliente_telefono']); ?></span>
 
                                     <!-- WA Button -->
-                                    <a href="https://wa.me/<?php echo $raw_phone; ?>?text=<?php echo $wa_msg; ?>" target="_blank"
+                                    <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo $wa_msg; ?>" target="_blank"
                                         title="WhatsApp" style="color: #25D366; text-decoration: none;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                             fill="currentColor">
