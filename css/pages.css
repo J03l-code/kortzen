@@ -502,7 +502,7 @@
     font-family: var(--font-display);
     font-size: var(--text-2xl);
     font-style: italic;
-    color: var(--color-white-off);
+    color: var(--color-white-pure);
     line-height: var(--leading-relaxed);
     margin-bottom: var(--space-6);
 }
