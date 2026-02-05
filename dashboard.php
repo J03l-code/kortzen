@@ -305,7 +305,7 @@ include 'includes/header.php';
                        ORDER BY cantidad ASC LIMIT 5", [$sucursal_id]);
 
     // 4. Agenda General Sucursal (Hoy)
-    $agendaGlobal = query("SELECT c.*, u.nombre as barbero, s.nombre as servicio, cli.nombre as cliente 
+    $agendaGlobal = query("SELECT c.*, u.nombre as barbero, s.nombre as servicio, cli.nombre as cliente, cli.telefono, cli.id as cliente_id 
                            FROM citas c
                            JOIN usuarios u ON c.barbero_id = u.id
                            JOIN servicios s ON c.servicio_id = s.id
@@ -393,9 +393,9 @@ include 'includes/header.php';
                 $height = ($day['val'] / $maxVal) * 100;
                 $color = $day['val'] > 0 ? 'var(--primary-gold)' : '#333';
                 ?>
-                        <div style="text-align: center; width: 100%;">
-                            <div style="font-size: 10px; color: #BBB; margin-bottom: 5px;">$<?php echo (int) $day['val']; ?></div>
-                            <div style="
+                <div style="text-align: center; width: 100%;">
+                    <div style="font-size: 10px; color: #BBB; margin-bottom: 5px;">$<?php echo (int) $day['val']; ?></div>
+                    <div style="
                     height: <?php echo $height; ?>%; 
                     background: <?php echo $color; ?>; 
                     width: 60%; 
@@ -403,278 +403,300 @@ include 'includes/header.php';
                     border-radius: 4px 4px 0 0;
                     min-height: 4px;
                     transition: height 1s ease;">
-                            </div>
-                            <div style="margin-top: 8px; font-size: 11px; color: #888;"><?php echo $day['date']; ?></div>
-                        </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
-
-            <!-- Columna Izquierda: Ranking + Inventario -->
-            <div style="flex: 1; min-width: 300px;">
-
-                <!-- Ranking Barberos -->
-                <div class="card">
-                    <div class="card-title">🏆 Top Barberos (Mes)</div>
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Barbero</th>
-                                    <th style="text-align: right;">Ventas</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if ($topBarberos): ?>
-                                        <?php foreach ($topBarberos as $b): ?>
-                                                <tr>
-                                                    <td>
-                                                        <div style="font-weight: bold;"><?php echo htmlspecialchars($b['nombre']); ?></div>
-                                                        <div style="font-size: 10px; color: #888;"><?php echo $b['citas']; ?> citas</div>
-                                                    </td>
-                                                    <td style="text-align: right; color: var(--primary-gold); font-weight: bold;">
-                                                        $<?php echo number_format($b['total'], 0); ?>
-                                                    </td>
-                                                </tr>
-                                        <?php endforeach; ?>
-                                <?php else: ?>
-                                        <tr>
-                                            <td colspan="2" style="text-align: center; color: #666;">Sin datos aún</td>
-                                        </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
                     </div>
+                    <div style="margin-top: 8px; font-size: 11px; color: #888;"><?php echo $day['date']; ?></div>
                 </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
 
-                <!-- Alerta Inventario -->
-                <?php if ($lowStock): ?>
-                        <div class="card" style="margin-top: 24px; border-left: 4px solid #E74C3C;">
-                            <div class="card-title" style="color: #E74C3C;">⚠️ Stock Bajo</div>
-                            <ul style="list-style: none; padding: 0; margin: 0;">
-                                <?php foreach ($lowStock as $prod): ?>
-                                        <li
-                                            style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                            <span><?php echo htmlspecialchars($prod['producto']); ?></span>
-                                            <span style="color: #E74C3C; font-weight: bold;"><?php echo $prod['cantidad']; ?> und.</span>
-                                        </li>
+    <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
+
+        <!-- Columna Izquierda: Ranking + Inventario -->
+        <div style="flex: 1; min-width: 300px;">
+
+            <!-- Ranking Barberos -->
+            <div class="card">
+                <div class="card-title">🏆 Top Barberos (Mes)</div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Barbero</th>
+                                <th style="text-align: right;">Ventas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($topBarberos): ?>
+                                <?php foreach ($topBarberos as $b): ?>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: bold;"><?php echo htmlspecialchars($b['nombre']); ?></div>
+                                            <div style="font-size: 10px; color: #888;"><?php echo $b['citas']; ?> citas</div>
+                                        </td>
+                                        <td style="text-align: right; color: var(--primary-gold); font-weight: bold;">
+                                            $<?php echo number_format($b['total'], 0); ?>
+                                        </td>
+                                    </tr>
                                 <?php endforeach; ?>
-                            </ul>
-                            <a href="inventario.php"
-                                style="display: block; margin-top: 10px; font-size: 11px; text-align: right; color: #AAA;">Gestionar
-                                Inventario →</a>
-                        </div>
-                <?php endif; ?>
-
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="2" style="text-align: center; color: #666;">Sin datos aún</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Columna Derecha: Agenda Global -->
-            <div style="flex: 2; min-width: 400px;">
-                <div class="card">
-                    <div class="card-title">Agenda General de Sucursal (Hoy)</div>
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
+            <!-- Alerta Inventario -->
+            <?php if ($lowStock): ?>
+                <div class="card" style="margin-top: 24px; border-left: 4px solid #E74C3C;">
+                    <div class="card-title" style="color: #E74C3C;">⚠️ Stock Bajo</div>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <?php foreach ($lowStock as $prod): ?>
+                            <li
+                                style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <span><?php echo htmlspecialchars($prod['producto']); ?></span>
+                                <span style="color: #E74C3C; font-weight: bold;"><?php echo $prod['cantidad']; ?> und.</span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <a href="inventario.php"
+                        style="display: block; margin-top: 10px; font-size: 11px; text-align: right; color: #AAA;">Gestionar
+                        Inventario →</a>
+                </div>
+            <?php endif; ?>
+
+        </div>
+
+        <!-- Columna Derecha: Agenda Global -->
+        <div style="flex: 2; min-width: 400px;">
+            <div class="card">
+                <div class="card-title">Agenda General de Sucursal (Hoy)</div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Barbero</th>
+                                <th>Cliente</th>
+                                <th>Servicio</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($agendaGlobal): ?>
+                                <?php foreach ($agendaGlobal as $cita): ?>
+                                    <tr>
+                                        <td style="font-weight: bold; color: var(--primary-gold);">
+                                            <?php echo date('H:i', strtotime($cita['fecha_hora'])); ?>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($cita['barbero']); ?></td>
+                                        <td>
+                                            <div style="font-weight:bold;"><?php echo htmlspecialchars($cita['cliente']); ?></div>
+                                            <?php if (!empty($cita['telefono'])): 
+                                                $raw_phone = preg_replace('/[^0-9]/', '', $cita['telefono']);
+                                                $wa_msg = urlencode("Hola " . explode(' ', $cita['cliente'])[0] . ", te escribo de Kortzen sobre tu cita.");
+                                            ?>
+                                                <div style="font-size: 11px; margin-top: 4px; display: flex; gap: 8px; align-items: center;">
+                                                    <span style="color:#888;"><?php echo htmlspecialchars($cita['telefono']); ?></span>
+                                                    
+                                                    <!-- WA Button -->
+                                                    <a href="https://wa.me/<?php echo $raw_phone; ?>?text=<?php echo $wa_msg; ?>" target="_blank" title="WhatsApp" style="color: #25D366; text-decoration: none;">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" /></svg>
+                                                    </a>
+
+                                                    <!-- Call Button -->
+                                                    <a href="tel:<?php echo $raw_phone; ?>" title="Llamar" style="color: var(--primary-gold); text-decoration: none;">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                                    </a>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($cita['servicio']); ?></td>
+                                        <td>
+                                            <span class="badge badge-<?php echo $cita['estado']; ?>">
+                                                <?php echo ucfirst($cita['estado']); ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
                                 <tr>
-                                    <th>Hora</th>
-                                    <th>Barbero</th>
-                                    <th>Cliente</th>
-                                    <th>Servicio</th>
-                                    <th>Estado</th>
+                                    <td colspan="5" style="text-align: center; padding: 20px;">No hay citas para hoy</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php if ($agendaGlobal): ?>
-                                        <?php foreach ($agendaGlobal as $cita): ?>
-                                                <tr>
-                                                    <td style="font-weight: bold; color: var(--primary-gold);">
-                                                        <?php echo date('H:i', strtotime($cita['fecha_hora'])); ?>
-                                                    </td>
-                                                    <td><?php echo htmlspecialchars($cita['barbero']); ?></td>
-                                                    <td><?php echo htmlspecialchars($cita['cliente']); ?></td>
-                                                    <td><?php echo htmlspecialchars($cita['servicio']); ?></td>
-                                                    <td>
-                                                        <span class="badge badge-<?php echo $cita['estado']; ?>">
-                                                            <?php echo ucfirst($cita['estado']); ?>
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                        <?php endforeach; ?>
-                                <?php else: ?>
-                                        <tr>
-                                            <td colspan="5" style="text-align: center; padding: 20px;">No hay citas para hoy</td>
-                                        </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- CALENDARIO DE OCUPACIÓN -->
-        <?php
-        // Lógica del Calendario
-        $calMonth = date('m');
-        $calYear = date('Y');
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $calMonth, $calYear);
-        $firstDayOfMonth = date('N', strtotime("$calYear-$calMonth-01")); // 1 (Mon) to 7 (Sun)
-    
-        // Obtener días con citas
-        if ($sucursal_id) {
-            $bookings = query("SELECT DATE(fecha_hora) as d, COUNT(*) as c FROM citas WHERE sucursal_id = ? AND MONTH(fecha_hora) = ? AND YEAR(fecha_hora) = ? GROUP BY d", [$sucursal_id, $calMonth, $calYear]);
-        } else {
-            $bookings = query("SELECT DATE(fecha_hora) as d, COUNT(*) as c FROM citas WHERE MONTH(fecha_hora) = ? AND YEAR(fecha_hora) = ? GROUP BY d", [$calMonth, $calYear]);
+    <!-- CALENDARIO DE OCUPACIÓN -->
+    <?php
+    // Lógica del Calendario
+    $calMonth = date('m');
+    $calYear = date('Y');
+    $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $calMonth, $calYear);
+    $firstDayOfMonth = date('N', strtotime("$calYear-$calMonth-01")); // 1 (Mon) to 7 (Sun)
+
+    // Obtener días con citas
+    if ($sucursal_id) {
+        $bookings = query("SELECT DATE(fecha_hora) as d, COUNT(*) as c FROM citas WHERE sucursal_id = ? AND MONTH(fecha_hora) = ? AND YEAR(fecha_hora) = ? GROUP BY d", [$sucursal_id, $calMonth, $calYear]);
+    } else {
+        $bookings = query("SELECT DATE(fecha_hora) as d, COUNT(*) as c FROM citas WHERE MONTH(fecha_hora) = ? AND YEAR(fecha_hora) = ? GROUP BY d", [$calMonth, $calYear]);
+    }
+
+    // Mapear citas por día
+    $bookingsMap = [];
+    foreach ($bookings as $b) {
+        $dayNum = (int) date('d', strtotime($b['d']));
+        $bookingsMap[$dayNum] = $b['c'];
+    }
+    ?>
+    <style>
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 16px;
         }
 
-        // Mapear citas por día
-        $bookingsMap = [];
-        foreach ($bookings as $b) {
-            $dayNum = (int) date('d', strtotime($b['d']));
-            $bookingsMap[$dayNum] = $b['c'];
+        .cal-day-header {
+            text-align: center;
+            font-size: 11px;
+            color: #888;
+            padding-bottom: 8px;
+            text-transform: uppercase;
         }
-        ?>
-        <style>
-            .calendar-grid {
-                display: grid;
-                grid-template-columns: repeat(7, 1fr);
-                gap: 8px;
-                margin-top: 16px;
+
+        .cal-day {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            height: 80px;
+            padding: 8px;
+            position: relative;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .cal-day:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .cal-number {
+            font-size: 14px;
+            font-weight: 600;
+            color: #DDD;
+        }
+
+        .cal-dots {
+            display: flex;
+            gap: 3px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .cal-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--primary-gold);
+            border-radius: 50%;
+        }
+
+        .cal-badge {
+            font-size: 10px;
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #AAA;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .has-bookings {
+            background: rgba(201, 169, 110, 0.05);
+            border-color: rgba(201, 169, 110, 0.2);
+        }
+
+        .is-today {
+            border: 1px solid var(--primary-gold);
+        }
+    </style>
+
+    <div class="card" style="margin-top: 24px;">
+        <div class="card-title">Calendario de Ocupación - <?php echo $mesActual . ' ' . $calYear; ?></div>
+
+        <div class="calendar-grid">
+            <div class="cal-day-header">Lun</div>
+            <div class="cal-day-header">Mar</div>
+            <div class="cal-day-header">Mie</div>
+            <div class="cal-day-header">Jue</div>
+            <div class="cal-day-header">Vie</div>
+            <div class="cal-day-header">Sab</div>
+            <div class="cal-day-header">Dom</div>
+
+            <?php
+            // Espacios vacíos antes del día 1
+            for ($i = 1; $i < $firstDayOfMonth; $i++) {
+                echo "<div></div>";
             }
 
-            .cal-day-header {
-                text-align: center;
-                font-size: 11px;
-                color: #888;
-                padding-bottom: 8px;
-                text-transform: uppercase;
-            }
+            // Días del mes
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $count = $bookingsMap[$day] ?? 0;
+                $class = $count > 0 ? 'cal-day has-bookings' : 'cal-day';
+                if ($day == date('d'))
+                    $class .= ' is-today';
 
-            .cal-day {
-                background: rgba(255, 255, 255, 0.03);
-                border-radius: 6px;
-                height: 80px;
-                padding: 8px;
-                position: relative;
-                border: 1px solid transparent;
-                transition: all 0.2s;
-            }
+                $onclick = "onclick=\"loadDayDetails($day)\"";
+                $style = "cursor: pointer;";
 
-            .cal-day:hover {
-                border-color: rgba(255, 255, 255, 0.1);
-                background: rgba(255, 255, 255, 0.05);
-            }
+                echo "<div class='$class' $onclick style='$style'>";
+                echo "<div class='cal-number'>$day</div>";
 
-            .cal-number {
-                font-size: 14px;
-                font-weight: 600;
-                color: #DDD;
-            }
-
-            .cal-dots {
-                display: flex;
-                gap: 3px;
-                margin-top: 6px;
-                flex-wrap: wrap;
-            }
-
-            .cal-dot {
-                width: 6px;
-                height: 6px;
-                background: var(--primary-gold);
-                border-radius: 50%;
-            }
-
-            .cal-badge {
-                font-size: 10px;
-                background: #333;
-                padding: 2px 6px;
-                border-radius: 4px;
-                color: #AAA;
-                margin-top: 4px;
-                display: inline-block;
-            }
-
-            .has-bookings {
-                background: rgba(201, 169, 110, 0.05);
-                border-color: rgba(201, 169, 110, 0.2);
-            }
-
-            .is-today {
-                border: 1px solid var(--primary-gold);
-            }
-        </style>
-
-        <div class="card" style="margin-top: 24px;">
-            <div class="card-title">Calendario de Ocupación - <?php echo $mesActual . ' ' . $calYear; ?></div>
-
-            <div class="calendar-grid">
-                <div class="cal-day-header">Lun</div>
-                <div class="cal-day-header">Mar</div>
-                <div class="cal-day-header">Mie</div>
-                <div class="cal-day-header">Jue</div>
-                <div class="cal-day-header">Vie</div>
-                <div class="cal-day-header">Sab</div>
-                <div class="cal-day-header">Dom</div>
-
-                <?php
-                // Espacios vacíos antes del día 1
-                for ($i = 1; $i < $firstDayOfMonth; $i++) {
-                    echo "<div></div>";
-                }
-
-                // Días del mes
-                for ($day = 1; $day <= $daysInMonth; $day++) {
-                    $count = $bookingsMap[$day] ?? 0;
-                    $class = $count > 0 ? 'cal-day has-bookings' : 'cal-day';
-                    if ($day == date('d'))
-                        $class .= ' is-today';
-
-                    $onclick = "onclick=\"loadDayDetails($day)\"";
-                    $style = "cursor: pointer;";
-
-                    echo "<div class='$class' $onclick style='$style'>";
-                    echo "<div class='cal-number'>$day</div>";
-
-                    if ($count > 0) {
-                        echo "<div class='cal-badge'>$count citas</div>";
-                        echo "<div class='cal-dots'>";
-                        // Mostrar hasta 5 puntitos visuales
-                        for ($k = 0; $k < min($count, 5); $k++)
-                            echo "<div class='cal-dot'></div>";
-                        if ($count > 5)
-                            echo "<span style='font-size:10px;color:#666;'>+</span>";
-                        echo "</div>";
-                    }
-
+                if ($count > 0) {
+                    echo "<div class='cal-badge'>$count citas</div>";
+                    echo "<div class='cal-dots'>";
+                    // Mostrar hasta 5 puntitos visuales
+                    for ($k = 0; $k < min($count, 5); $k++)
+                        echo "<div class='cal-dot'></div>";
+                    if ($count > 5)
+                        echo "<span style='font-size:10px;color:#666;'>+</span>";
                     echo "</div>";
                 }
-                ?>
-            </div>
-        </div>
 
-        <!-- DETALLES DEL DÍA SELECCIONADO (Oculto por defecto) -->
-        <div id="day-details-container" class="card" style="margin-top: 24px; display: none; transition: opacity 0.3s ease;">
-            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="day-details-title">Detalles del Día</span>
-                <button onclick="document.getElementById('day-details-container').style.display='none'" style="background:none; border:none; color: #888; cursor: pointer; font-size: 1.2rem;">&times;</button>
-            </div>
-            <div id="day-details-content">
-                <!-- Table dynamically populated -->
-            </div>
-            <div id="day-details-summary" style="margin-top: 15px; text-align: right; font-size: 1.2rem; color: var(--primary-gold); font-weight: bold; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                <!-- Total revenue -->
-            </div>
+                echo "</div>";
+            }
+            ?>
         </div>
+    </div>
 
-        <script>
+    <!-- DETALLES DEL DÍA SELECCIONADO (Oculto por defecto) -->
+    <div id="day-details-container" class="card" style="margin-top: 24px; display: none; transition: opacity 0.3s ease;">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="day-details-title">Detalles del Día</span>
+            <button onclick="document.getElementById('day-details-container').style.display='none'"
+                style="background:none; border:none; color: #888; cursor: pointer; font-size: 1.2rem;">&times;</button>
+        </div>
+        <div id="day-details-content">
+            <!-- Table dynamically populated -->
+        </div>
+        <div id="day-details-summary"
+            style="margin-top: 15px; text-align: right; font-size: 1.2rem; color: var(--primary-gold); font-weight: bold; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+            <!-- Total revenue -->
+        </div>
+    </div>
+
+    <script>
         function loadDayDetails(day) {
             // Construct date string YYYY-MM-DD
             const year = <?php echo $calYear; ?>;
             // Ensure month is 2 digits for consistency
-            const month = "<?php echo str_pad($calMonth, 2, '0', STR_PAD_LEFT); ?>"; 
+            const month = "<?php echo str_pad($calMonth, 2, '0', STR_PAD_LEFT); ?>";
             const dayStr = String(day).padStart(2, '0');
             const fullDate = `${year}-${month}-${dayStr}`;
             // Ensure we handle the PHP null/empty value correctly for JS
@@ -690,19 +712,19 @@ include 'includes/header.php';
             title.innerHTML = `Detalles del <span style="color:var(--primary-gold)">${dayStr}/${month}/${year}</span>`;
             content.innerHTML = '<p style="text-align:center; color:#888; padding: 20px;">Cargando citas...</p>';
             summary.innerHTML = '';
-        
+
             // Scroll to details
-            container.scrollIntoView({behavior: 'smooth', block: 'center'});
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             // Fetch
             let url = `api/get_citas_dia.php?fecha=${fullDate}`;
-            if(branchId) url += `&sucursal_id=${branchId}`;
+            if (branchId) url += `&sucursal_id=${branchId}`;
 
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
-                    if(data.success) {
-                        if(data.citas && data.citas.length > 0) {
+                    if (data.success) {
+                        if (data.citas && data.citas.length > 0) {
                             let html = `
                             <div class="table-container">
                                 <table class="table">
@@ -718,10 +740,10 @@ include 'includes/header.php';
                                     </thead>
                                     <tbody>
                         `;
-                        
+
                             data.citas.forEach(cita => {
                                 // Extract time HH:MM
-                                const timePart = cita.fecha_hora.split(' ')[1].substring(0,5);
+                                const timePart = cita.fecha_hora.split(' ')[1].substring(0, 5);
                                 html += `
                                 <tr>
                                     <td style="font-weight:bold; color:white;">${timePart}</td>
@@ -733,7 +755,7 @@ include 'includes/header.php';
                                 </tr>
                             `;
                             });
-                        
+
                             html += `</tbody></table></div>`;
                             content.innerHTML = html;
                             summary.innerHTML = `Recaudación Total: $${parseFloat(data.total_recaudado).toFixed(2)}`;
@@ -750,45 +772,45 @@ include 'includes/header.php';
                     content.innerHTML = '<p style="color:red; text-align:center;">Error de conexión.</p>';
                 });
         }
-        </script>
+    </script>
 
 <?php else: ?>
-        <!-- ========================================== -->
-        <!-- VISTA BARBERO MEJORADA (SUPER DASHBOARD) -->
-        <!-- ========================================== -->
+    <!-- ========================================== -->
+    <!-- VISTA BARBERO MEJORADA (SUPER DASHBOARD) -->
+    <!-- ========================================== -->
 
-        <?php
-        $barbero_id = $currentUser['id'];
-        $hoy = date('Y-m-d');
+    <?php
+    $barbero_id = $currentUser['id'];
+    $hoy = date('Y-m-d');
 
-        // 1. CALCULAR GANANCIAS (Earnings)
-        $mi_comision = floatval($currentUser['comision_porcentaje'] ?? 50);
+    // 1. CALCULAR GANANCIAS (Earnings)
+    $mi_comision = floatval($currentUser['comision_porcentaje'] ?? 50);
 
-        // Función helper para calcular neto
-        function calcularComision($total, $porcentaje)
-        {
-            return $total * ($porcentaje / 100);
-        }
+    // Función helper para calcular neto
+    function calcularComision($total, $porcentaje)
+    {
+        return $total * ($porcentaje / 100);
+    }
 
-        // Día
-        $earningsTodayTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = ?", [$barbero_id, $hoy])[0]['total'] ?? 0;
-        $miGananciaDia = calcularComision($earningsTodayTotal, $mi_comision);
+    // Día
+    $earningsTodayTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = ?", [$barbero_id, $hoy])[0]['total'] ?? 0;
+    $miGananciaDia = calcularComision($earningsTodayTotal, $mi_comision);
 
-        // Semana (Lunes a Domingo actual)
-        $monday = date('Y-m-d', strtotime('monday this week'));
-        $sunday = date('Y-m-d', strtotime('sunday this week'));
-        $earningsWeekTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$barbero_id, $monday, $sunday])[0]['total'] ?? 0;
-        $miGananciaSemana = calcularComision($earningsWeekTotal, $mi_comision);
+    // Semana (Lunes a Domingo actual)
+    $monday = date('Y-m-d', strtotime('monday this week'));
+    $sunday = date('Y-m-d', strtotime('sunday this week'));
+    $earningsWeekTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$barbero_id, $monday, $sunday])[0]['total'] ?? 0;
+    $miGananciaSemana = calcularComision($earningsWeekTotal, $mi_comision);
 
-        // Mes
-        $monthStart = date('Y-m-01');
-        $monthEnd = date('Y-m-t');
-        $earningsMonthTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
-        $miGananciaMes = calcularComision($earningsMonthTotal, $mi_comision);
+    // Mes
+    $monthStart = date('Y-m-01');
+    $monthEnd = date('Y-m-t');
+    $earningsMonthTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
+    $miGananciaMes = calcularComision($earningsMonthTotal, $mi_comision);
 
-        // 2. PRÓXIMO CLIENTE (Next Up) - Sin cambios en query...
-        // Buscar la primera cita "pendiente" o "confirmada" futura (o de hoy pero hora > ahora)
-        $nextClient = query("SELECT c.*, s.nombre as servicio, cli.nombre as cliente, cli.foto_perfil
+    // 2. PRÓXIMO CLIENTE (Next Up) - Sin cambios en query...
+    // Buscar la primera cita "pendiente" o "confirmada" futura (o de hoy pero hora > ahora)
+    $nextClient = query("SELECT c.*, s.nombre as servicio, cli.nombre as cliente, cli.foto_perfil
                          FROM citas c
                          JOIN servicios s ON c.servicio_id = s.id
                          JOIN clientes cli ON c.cliente_id = cli.id
@@ -797,13 +819,13 @@ include 'includes/header.php';
                          AND c.estado IN ('pendiente', 'confirmada')
                          ORDER BY c.fecha_hora ASC 
                          LIMIT 1",
-            [$barbero_id]
-        );
+        [$barbero_id]
+    );
 
-        $proximo = $nextClient ? $nextClient[0] : null;
+    $proximo = $nextClient ? $nextClient[0] : null;
 
-        // 3. CITAS DE HOY (Lista Completa) - Sin cambios...
-        $misCitasHoy = query("SELECT c.*, s.nombre as servicio, cli.nombre as cliente, cli.telefono, cli.id as cliente_id
+    // 3. CITAS DE HOY (Lista Completa) - Sin cambios...
+    $misCitasHoy = query("SELECT c.*, s.nombre as servicio, cli.nombre as cliente, cli.telefono, cli.id as cliente_id
                           FROM citas c
                           JOIN servicios s ON c.servicio_id = s.id
                           JOIN clientes cli ON c.cliente_id = cli.id
@@ -811,254 +833,239 @@ include 'includes/header.php';
                           AND DATE(c.fecha_hora) = ?
                           AND c.estado != 'cancelada'
                           ORDER BY c.fecha_hora ASC",
-            [$barbero_id, $hoy]
-        );
-        ?>
+        [$barbero_id, $hoy]
+    );
+    ?>
 
-        <!-- SECCIÓN DE GANANCIAS (ACTUALIZADO con COMISIÓN) -->
-        <div class="dashboard-grid">
-            <div class="earnings-card">
-                <div class="earnings-title">Tu Ganancia Hoy (<?php echo $mi_comision; ?>%)</div>
-                <div class="earnings-amount">$<?php echo number_format($miGananciaDia, 2); ?></div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Venta Total:
-                    $<?php echo number_format($earningsTodayTotal, 2); ?></div>
-                <div class="trend-indicator trend-up">
-                    <span>📅 <?php echo date('d M'); ?></span>
-                </div>
-            </div>
-            <div class="earnings-card" style="border-color: rgba(255, 255, 255, 0.1);">
-                <div class="earnings-title">Tu Ganancia Semana</div>
-                <div class="earnings-amount">$<?php echo number_format($miGananciaSemana, 2); ?></div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Venta Total:
-                    $<?php echo number_format($earningsWeekTotal, 2); ?></div>
-                <div class="trend-indicator">
-                    <span>Semana <?php echo date('W'); ?></span>
-                </div>
-            </div>
-            <div class="earnings-card" style="border-color: rgba(255, 255, 255, 0.1);">
-                <div class="earnings-title">Tu Ganancia Mes</div>
-                <div class="earnings-amount">$<?php echo number_format($miGananciaMes, 2); ?></div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Venta Total:
-                    $<?php echo number_format($earningsMonthTotal, 2); ?></div>
-                <div class="trend-indicator">
-                    <span><?php echo date('F Y'); ?></span>
-                </div>
+    <!-- SECCIÓN DE GANANCIAS (ACTUALIZADO con COMISIÓN) -->
+    <div class="dashboard-grid">
+        <div class="earnings-card">
+            <div class="earnings-title">Tu Ganancia Hoy (<?php echo $mi_comision; ?>%)</div>
+            <div class="earnings-amount">$<?php echo number_format($miGananciaDia, 2); ?></div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Venta Total:
+                $<?php echo number_format($earningsTodayTotal, 2); ?></div>
+            <div class="trend-indicator trend-up">
+                <span>📅 <?php echo date('d M'); ?></span>
             </div>
         </div>
+        <div class="earnings-card" style="border-color: rgba(255, 255, 255, 0.1);">
+            <div class="earnings-title">Tu Ganancia Semana</div>
+            <div class="earnings-amount">$<?php echo number_format($miGananciaSemana, 2); ?></div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Venta Total:
+                $<?php echo number_format($earningsWeekTotal, 2); ?></div>
+            <div class="trend-indicator">
+                <span>Semana <?php echo date('W'); ?></span>
+            </div>
+        </div>
+        <div class="earnings-card" style="border-color: rgba(255, 255, 255, 0.1);">
+            <div class="earnings-title">Tu Ganancia Mes</div>
+            <div class="earnings-amount">$<?php echo number_format($miGananciaMes, 2); ?></div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Venta Total:
+                $<?php echo number_format($earningsMonthTotal, 2); ?></div>
+            <div class="trend-indicator">
+                <span><?php echo date('F Y'); ?></span>
+            </div>
+        </div>
+    </div>
 
-        <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
-            <!-- COLUMNA IZQUIERDA: Next Up + Acciones -->
-            <div style="flex: 1; min-width: 300px;">
+    <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
+        <!-- COLUMNA IZQUIERDA: Next Up + Acciones -->
+        <div style="flex: 1; min-width: 300px;">
 
-                <?php if ($proximo): ?>
-                        <div class="next-client-card">
-                            <div class="next-time">
-                                <div class="next-hour"><?php echo date('H:i', strtotime($proximo['fecha_hora'])); ?></div>
-                                <div class="next-label">Próximo</div>
-                            </div>
-                            <div class="client-details">
-                                <h3 style="margin: 0;"><?php echo htmlspecialchars($proximo['cliente']); ?></h3>
-                                <span class="service-badge"><?php echo htmlspecialchars($proximo['servicio']); ?></span>
-                                <div style="margin-top: 8px; font-size: 12px; color: #888;">
-                                    <?php
-                                    $minutos = round((strtotime($proximo['fecha_hora']) - time()) / 60);
-                                    if ($minutos < 0)
-                                        echo "En curso (hace " . abs($minutos) . " min)";
-                                    else
-                                        echo "En $minutos minutos";
-                                    ?>
-                                </div>
-                            </div>
-                        </div>
-                <?php else: ?>
-                        <div class="alert alert-success" style="margin-bottom: 24px;">
-                            🎉 ¡Todo listo! No tienes más clientes pendientes por hoy.
-                        </div>
-                <?php endif; ?>
-
-                <!-- ACCIONES RÁPIDAS -->
-                <h3 class="card-title">Acciones Rápidas</h3>
-                <div class="action-buttons-grid">
-                    <div class="quick-action-btn" onclick="crearCitaRapida()">
-                        <span style="font-size: 24px;">📅</span>
-                        <span>Agendar Cita</span>
+            <?php if ($proximo): ?>
+                <div class="next-client-card">
+                    <div class="next-time">
+                        <div class="next-hour"><?php echo date('H:i', strtotime($proximo['fecha_hora'])); ?></div>
+                        <div class="next-label">Próximo</div>
                     </div>
-                    <div class="quick-action-btn" onclick="bloquearHora()">
-                        <span style="font-size: 24px;">☕</span>
-                        <span>Bloqueo 1h</span>
+                    <div class="client-details">
+                        <h3 style="margin: 0;"><?php echo htmlspecialchars($proximo['cliente']); ?></h3>
+                        <span class="service-badge"><?php echo htmlspecialchars($proximo['servicio']); ?></span>
+                        <div style="margin-top: 8px; font-size: 12px; color: #888;">
+                            <?php
+                            $minutos = round((strtotime($proximo['fecha_hora']) - time()) / 60);
+                            if ($minutos < 0)
+                                echo "En curso (hace " . abs($minutos) . " min)";
+                            else
+                                echo "En $minutos minutos";
+                            ?>
+                        </div>
                     </div>
                 </div>
+            <?php else: ?>
+                <div class="alert alert-success" style="margin-bottom: 24px;">
+                    🎉 ¡Todo listo! No tienes más clientes pendientes por hoy.
+                </div>
+            <?php endif; ?>
 
+            <!-- ACCIONES RÁPIDAS -->
+            <h3 class="card-title">Acciones Rápidas</h3>
+            <div class="action-buttons-grid">
+                <div class="quick-action-btn" onclick="crearCitaRapida()">
+                    <span style="font-size: 24px;">📅</span>
+                    <span>Agendar Cita</span>
+                </div>
+                <div class="quick-action-btn" onclick="bloquearHora()">
+                    <span style="font-size: 24px;">☕</span>
+                    <span>Bloqueo 1h</span>
+                </div>
             </div>
 
-            <!-- COLUMNA DERECHA: Lista de Hoy -->
-            <div style="flex: 2; min-width: 400px;">
-                <div class="card">
-                    <div class="card-title">
-                        Agenda de Hoy
-                        <span style="margin-left: auto; font-size: 0.8em; opacity: 0.7;"><?php echo count($misCitasHoy); ?>
-                            citas</span>
-                    </div>
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
+        </div>
+
+        <!-- COLUMNA DERECHA: Lista de Hoy -->
+        <div style="flex: 2; min-width: 400px;">
+            <div class="card">
+                <div class="card-title">
+                    Agenda de Hoy
+                    <span style="margin-left: auto; font-size: 0.8em; opacity: 0.7;"><?php echo count($misCitasHoy); ?>
+                        citas</span>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Cliente</th>
+                                <th>Servicio</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($misCitasHoy as $cita): ?>
                                 <tr>
-                                    <th>Hora</th>
-                                    <th>Cliente</th>
-                                    <th>Servicio</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
+                                    <td style="font-weight: bold; color: var(--primary-gold);">
+                                        <?php echo date('H:i', strtotime($cita['fecha_hora'])); ?>
+                                    </td>
+                                    <td>
+                                        <div><?php echo htmlspecialchars($cita['cliente']); ?></div>
+                                        <div
+                                            style="font-size: 0.85em; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                                            <?php echo htmlspecialchars($cita['telefono']); ?>
+                                        </div>
+                                        <a href="#"
+                                            onclick="verHistorial(<?php echo $cita['cliente_id']; ?>, '<?php echo htmlspecialchars($cita['cliente']); ?>')"
+                                            style="font-size: 11px; color: var(--text-muted); text-decoration: underline;">Ver
+                                            Historial</a>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($cita['servicio']); ?></td>
+                                    <td>
+                                        <span
+                                            class="badge badge-<?php echo $cita['estado']; ?>"><?php echo ucfirst($cita['estado']); ?></span>
+                                    </td>
+                                    <td class="actions-cell">
+                                        <?php if ($cita['estado'] === 'pendiente' || $cita['estado'] === 'confirmada'): ?>
+                                            <button onclick="abrirModalTerminar(<?php echo $cita['id']; ?>)"
+                                                class="btn btn-sm btn-primary" style="margin-right: 5px;">Terminar</button>
+                                            <button onclick="confirmarCancelar(<?php echo $cita['id']; ?>)"
+                                                class="btn btn-sm btn-delete"
+                                                style="background:transparent; border: 1px solid #E74C3C; color: #E74C3C;">Cancelar</button>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($misCitasHoy as $cita): ?>
-                                        <tr>
-                                            <td style="font-weight: bold; color: var(--primary-gold);">
-                                                <?php echo date('H:i', strtotime($cita['fecha_hora'])); ?>
-                                            </td>
-                                            <td>
-                                                <div><?php echo htmlspecialchars($cita['cliente']); ?></div>
-                                                <div
-                                                    style="font-size: 0.85em; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                                                    <?php echo htmlspecialchars($cita['telefono']); ?>
-                                                    <?php if (!empty($cita['telefono'])):
-                                                        // Limpiar teléfono para el link (solo números)
-                                                        $wa_phone = preg_replace('/[^0-9]/', '', $cita['telefono']);
-                                                        $wa_msg = urlencode("Hola " . explode(' ', $cita['cliente'])[0] . ", soy tu barbero de Kortzen. Te escribo sobre tu cita de las " . date('H:i', strtotime($cita['fecha_hora'])) . ".");
-                                                        ?>
-                                                            <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo $wa_msg; ?>"
-                                                                target="_blank" title="Enviar WhatsApp"
-                                                                style="color: #25D366; text-decoration: none;">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                                    viewBox="0 0 24 24" fill="currentColor">
-                                                                    <path
-                                                                        d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
-                                                                </svg>
-                                                            </a>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <a href="#"
-                                                    onclick="verHistorial(<?php echo $cita['cliente_id']; ?>, '<?php echo htmlspecialchars($cita['cliente']); ?>')"
-                                                    style="font-size: 11px; color: var(--text-muted); text-decoration: underline;">Ver
-                                                    Historial</a>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($cita['servicio']); ?></td>
-                                            <td>
-                                                <span
-                                                    class="badge badge-<?php echo $cita['estado']; ?>"><?php echo ucfirst($cita['estado']); ?></span>
-                                            </td>
-                                            <td class="actions-cell">
-                                                <?php if ($cita['estado'] === 'pendiente' || $cita['estado'] === 'confirmada'): ?>
-                                                        <button onclick="abrirModalTerminar(<?php echo $cita['id']; ?>)"
-                                                            class="btn btn-sm btn-primary" style="margin-right: 5px;">Terminar</button>
-                                                        <button onclick="confirmarCancelar(<?php echo $cita['id']; ?>)"
-                                                            class="btn btn-sm btn-delete"
-                                                            style="background:transparent; border: 1px solid #E74C3C; color: #E74C3C;">Cancelar</button>
-                                                <?php endif; ?>
-                                            </td>
-                                        </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- MODAL HISTORIAL CLIENTE -->
-        <div id="modalHistorial" class="modal-overlay"
-            style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
-            <div class="modal-content"
-                style="background: #1A1A1A; width: 500px; padding: 30px; border-radius: 12px; border: 1px solid #333;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 id="modalClientName" style="color: var(--primary-gold); margin: 0;">Historial</h3>
-                    <button onclick="document.getElementById('modalHistorial').style.display='none'"
-                        style="background: none; border: none; color: #FFF; font-size: 24px; cursor: pointer;">&times;</button>
-                </div>
-                <div id="historialContent" style="max-height: 400px; overflow-y: auto;">
-                    <p style="text-align: center; color: #666;">Cargando...</p>
-                </div>
+    <!-- MODAL HISTORIAL CLIENTE -->
+    <div id="modalHistorial" class="modal-overlay"
+        style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+        <div class="modal-content"
+            style="background: #1A1A1A; width: 500px; padding: 30px; border-radius: 12px; border: 1px solid #333;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="modalClientName" style="color: var(--primary-gold); margin: 0;">Historial</h3>
+                <button onclick="document.getElementById('modalHistorial').style.display='none'"
+                    style="background: none; border: none; color: #FFF; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div id="historialContent" style="max-height: 400px; overflow-y: auto;">
+                <p style="text-align: center; color: #666;">Cargando...</p>
             </div>
         </div>
+    </div>
 
-        <!-- MODAL TERMINAR CITA (Añadido para funcionalidad de botones) -->
-        <div id="modalTerminar" class="modal-overlay"
-            style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
-            <div class="modal-content"
-                style="background: #1A1A1A; width: 500px; max-width: 90%; padding: 30px; border-radius: 12px; border: 1px solid #333;">
-                <h2 style="margin-bottom: 20px; color: var(--primary-gold);">Terminar Cita</h2>
-                <p style="margin-bottom: 20px; color: #AAA;">Confirma que has completado el servicio.</p>
+    <!-- MODAL TERMINAR CITA (Añadido para funcionalidad de botones) -->
+    <div id="modalTerminar" class="modal-overlay"
+        style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+        <div class="modal-content"
+            style="background: #1A1A1A; width: 500px; max-width: 90%; padding: 30px; border-radius: 12px; border: 1px solid #333;">
+            <h2 style="margin-bottom: 20px; color: var(--primary-gold);">Terminar Cita</h2>
+            <p style="margin-bottom: 20px; color: #AAA;">Confirma que has completado el servicio.</p>
 
-                <form id="formTerminar" method="POST" action="api/citas_action.php">
-                    <input type="hidden" name="action" value="completar">
-                    <input type="hidden" name="id" id="citaIdTerminar">
-                    <input type="hidden" name="redirect_source" value="dashboard">
+            <form id="formTerminar" method="POST" action="api/citas_action.php">
+                <input type="hidden" name="action" value="completar">
+                <input type="hidden" name="id" id="citaIdTerminar">
+                <input type="hidden" name="redirect_source" value="dashboard">
 
-                    <!-- Para futura expansión de inventario -->
-                    <!-- <div id="materialesList"></div> -->
+                <!-- Para futura expansión de inventario -->
+                <!-- <div id="materialesList"></div> -->
 
-                    <div style="display: flex; gap: 10px; margin-top: 30px;">
-                        <button type="button" onclick="document.getElementById('modalTerminar').style.display='none'"
-                            class="btn-secondary"
-                            style="flex: 1; padding: 12px; border-radius: 6px; cursor: pointer;">Cancelar</button>
-                        <button type="submit" class="btn-primary"
-                            style="flex: 1; padding: 12px; border-radius: 6px; border: none; cursor: pointer;">Confirmar
-                            Completado</button>
-                    </div>
-                </form>
-            </div>
+                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="button" onclick="document.getElementById('modalTerminar').style.display='none'"
+                        class="btn-secondary"
+                        style="flex: 1; padding: 12px; border-radius: 6px; cursor: pointer;">Cancelar</button>
+                    <button type="submit" class="btn-primary"
+                        style="flex: 1; padding: 12px; border-radius: 6px; border: none; cursor: pointer;">Confirmar
+                        Completado</button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <script>
-            // Funciones de Cita (Terminar/Cancelar)
-            function confirmarCancelar(id) {
-                if (confirm('¿Realmente deseas cancelar esta cita?')) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = 'api/citas_action.php';
+    <script>
+        // Funciones de Cita (Terminar/Cancelar)
+        function confirmarCancelar(id) {
+            if (confirm('¿Realmente deseas cancelar esta cita?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'api/citas_action.php';
 
-                    const actionInput = document.createElement('input');
-                    actionInput.type = 'hidden';
-                    actionInput.name = 'action';
-                    actionInput.value = 'cancelar_barbero';
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'cancelar_barbero';
 
-                    const redirectInput = document.createElement('input');
-                    redirectInput.type = 'hidden';
-                    redirectInput.name = 'redirect_source';
-                    redirectInput.value = 'dashboard';
+                const redirectInput = document.createElement('input');
+                redirectInput.type = 'hidden';
+                redirectInput.name = 'redirect_source';
+                redirectInput.value = 'dashboard';
 
-                    const idInput = document.createElement('input');
-                    idInput.type = 'hidden';
-                    idInput.name = 'id';
-                    idInput.value = id;
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = id;
 
-                    form.appendChild(actionInput);
-                    form.appendChild(redirectInput);
-                    form.appendChild(idInput);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
+                form.appendChild(actionInput);
+                form.appendChild(redirectInput);
+                form.appendChild(idInput);
+                document.body.appendChild(form);
+                form.submit();
             }
+        }
 
-            function abrirModalTerminar(id) {
-                document.getElementById('citaIdTerminar').value = id;
-                document.getElementById('modalTerminar').style.display = 'flex';
-            }
+        function abrirModalTerminar(id) {
+            document.getElementById('citaIdTerminar').value = id;
+            document.getElementById('modalTerminar').style.display = 'flex';
+        }
 
-            // Funciones del Dashboard original
-            function verHistorial(clientId, clientName) {
-                document.getElementById('modalHistorial').style.display = 'flex';
-                document.getElementById('modalClientName').textContent = 'Historial: ' + clientName;
-                document.getElementById('historialContent').innerHTML = '<p style="text-align: center; color: #666;">Cargando datos...</p>';
+        // Funciones del Dashboard original
+        function verHistorial(clientId, clientName) {
+            document.getElementById('modalHistorial').style.display = 'flex';
+            document.getElementById('modalClientName').textContent = 'Historial: ' + clientName;
+            document.getElementById('historialContent').innerHTML = '<p style="text-align: center; color: #666;">Cargando datos...</p>';
 
-                fetch(`api/get_client_history.php?client_id=${clientId}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        const container = document.getElementById('historialContent');
-                        if (data.success && data.history.length > 0) {
-                            let html = '';
-                            data.history.forEach(item => {
-                                html += `
+            fetch(`api/get_client_history.php?client_id=${clientId}`)
+                .then(r => r.json())
+                .then(data => {
+                    const container = document.getElementById('historialContent');
+                    if (data.success && data.history.length > 0) {
+                        let html = '';
+                        data.history.forEach(item => {
+                            html += `
                                 <div class="history-item">
                                     <div>
                                         <div class="history-service">${item.servicio_nombre}</div>
@@ -1067,40 +1074,40 @@ include 'includes/header.php';
                                     <div class="history-price">$${parseFloat(item.precio_final).toFixed(2)}</div>
                                 </div>
                             `;
-                            });
-                            container.innerHTML = html;
-                        } else {
-                            container.innerHTML = '<p style="text-align: center; color: #888;">No hay historial previo disponible.</p>';
-                        }
-                    })
-                    .catch(err => {
-                        document.getElementById('historialContent').innerHTML = '<p style="color: red;">Error al cargar.</p>';
-                    });
-            }
-
-            function bloquearHora() {
-                if (!confirm('¿Bloquear la próxima hora disponible en tu agenda para descanso/gestión?')) return;
-
-                fetch('api/block_time_action.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'action=quick_block_next_hour'
+                        });
+                        container.innerHTML = html;
+                    } else {
+                        container.innerHTML = '<p style="text-align: center; color: #888;">No hay historial previo disponible.</p>';
+                    }
                 })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('✅ ' + data.message);
-                            location.reload();
-                        } else {
-                            alert('❌ Error: ' + data.error);
-                        }
-                    });
-            }
+                .catch(err => {
+                    document.getElementById('historialContent').innerHTML = '<p style="color: red;">Error al cargar.</p>';
+                });
+        }
 
-            function crearCitaRapida() {
-                window.location.href = 'citas_crear.php';
-            }
-        </script>
+        function bloquearHora() {
+            if (!confirm('¿Bloquear la próxima hora disponible en tu agenda para descanso/gestión?')) return;
+
+            fetch('api/block_time_action.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'action=quick_block_next_hour'
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        location.reload();
+                    } else {
+                        alert('❌ Error: ' + data.error);
+                    }
+                });
+        }
+
+        function crearCitaRapida() {
+            window.location.href = 'citas_crear.php';
+        }
+    </script>
 
 <?php endif; ?>
 
