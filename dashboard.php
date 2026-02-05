@@ -989,33 +989,50 @@ include 'includes/header.php';
     $barbero_id = $currentUser['id'];
     $hoy = date('Y-m-d');
 
-    // 1. CALCULAR GANANCIAS (Earnings)
-    $mi_comision = floatval($currentUser['comision_porcentaje'] ?? 50);
+    // 1. CALCULAR GANANCIAS CON DOBLE TASA (Diaria vs Fin de Semana)
+    $com_diaria = floatval($currentUser['comision_porcentaje'] ?? 50);
+    $com_finde = floatval($currentUser['comision_fin_semana'] ?? 50);
 
-    // Función helper para calcular neto
-    function calcularComision($total, $porcentaje)
-    {
-        return $total * ($porcentaje / 100);
-    }
+    // Lógica SQL para calcular ganancia basada en el día de la cita
+    // DAYOFWEEK: 1=Domingo, 7=Sábado => IN (1, 7) = Fin de Semana
+    $sqlGanancia = "
+        SUM(
+            (IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100) 
+            + 
+            (IFNULL((SELECT SUM(vp.cantidad * vp.precio_unitario) FROM ventas_productos vp WHERE vp.cita_id = citas.id), 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)
+        ) as total_ganancia
+    ";
 
-    // Día
-    $earningsTodayTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = ?", [$barbero_id, $hoy])[0]['total'] ?? 0;
-    $miGananciaDia = calcularComision($earningsTodayTotal, $mi_comision);
+    // 1.1 Ganancia HOY
+    $gananciaHoy = query("
+        SELECT $sqlGanancia
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
+    ", [$barbero_id]);
+    $miGananciaDia = $gananciaHoy[0]['total_ganancia'] ?? 0;
 
-    // Semana (Lunes a Domingo actual)
+    // 1.2 Ganancia SEMANA
     $monday = date('Y-m-d', strtotime('monday this week'));
     $sunday = date('Y-m-d', strtotime('sunday this week'));
-    $earningsWeekTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$barbero_id, $monday, $sunday])[0]['total'] ?? 0;
-    $miGananciaSemana = calcularComision($earningsWeekTotal, $mi_comision);
+    $gananciaSemana = query("
+        SELECT $sqlGanancia
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+    ", [$barbero_id, $monday, $sunday]);
+    $miGananciaSemana = $gananciaSemana[0]['total_ganancia'] ?? 0;
 
-    // Mes
+    // 1.3 Ganancia MES
     $monthStart = date('Y-m-01');
     $monthEnd = date('Y-m-t');
-    $earningsMonthTotal = query("SELECT SUM(precio_final) as total FROM citas WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
-    $miGananciaMes = calcularComision($earningsMonthTotal, $mi_comision);
+    $gananciaMes = query("
+        SELECT $sqlGanancia
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+    ", [$barbero_id, $monthStart, $monthEnd]);
+    $miGananciaMes = $gananciaMes[0]['total_ganancia'] ?? 0;
 
-    // 2. PRÓXIMO CLIENTE (Next Up) - Sin cambios en query...
-    // Buscar la primera cita "pendiente" o "confirmada" futura (o de hoy pero hora > ahora)
+    // 2. PRÓXIMO CLIENTE...
+    // ... (restcode kept)
     $nextClient = query("SELECT c.*, s.nombre as servicio, cli.nombre as cliente, cli.foto_perfil
                          FROM citas c
                          JOIN servicios s ON c.servicio_id = s.id
@@ -1030,7 +1047,7 @@ include 'includes/header.php';
 
     $proximo = $nextClient ? $nextClient[0] : null;
 
-    // 3. CITAS DE HOY (Lista Completa) - Sin cambios...
+    // 3. CITAS DE HOY (Lista Completa)
     $misCitasHoy = query("SELECT c.*, s.nombre as servicio, cli.nombre as cliente, cli.telefono, cli.id as cliente_id
                           FROM citas c
                           JOIN servicios s ON c.servicio_id = s.id
@@ -1043,10 +1060,11 @@ include 'includes/header.php';
     );
     ?>
 
-    <!-- SECCIÓN DE GANANCIAS (ACTUALIZADO con COMISIÓN) -->
+    <!-- SECCIÓN DE GANANCIAS -->
     <div class="dashboard-grid">
         <div class="earnings-card">
-            <div class="earnings-title">Tu Ganancia Hoy (<?php echo $mi_comision; ?>%)</div>
+            <!-- Si quieres mostrar el %, podrías poner "Var" o ambos ej: 50% / 60% -->
+            <div class="earnings-title">Tu Ganancia Hoy (Dinámica)</div>
             <div class="earnings-amount">$<?php echo number_format($miGananciaDia, 2); ?></div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Venta Total:
                 $<?php echo number_format($earningsTodayTotal, 2); ?></div>

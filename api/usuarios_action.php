@@ -25,6 +25,7 @@ try {
             $foto_url = trim($_POST['foto_url'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
+            $comision_fin_semana = floatval($_POST['comision_fin_semana'] ?? 50.00);
 
             // Validaciones
             if (empty($nombre) || empty($email) || empty($password)) {
@@ -48,9 +49,9 @@ try {
             // Hash de contraseña con BCRYPT
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO usuarios (nombre, email, password, rol, sucursal_id, biografia, especialidades, foto_url, telefono, comision_porcentaje) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO usuarios (nombre, email, password, rol, sucursal_id, biografia, especialidades, foto_url, telefono, comision_porcentaje, comision_fin_semana) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje]);
+            $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana]);
 
             header('Location: ../usuarios.php?success=Usuario creado exitosamente');
             exit;
@@ -67,6 +68,7 @@ try {
             $foto_url = trim($_POST['foto_url'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
+            $comision_fin_semana = floatval($_POST['comision_fin_semana'] ?? 50.00);
 
             if ($id <= 0) {
                 throw new Exception('ID de usuario inválido.');
@@ -92,14 +94,14 @@ try {
                     throw new Exception('La contraseña debe tener al menos 6 caracteres.');
                 }
                 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-                $sql = "UPDATE usuarios SET nombre = ?, email = ?, password = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ? WHERE id = ?";
+                $sql = "UPDATE usuarios SET nombre = ?, email = ?, password = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ?, comision_fin_semana = ? WHERE id = ?";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $id]);
+                $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $id]);
             } else {
                 // No actualizar contraseña
-                $sql = "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ? WHERE id = ?";
+                $sql = "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ?, comision_fin_semana = ? WHERE id = ?";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$nombre, $email, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $id]);
+                $stmt->execute([$nombre, $email, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $id]);
             }
 
             header('Location: ../usuarios.php?success=Usuario actualizado exitosamente');
