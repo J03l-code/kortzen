@@ -450,22 +450,28 @@ $pageTitle = 'Reservar Cita';
         // --- API Calls ---
 
         async function loadServices() {
-            // En un entorno real, esto vendría de una API. Aquí simularemos fetch a la BD 
-            // pero usaremos un endpoint simple o inyectaremos los datos con PHP si es más rapido.
-            // Para hacerlo limpio, crearemos un endpoint rapido inline o usaremos datos mockeados si no hay endpoint.
-            // Mejor: Crear un endpoint para esto o usar PHP para renderizar initial state.
-            // Por simplicidad para el usuario, usaré PHP para poblar JS variables o un endpoint simple.
-
-            // Vamos a hacer fetch a api_helpers.php (que crearemos rapido) o simular.
-            // Simularemos llamada a un endpoint que crearemos despues: api/get_catalog.php
+            const grid = document.getElementById('servicesGrid');
 
             try {
                 const response = await fetch('api/get_catalog.php');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
                 const data = await response.json();
 
-                const grid = document.getElementById('servicesGrid');
-                grid.innerHTML = '';
+                if (data.error) {
+                    grid.innerHTML = `<p style="color:#cc0000; grid-column:1/-1;">Error: ${data.error}</p>`;
+                    return;
+                }
 
+                if (!data.servicios || data.servicios.length === 0) {
+                    grid.innerHTML = '<p style="color:#888; grid-column:1/-1;">No hay servicios disponibles.</p>';
+                    return;
+                }
+
+                grid.innerHTML = '';
                 data.servicios.forEach(s => {
                     const el = document.createElement('div');
                     el.className = 'option-card';
@@ -478,6 +484,8 @@ $pageTitle = 'Reservar Cita';
                     grid.appendChild(el);
                 });
             } catch (e) {
+                console.error('Error cargando servicios:', e);
+                grid.innerHTML = `<p style="color:#cc0000; grid-column:1/-1;">Error al cargar servicios. Revisa la consola (F12).</p>`;
                 console.error(e);
             }
         }
