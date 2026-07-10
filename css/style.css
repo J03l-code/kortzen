@@ -352,6 +352,9 @@ body {
 }
 
 .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 32px;
 }
 
@@ -606,4 +609,47 @@ body {
     .mobile-header {
         display: flex;
     }
+}
+
+/* Action Buttons and Icon Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-icon:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+.btn-icon.edit:hover {
+    border-color: var(--primary-gold);
+    color: var(--primary-gold);
+}
+
+.btn-icon.delete {
+    color: #E74C3C;
+    border-color: rgba(231, 76, 60, 0.2);
+}
+
+.btn-icon.delete:hover {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #E74C3C;
+    color: #E74C3C;
 }

@@ -10,10 +10,10 @@ include 'includes/header.php';
 $resenas = query("SELECT * FROM resenas ORDER BY created_at DESC");
 ?>
 
-<div class="header-container">
+<div class="page-header">
     <h1 class="page-title">Reseñas de Clientes</h1>
-    <a href="resenas_crear.php" class="btn-add">
-        <i class="fas fa-plus"></i> Nueva Reseña
+    <a href="resenas_crear.php" class="btn btn-primary">
+        <i class="fas fa-plus"></i> NUEVA RESEÑA
     </a>
 </div>
 
@@ -30,7 +30,7 @@ $resenas = query("SELECT * FROM resenas ORDER BY created_at DESC");
 <?php endif; ?>
 
 <div class="table-container">
-    <table class="data-table">
+    <table class="table">
         <thead>
             <tr>
                 <th>Cliente</th>
