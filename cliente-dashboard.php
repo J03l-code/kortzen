@@ -35,6 +35,14 @@ $foto = $_SESSION['cliente_foto'] ?? null;
     <link rel="stylesheet" href="/css/reset.css">
     <link rel="stylesheet" href="/css/base.css">
 
+    <!-- PWA Manifest & Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KORTZEN">
+    <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
+    <script src="/js/pwa.js" defer></script>
+
     <style>
         :root {
             --gold-primary: #D4AF37;

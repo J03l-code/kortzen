@@ -10,6 +10,7 @@
 
 html {
     scroll-behavior: smooth;
+    touch-action: manipulation;
 }
 
 body {
@@ -19,6 +20,7 @@ body {
     color: var(--color-white-off);
     background-color: var(--color-black-matte);
     overflow-x: hidden;
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* =================== TYPOGRAPHY =================== */
