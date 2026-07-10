@@ -145,7 +145,7 @@ include 'includes/header.php';
         <?php echo $isEdit ? htmlspecialchars($servicio['nombre']) : 'Nuevo Servicio'; ?>
     </h1>
 
-    <form method="POST" action="api/servicios_action.php">
+    <form method="POST" action="api/servicios_action.php" enctype="multipart/form-data">
         <input type="hidden" name="action" value="<?php echo $isEdit ? 'update' : 'create'; ?>">
         <?php if ($isEdit): ?>
             <input type="hidden" name="id" value="<?php echo $servicio['id']; ?>">
@@ -162,6 +162,12 @@ include 'includes/header.php';
             <label class="form-label">Descripción</label>
             <textarea name="descripcion" class="form-textarea"
                 placeholder="Corte tradicional con máquina y tijera, incluye lavado"><?php echo $isEdit ? htmlspecialchars($servicio['descripcion']) : ''; ?></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Imagen Referencial</label>
+            <input type="file" name="foto_file" class="form-input" accept="image/*">
+            <small style="color: var(--text-muted); font-size: 0.8em; display: block; margin-top: 4px;">Sube una imagen (PNG, JPG, JPEG, WEBP)</small>
         </div>
 
         <div class="form-group">

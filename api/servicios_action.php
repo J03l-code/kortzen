@@ -18,10 +18,35 @@ try {
             $precio = floatval($_POST['precio'] ?? 0);
             $duracion_minutos = intval($_POST['duracion_minutos'] ?? 30);
             $categoria = trim($_POST['categoria'] ?? 'General');
-            $foto_url = trim($_POST['foto_url'] ?? '');
             $activo = intval($_POST['activo'] ?? 1);
             $destacado = isset($_POST['destacado']) ? 1 : 0;
             $sucursales = $_POST['sucursales'] ?? [];
+
+            $foto_url = '';
+            if (isset($_FILES['foto_file']) && $_FILES['foto_file']['error'] === UPLOAD_ERR_OK) {
+                $fileTmpPath = $_FILES['foto_file']['tmp_name'];
+                $fileName = $_FILES['foto_file']['name'];
+                $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                
+                if (in_array($fileExtension, $allowedExtensions)) {
+                    $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                    $uploadFileDir = '../assets/images/';
+                    
+                    if (!is_dir($uploadFileDir)) {
+                        mkdir($uploadFileDir, 0755, true);
+                    }
+                    
+                    $dest_path = $uploadFileDir . $newFileName;
+                    if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                        $foto_url = '/assets/images/' . $newFileName;
+                    } else {
+                        throw new Exception('Error al guardar la imagen subida.');
+                    }
+                } else {
+                    throw new Exception('Formato de imagen no permitido. Usa JPG, PNG, GIF o WEBP.');
+                }
+            }
 
             if (empty($nombre)) {
                 throw new Exception('El nombre del servicio es obligatorio.');
@@ -64,13 +89,42 @@ try {
             $precio = floatval($_POST['precio'] ?? 0);
             $duracion_minutos = intval($_POST['duracion_minutos'] ?? 30);
             $categoria = trim($_POST['categoria'] ?? 'General');
-            $foto_url = trim($_POST['foto_url'] ?? '');
             $activo = intval($_POST['activo'] ?? 1);
             $destacado = isset($_POST['destacado']) ? 1 : 0;
             $sucursales = $_POST['sucursales'] ?? [];
 
             if ($id <= 0) {
                 throw new Exception('ID de servicio inválido.');
+            }
+
+            // Get current foto_url from DB
+            $currentService = query("SELECT foto_url FROM servicios WHERE id = ?", [$id]);
+            $foto_url = (!empty($currentService)) ? $currentService[0]['foto_url'] : '';
+
+            // Check for file upload
+            if (isset($_FILES['foto_file']) && $_FILES['foto_file']['error'] === UPLOAD_ERR_OK) {
+                $fileTmpPath = $_FILES['foto_file']['tmp_name'];
+                $fileName = $_FILES['foto_file']['name'];
+                $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                
+                if (in_array($fileExtension, $allowedExtensions)) {
+                    $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                    $uploadFileDir = '../assets/images/';
+                    
+                    if (!is_dir($uploadFileDir)) {
+                        mkdir($uploadFileDir, 0755, true);
+                    }
+                    
+                    $dest_path = $uploadFileDir . $newFileName;
+                    if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                        $foto_url = '/assets/images/' . $newFileName;
+                    } else {
+                        throw new Exception('Error al guardar la nueva imagen subida.');
+                    }
+                } else {
+                    throw new Exception('Formato de imagen no permitido. Usa JPG, PNG, GIF o WEBP.');
+                }
             }
 
             if (empty($nombre)) {

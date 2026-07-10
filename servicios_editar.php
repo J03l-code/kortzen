@@ -145,7 +145,7 @@ include 'includes/header.php';
         <?php echo $isEdit ? htmlspecialchars($servicio['nombre']) : 'Nuevo Servicio'; ?>
     </h1>
 
-    <form method="POST" action="api/servicios_action.php">
+    <form method="POST" action="api/servicios_action.php" enctype="multipart/form-data">
         <input type="hidden" name="action" value="<?php echo $isEdit ? 'update' : 'create'; ?>">
         <?php if ($isEdit): ?>
             <input type="hidden" name="id" value="<?php echo $servicio['id']; ?>">
@@ -165,11 +165,15 @@ include 'includes/header.php';
         </div>
 
         <div class="form-group">
-            <label class="form-label">URL Imagen Referencial</label>
-            <input type="text" name="foto_url" class="form-input"
-                value="<?php echo $isEdit && isset($servicio['foto_url']) ? htmlspecialchars($servicio['foto_url']) : ''; ?>"
-                placeholder="/assets/images/services/corte-clasico.jpg">
-            <small style="color: var(--text-muted); font-size: 0.8em;">Ruta de la imagen en el servidor</small>
+            <label class="form-label">Imagen Referencial</label>
+            <?php if ($isEdit && !empty($servicio['foto_url'])): ?>
+                <div style="margin-bottom: 12px;">
+                    <img src="<?php echo htmlspecialchars($servicio['foto_url']); ?>" alt="Vista previa" style="max-width: 150px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); display: block;">
+                    <small style="color: var(--text-muted); display: block; margin-top: 4px;">Imagen actual: <?php echo htmlspecialchars($servicio['foto_url']); ?></small>
+                </div>
+            <?php endif; ?>
+            <input type="file" name="foto_file" class="form-input" accept="image/*">
+            <small style="color: var(--text-muted); font-size: 0.8em; display: block; margin-top: 4px;">Sube una imagen (PNG, JPG, JPEG, WEBP)</small>
         </div>
 
         <div class="form-group">
