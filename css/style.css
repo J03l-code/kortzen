@@ -648,3 +648,33 @@ body {
     background: #E74C3C;
     color: #FFFFFF;
 }
+
+/* Action Buttons and Icon Buttons */
+.action-buttons {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 4px;
+    color: #1A1A1A; /* Solid Black */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.btn-icon:hover {
+    color: #777777; /* Soft gray on hover */
+    transform: scale(1.12);
+}
+
+.btn-icon i {
+    font-style: normal;
+}

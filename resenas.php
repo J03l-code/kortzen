@@ -78,13 +78,17 @@ $resenas = query("SELECT * FROM resenas ORDER BY created_at DESC");
                             <?php endif; ?>
                         </td>
                         <td>
-                            <div class="actions-cell">
-                                <a href="resenas_editar.php?id=<?php echo $r['id']; ?>" class="btn-action">EDITAR</a>
+                            <div class="action-buttons">
+                                <a href="resenas_editar.php?id=<?php echo $r['id']; ?>" class="btn-icon edit" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                                 <form method="POST" action="api/reviews_action.php" style="display:inline;"
                                     onsubmit="return confirm('¿Estás seguro de eliminar esta reseña?');">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?php echo $r['id']; ?>">
-                                    <button type="submit" class="btn-action btn-delete">ELIMINAR</button>
+                                    <button type="submit" class="btn-icon delete" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </form>
                             </div>
                         </td>
