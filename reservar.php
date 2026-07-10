@@ -822,6 +822,12 @@ $pageTitle = 'Reservar Cita';
                 formData.append('hora', bookingData.time);
                 formData.append('telefono', bookingData.phone);
 
+                const urlParams = new URLSearchParams(window.location.search);
+                const reagendarId = urlParams.get('reagendar_id');
+                if (reagendarId) {
+                    formData.append('reagendar_id', reagendarId);
+                }
+
                 const req = await fetch('api/crear_cita_cliente.php', {
                     method: 'POST',
                     body: formData
@@ -835,8 +841,8 @@ $pageTitle = 'Reservar Cita';
                     <div style="text-align:center; padding-top:50px;">
                         <div style="font-size:4rem; color:var(--gold); margin-bottom:20px;">✓</div>
                         <h1 style="color:var(--text-primary); margin-bottom:10px;">¡Reserva Exitosa!</h1>
-                        <p style="color:var(--text-muted); margin-bottom:30px;">Tu cita ha sido agendada correctamente.</p>
-                        <a href="index.html" class="btn btn-next" style="text-decoration:none;">Volver al Inicio</a>
+                        <p style="color:var(--text-muted); margin-bottom:30px;">Tu cita ha sido ${reagendarId ? 'reagendada' : 'agendada'} correctamente.</p>
+                        <a href="cliente-dashboard.php" class="btn btn-next" style="text-decoration:none;">Volver a mi Cuenta</a>
                         <br><br>
                         <a href="https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu" target="_blank" style="color:var(--gold); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
                             <span style="font-size:1.2rem;">⭐</span> Califícanos en Google

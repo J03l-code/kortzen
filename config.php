@@ -26,7 +26,9 @@ define('SITE_NAME', 'Sistema de Gestión de Barberías');  // Nombre del sitio
 // Configuración de sesión
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 0);      // Cambia a 1 si usas HTTPS en Hostinger
+ini_set('session.cookie_lifetime', 31536000); // 1 año en segundos
+ini_set('session.gc_maxlifetime', 31536000);  // 1 año en segundos
+ini_set('session.cookie_secure', (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 1 : 0);
 
 // Iniciar sesión si no está iniciada
 if (session_status() === PHP_SESSION_NONE) {

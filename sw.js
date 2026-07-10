@@ -1,5 +1,7 @@
-const CACHE_NAME = 'kortzen-v1';
+const CACHE_NAME = 'kortzen-v2';
 const ASSETS_TO_CACHE = [
+  '/cliente-dashboard.php',
+  '/cliente-login.php',
   '/',
   '/index.html',
   '/servicios.html',

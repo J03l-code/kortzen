@@ -156,6 +156,26 @@ $citasHistorial = query($sqlHistorial, [$cliente['id']]);
             color: white;
         }
 
+        .btn-reagendar {
+            background: #ffffff;
+            border: 1px solid #ffffff;
+            color: #111111;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 13.3333px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-reagendar:hover {
+            background: transparent;
+            color: #ffffff;
+            border-color: #ffffff;
+        }
+
         @media (max-width: 600px) {
             .cita-card {
                 flex-direction: column;
@@ -201,11 +221,10 @@ $citasHistorial = query($sqlHistorial, [$cliente['id']]);
                             <?php echo htmlspecialchars($cita['sucursal']); ?>
                         </div>
                     </div>
-                    <div>
-                        <!-- Solo permitir cancelar si faltan más de 2 horas (ejemplo) -->
-                        <!-- Por simplicidad, permitimos cancelar siempre que no haya pasado -->
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <a href="reservar.php?reagendar_id=<?php echo $cita['id']; ?>" class="btn-reagendar">Reagendar</a>
                         <form onsubmit="return confirm('¿Seguro que deseas cancelar esta cita?');"
-                            action="api/cancelar_cita.php" method="POST">
+                            action="api/cancelar_cita.php" method="POST" style="margin: 0;">
                             <input type="hidden" name="cita_id" value="<?php echo $cita['id']; ?>">
                             <button type="submit" class="btn-cancelar">Cancelar Cita</button>
                         </form>

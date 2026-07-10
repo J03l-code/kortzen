@@ -59,12 +59,27 @@ try {
     $nombreServicio = $servicioData['nombre'];
     $precio = $servicioData['precio'];
 
-    // 4. Insertar la cita
-    $sql = "INSERT INTO citas (cliente_id, servicio_id, barbero_id, sucursal_id, fecha_hora, estado, precio_final) 
-            VALUES (?, ?, ?, ?, ?, 'pendiente', ?)";
+    $reagendarId = isset($_POST['reagendar_id']) ? intval($_POST['reagendar_id']) : 0;
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$clienteId, $servicioId, $barberoId, $sucursalId, $fechaHora, $precio]);
+    if ($reagendarId > 0) {
+        // Validar que la cita pertenece al cliente
+        $stmtCheckOwner = $pdo->prepare("SELECT id FROM citas WHERE id = ? AND cliente_id = ?");
+        $stmtCheckOwner->execute([$reagendarId, $clienteId]);
+        if ($stmtCheckOwner->fetchColumn() === false) {
+            throw new Exception('Cita original no encontrada.');
+        }
+
+        // Actualizar la cita existente
+        $sql = "UPDATE citas SET servicio_id = ?, barbero_id = ?, sucursal_id = ?, fecha_hora = ?, estado = 'pendiente', precio_final = ? WHERE id = ? AND cliente_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$servicioId, $barberoId, $sucursalId, $fechaHora, $precio, $reagendarId, $clienteId]);
+    } else {
+        // 4. Insertar la cita
+        $sql = "INSERT INTO citas (cliente_id, servicio_id, barbero_id, sucursal_id, fecha_hora, estado, precio_final) 
+                VALUES (?, ?, ?, ?, ?, 'pendiente', ?)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$clienteId, $servicioId, $barberoId, $sucursalId, $fechaHora, $precio]);
+    }
 
     // 5. Enviar Correo
     require_once '../includes/email_helper.php';

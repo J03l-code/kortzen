@@ -145,7 +145,7 @@ try {
     // Redirigir a la página de éxito o inicio
     // Redirigir a la página de reservas por defecto (o dashboard si se prefiere)
     // El usuario quería reservar, así que priorizamos el flujo de reserva.
-    header('Location: ' . SITE_BASE_URL . '/reservar.php');
+    header('Location: ' . SITE_BASE_URL . '/cliente-dashboard.php');
     exit;
 
 } catch (PDOException $e) {

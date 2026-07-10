@@ -9,7 +9,7 @@ require_once 'config.php';
 
 // Verificar si el cliente está logueado
 if (!isset($_SESSION['cliente_logged_in']) || !$_SESSION['cliente_logged_in']) {
-    header('Location: /');
+    header('Location: cliente-login.php');
     exit;
 }
 
