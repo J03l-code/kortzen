@@ -33,11 +33,11 @@ $pageTitle = 'Reservar Cita';
     <script src="/js/pwa.js" defer></script>
     <style>
         :root {
-            --gold: #C9A96E;
-            --dark-bg: #F4F4F9;
-            --card-bg: #FFFFFF;
-            --text-primary: #333333;
-            --text-secondary: #666666;
+            --gold: #FFFFFF;
+            --dark-bg: #050505;
+            --card-bg: #111111;
+            --text-primary: #F5F5F5;
+            --text-secondary: #A3A3A3;
         }
 
         body {
@@ -107,8 +107,8 @@ $pageTitle = 'Reservar Cita';
 
         .step-dot.active {
             background: var(--gold);
-            color: #FFF;
-            box-shadow: 0 0 10px rgba(201, 169, 110, 0.3);
+            color: #000;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
 
         .step-dot.completed {
@@ -148,7 +148,7 @@ $pageTitle = 'Reservar Cita';
         /* Service Card */
         .option-card {
             background: var(--card-bg);
-            border: 1px solid #E0E0E0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
             padding: 20px;
             cursor: pointer;
@@ -158,7 +158,7 @@ $pageTitle = 'Reservar Cita';
 
         .option-card:hover {
             border-color: var(--gold);
-            background: rgba(201, 169, 110, 0.05);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .option-card.selected {
@@ -227,7 +227,7 @@ $pageTitle = 'Reservar Cita';
         .time-slot {
             padding: 10px;
             background: var(--card-bg);
-            border: 1px solid #DDD;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 8px;
             text-align: center;
             cursor: pointer;

@@ -62,10 +62,14 @@ async function loadTestimonials() {
                 `;
         track.appendChild(div);
       });
+    } else {
+      const testimonialsSection = document.querySelector('[aria-labelledby="testimonials-title"]');
+      if (testimonialsSection) testimonialsSection.style.display = 'none';
     }
   } catch (e) {
     console.error('Error loading reviews:', e);
-    // Fallback content in case of error is handled by existing HTML or empty
+    const testimonialsSection = document.querySelector('[aria-labelledby="testimonials-title"]');
+    if (testimonialsSection) testimonialsSection.style.display = 'none';
   }
 }
 
@@ -120,6 +124,7 @@ function initTestimonialsSlider() {
 
   // Autoplay
   function startAutoplay() {
+    if (window.innerWidth < 768) return; // Disable autoplay on mobile
     // Clear any existing interval just in case
     clearInterval(autoplayInterval);
     autoplayInterval = setInterval(nextSlide, 5000);

@@ -59,8 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const nextStepId = opt.dataset.next;
 
             // Simulate processing time
-            opt.style.borderColor = 'var(--color-gold)';
-            opt.style.backgroundColor = 'rgba(192, 160, 98, 0.2)';
+            opt.style.borderColor = 'var(--color-white-pure)';
+            opt.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
 
             setTimeout(() => {
                 if (nextStepId === 'result') {

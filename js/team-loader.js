@@ -33,19 +33,32 @@ const TeamLoader = {
         const grid = document.getElementById('team-grid');
         if (!grid) return;
 
+        // Render skeleton loader
         grid.innerHTML = `
-            <div class="team-loader" style="grid-column: 1/-1; text-align: center; padding: 2rem;">
-                <div class="spinner" style="
-                    width: 40px; 
-                    height: 40px; 
-                    border: 3px solid rgba(51, 51, 51, 0.3); 
-                    border-radius: 50%; 
-                    border-top-color: #333333; 
-                    animation: spin 1s linear infinite; 
-                    margin: 0 auto 1rem;"></div>
-                <p style="color: var(--color-gray);">Cargando equipo...</p>
+            <div class="team-skeleton-grid" style="grid-column: 1/-1; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-8); width: 100%;">
+                <div class="team-skeleton-card" style="background: var(--color-charcoal); border: 1px solid var(--color-charcoal-light); height: 380px; border-radius: var(--border-radius-lg); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); animation: pulse 1.5s infinite;">
+                    <div style="width: 100%; height: 240px; background: rgba(255,255,255,0.03); border-radius: var(--border-radius-md);"></div>
+                    <div style="width: 60%; height: 20px; background: rgba(255,255,255,0.03); border-radius: 4px; margin-top: auto;"></div>
+                    <div style="width: 40%; height: 14px; background: rgba(255,255,255,0.02); border-radius: 4px;"></div>
+                </div>
+                <div class="team-skeleton-card" style="background: var(--color-charcoal); border: 1px solid var(--color-charcoal-light); height: 380px; border-radius: var(--border-radius-lg); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); animation: pulse 1.5s infinite; animation-delay: 0.2s;">
+                    <div style="width: 100%; height: 240px; background: rgba(255,255,255,0.03); border-radius: var(--border-radius-md);"></div>
+                    <div style="width: 60%; height: 20px; background: rgba(255,255,255,0.03); border-radius: 4px; margin-top: auto;"></div>
+                    <div style="width: 40%; height: 14px; background: rgba(255,255,255,0.02); border-radius: 4px;"></div>
+                </div>
+                <div class="team-skeleton-card" style="background: var(--color-charcoal); border: 1px solid var(--color-charcoal-light); height: 380px; border-radius: var(--border-radius-lg); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); animation: pulse 1.5s infinite; animation-delay: 0.4s;">
+                    <div style="width: 100%; height: 240px; background: rgba(255,255,255,0.03); border-radius: var(--border-radius-md);"></div>
+                    <div style="width: 60%; height: 20px; background: rgba(255,255,255,0.03); border-radius: 4px; margin-top: auto;"></div>
+                    <div style="width: 40%; height: 14px; background: rgba(255,255,255,0.02); border-radius: 4px;"></div>
+                </div>
             </div>
-            <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            <style>
+                @keyframes pulse {
+                    0% { opacity: 0.4; }
+                    50% { opacity: 0.8; }
+                    100% { opacity: 0.4; }
+                }
+            </style>
         `;
 
         try {
@@ -56,7 +69,7 @@ const TeamLoader = {
                 this.renderTeam(data.data);
             } else {
                 grid.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; color: var(--color-gray-dark); padding: 3rem;">
+                    <div style="grid-column: 1/-1; text-align: center; color: var(--color-gray); padding: 3rem; background: var(--color-charcoal); border: 1px solid var(--color-charcoal-light); border-radius: var(--border-radius-lg);">
                         <p>No hay barberos registrados en esta sucursal actualmente.</p>
                     </div>
                 `;
@@ -64,8 +77,9 @@ const TeamLoader = {
         } catch (error) {
             console.error('Error loading team:', error);
             grid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; color: var(--color-error); padding: 2rem;">
-                    <p>Error al cargar el equipo. Por favor intenta recargar.</p>
+                <div style="grid-column: 1/-1; text-align: center; color: var(--color-white-off); padding: 3rem; background: var(--color-charcoal); border: 1px solid var(--color-charcoal-light); border-radius: var(--border-radius-lg);">
+                    <p style="margin-bottom: var(--space-4);">No pudimos cargar los barberos. Intenta nuevamente.</p>
+                    <button class="btn btn--secondary btn--sm" onclick="TeamLoader.loadTeam(${branchId})" style="display: inline-flex; margin: 0 auto;">Reintentar</button>
                 </div>
             `;
         }

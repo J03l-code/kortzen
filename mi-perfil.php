@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .title {
             font-size: 2rem;
-            color: #333333;
+            color: #FFFFFF;
         }
 
         .profile-card {

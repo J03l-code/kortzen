@@ -6,34 +6,34 @@
 :root {
   /* =================== COLOR PALETTE =================== */
 
-  /* Primary - Light Foundations */
-  --color-black-matte: #FFFFFF;
-  --color-charcoal: #F5F5F5;
-  --color-charcoal-light: #E8E8E8;
+  /* Primary - Dark Foundations */
+  --color-black-matte: #050505;        /* Fondos principales negros */
+  --color-charcoal: #111111;           /* Carbón profundo / Fondos secundarios */
+  --color-charcoal-light: #171717;     /* Gris muy oscuro / Bordes finos */
 
-  /* Accent - Elegant Dark Gray */
-  --color-gold: #333333;
-  --color-gold-light: #555555;
-  --color-gold-dark: #1A1A1A;
-  --color-bronze: #444444;
+  /* Accent - Pure Monochrome */
+  --color-gold: #FFFFFF;               /* Blanco puro para acentos */
+  --color-gold-light: #D4D4D4;         /* Gris claro */
+  --color-gold-dark: #A3A3A3;          /* Gris secundario */
+  --color-bronze: #242424;             /* Gris oscuro */
 
   /* Text Colors */
-  --color-white-off: #1A1A1A;
-  --color-white-pure: #000000;
-  --color-gray-light: #555555;
-  --color-gray: #666666;
-  --color-gray-dark: #999999;
+  --color-white-off: #F5F5F5;          /* Blanco suavizado para texto principal */
+  --color-white-pure: #FFFFFF;         /* Blanco puro */
+  --color-gray-light: #A3A3A3;         /* Gris secundario para descripciones */
+  --color-gray: #666666;               /* Gris medio */
+  --color-gray-dark: #3A3A3A;          /* Gris medio oscuro */
 
-  /* Semantic Colors */
-  --color-success: #4A7C59;
-  --color-error: #8B3A3A;
-  --color-warning: #8B7355;
+  /* Semantic Colors - Minimal & Legible */
+  --color-success: #F5F5F5;
+  --color-error: #FFFFFF;
+  --color-warning: #D4D4D4;
 
   /* =================== TYPOGRAPHY =================== */
 
   /* Font Families */
-  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --font-body: 'Montserrat', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body: 'Plus Jakarta Sans', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 
   /* Font Sizes - Mobile First */
   --text-xs: 0.75rem;

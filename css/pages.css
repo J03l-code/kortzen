@@ -177,7 +177,7 @@
     position: fixed;
     inset: 0;
     z-index: var(--z-modal);
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(5, 5, 5, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -289,8 +289,7 @@
 }
 
 .about-intro__image-wrapper {
-    background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
-
+    background: linear-gradient(135deg, #111111 0%, #050505 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -540,6 +539,25 @@
     background-color: var(--color-gold);
 }
 
+@media (max-width: 767px) {
+    .testimonials-slider {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: var(--space-4);
+    }
+    .testimonials-track {
+        transform: none !important;
+    }
+    .testimonial {
+        scroll-snap-align: center;
+        flex: 0 0 100%;
+    }
+    .testimonials-dots {
+        display: none !important;
+    }
+}
+
 /* =================== HIGHLIGHTS SECTION =================== */
 
 .highlights-grid {
@@ -654,4 +672,70 @@
 
 .login-card__footer a {
     color: var(--color-gold);
+}
+
+/* =================== EL METODO KORTZEN =================== */
+
+.method-container {
+    margin-top: var(--space-16);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: var(--space-16);
+}
+
+.method-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    color: var(--color-white-off);
+    margin-bottom: var(--space-8);
+    text-align: center;
+}
+
+.method-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+}
+
+@media (min-width: 768px) {
+    .method-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .method-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-6);
+    }
+}
+
+.method-step {
+    position: relative;
+    padding-top: var(--space-12);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.method-step__number {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: 300;
+    color: var(--color-gray);
+    position: absolute;
+    top: var(--space-2);
+    left: 0;
+    line-height: 1;
+}
+
+.method-step__title {
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--color-white-off);
+    margin-bottom: var(--space-2);
+}
+
+.method-step__desc {
+    font-size: var(--text-sm);
+    color: var(--color-gray-light);
+    line-height: var(--leading-relaxed);
 }

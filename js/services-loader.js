@@ -83,21 +83,24 @@ const ServicesLoader = {
         const card = document.createElement('div');
         card.className = 'service-card revealed'; // Add 'revealed' class immediately
         card.setAttribute('data-reveal', '');
-        // Force visibility styles inline to prevent any CSS/JS conflict hiding it
         card.style.opacity = '1';
         card.style.transform = 'translateY(0)';
 
         const price = parseFloat(service.precio).toFixed(2);
         const cat = service.categoria || 'General';
+        const tagHtml = service.tag ? `<span class="service-card__tag-badge">${service.tag}</span>` : '';
+        const beneficioHtml = service.beneficio ? `<span class="service-card__benefit-text">${service.beneficio}</span>` : '';
 
         card.innerHTML = `
             <div class="service-card__image-wrapper">
                  <img src="${service.foto_url || '/assets/images/service-placeholder.jpg'}" alt="${service.nombre}" class="service-card__image" onerror="this.src='https://ui-avatars.com/api/?name=${service.nombre}&background=333333&color=fff&size=128'">
+                 ${tagHtml}
             </div>
             
             <div class="service-card__content">
                 <span class="service-card__category">${cat}</span>
                 <h3 class="service-card__title">${service.nombre}</h3>
+                ${beneficioHtml}
                 <p class="service-card__desc">${service.descripcion || ''}</p>
                 <div class="service-card__footer">
                     <span class="service-card__price">$${price}</span>

@@ -5,11 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description"
-    content="KORTZEN - Barbería Premium. Experiencia de lujo en corte y cuidado masculino. Tradición y modernidad fusionadas.">
-  <meta name="keywords" content="barbería, corte de pelo, afeitado, tratamientos faciales, barbería premium, lujo">
+    content="KORTZEN es una barbería de autor premium en Quito (Llano Chico). Cortes de cabello de precisión, diseño de barba y asesoría de estilo personalizada.">
+  <meta name="keywords" content="barbería en Quito, barbería Llano Chico, corte masculino Quito, diseño de barba, corte degradado, afeitado tradicional">
   <meta name="author" content="KORTZEN">
 
-  <title>KORTZEN | Barbería Premium</title>
+  <title>KORTZEN | Barbería de Autor en Quito</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
@@ -42,6 +42,64 @@
   <meta name="apple-mobile-web-app-title" content="KORTZEN">
   <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
   <script src="/js/pwa.js" defer></script>
+
+  <!-- Local Business Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BarberShop",
+    "name": "KORTZEN Barbería de Autor",
+    "image": "https://kortzenbrb.jiyanedesign.com/assets/images/barber-working.jpg",
+    "@id": "https://kortzenbrb.jiyanedesign.com/#barbershop",
+    "url": "https://kortzenbrb.jiyanedesign.com",
+    "telephone": "+593988422770",
+    "priceRange": "$$",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Llano Chico",
+      "addressLocality": "Quito",
+      "addressRegion": "Pichincha",
+      "postalCode": "170150",
+      "addressCountry": "EC"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": -0.1352812,
+      "longitude": -78.443467
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Thursday",
+          "Friday"
+        ],
+        "opens": "14:00",
+        "closes": "21:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Wednesday",
+          "Saturday"
+        ],
+        "opens": "10:00",
+        "closes": "21:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": "Sunday",
+        "opens": "14:00",
+        "closes": "20:00"
+      }
+    ],
+    "sameAs": [
+      "https://www.instagram.com/mateo.josue_"
+    ]
+  }
+  </script>
 </head>
 
 <body>
@@ -84,12 +142,33 @@
 
   <!-- Mobile Navigation -->
   <nav class="mobile-nav" id="mobile-nav" role="navigation" aria-label="Navegación móvil">
-    <a href="/" class="mobile-nav__link">Inicio</a>
-    <a href="/servicios.html" class="mobile-nav__link">Servicios</a>
-    <a href="/nosotros.html" class="mobile-nav__link">Equipo</a>
-    <a href="/galeria.html" class="mobile-nav__link">Galería</a>
-    <a href="/contacto.html" class="mobile-nav__link">Contacto</a>
-    <a href="/cliente-login.php" class="btn btn--primary mobile-nav__cta">Reservar Cita</a>
+    <div class="mobile-nav__links">
+      <a href="/" class="mobile-nav__link">Inicio</a>
+      <a href="/servicios.html" class="mobile-nav__link">Servicios</a>
+      <a href="/nosotros.html" class="mobile-nav__link">Equipo</a>
+      <a href="/galeria.html" class="mobile-nav__link">Galería</a>
+      <a href="/contacto.html" class="mobile-nav__link">Contacto</a>
+    </div>
+    <div class="mobile-nav__footer">
+      <a href="/cliente-login.php" class="btn btn--primary mobile-nav__cta">Reservar Cita</a>
+      <div class="mobile-nav__meta">
+        <div class="mobile-nav__meta-item">
+          <span class="mobile-nav__meta-label">Ubicación</span>
+          <span class="mobile-nav__meta-value">Llano Chico, Quito, Ecuador</span>
+        </div>
+        <div class="mobile-nav__meta-item">
+          <span class="mobile-nav__meta-label">Horarios</span>
+          <span class="mobile-nav__meta-value">Lun - Sáb: 10:00 AM - 09:00 PM</span>
+        </div>
+        <div class="mobile-nav__meta-item">
+          <span class="mobile-nav__meta-label">Contacto</span>
+          <span class="mobile-nav__meta-value">
+            <a href="https://www.instagram.com/mateo.josue_" target="_blank">Instagram</a> / 
+            <a href="https://wa.me/5930988422770" target="_blank">WhatsApp</a>
+          </span>
+        </div>
+      </div>
+    </div>
   </nav>
 
   <main>
@@ -104,8 +183,7 @@
             type="video/mp4">
         </video>
         <!-- Overlay Gradient (Fallback & Tint) -->
-        <div class="hero__overlay"
-          style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(245,245,245,0.98) 100%);"></div>
+        <div class="hero__overlay"></div>
       </div>
 
       <div class="container">
@@ -132,11 +210,13 @@
     <!-- Infinite Marquee -->
     <div class="marquee-section">
       <div class="marquee-content">
-        <span class="marquee-item">Estilo</span>
-        <span class="marquee-item">Tradición</span>
-        <span class="marquee-item">Vanguardia</span>
-        <span class="marquee-item">Excelencia</span>
-        <span class="marquee-item">Lujo</span>
+        <span class="marquee-item">Diagnóstico personalizado</span>
+        <span class="marquee-item">Corte de precisión</span>
+        <span class="marquee-item">Diseño de barba</span>
+        <span class="marquee-item">Ondulación</span>
+        <span class="marquee-item">Texturización</span>
+        <span class="marquee-item">Asesoría de estilo</span>
+        <span class="marquee-item">Reserva en línea</span>
       </div>
     </div>
 
@@ -146,26 +226,52 @@
         <div class="about-intro" data-reveal>
           <div class="about-intro__content">
             <span class="section-header__subtitle" data-reveal-text>Nuestra Filosofía</span>
-            <h2 id="intro-title" data-reveal-text style="transition-delay: 0.1s;">Más que una Barbería,<br>un Santuario
-            </h2>
+            <h2 id="intro-title" data-reveal-text style="transition-delay: 0.1s;">Diseño de autor<br>adaptado a ti</h2>
             <div class="divider"></div>
             <p>
-              En KORTZEN, cada corte es una obra de arte. Fusionamos técnicas tradicionales
-              heredadas de generaciones con las tendencias más vanguardistas del cuidado masculino.
+              En KORTZEN entendemos que tu cabello y tu barba forman parte de tu identidad. 
+              No creemos en cortes masivos ni en soluciones genéricas. Cada sesión comienza con un diagnóstico 
+              donde estudiamos la dirección del crecimiento, la textura natural de tu cabello y las facciones de tu rostro.
             </p>
             <p style="margin-top: var(--space-4);">
-              Nuestro espacio está diseñado para que cada visita sea un momento de relajación
-              y renovación. Aquí, el tiempo se detiene mientras nuestros maestros barberos
-              transforman tu imagen.
+              Nuestros artesanos combinan la precisión clásica de la tijera y navaja libre con las tendencias contemporáneas 
+              para crear un estilo sofisticado, masculino y, sobre todo, fácil de mantener en tu rutina diaria.
             </p>
             <div class="about-intro__actions">
-              <a href="/nosotros.html" class="btn btn--ghost">Conoce Nuestra Historia</a>
-              <button id="quiz-trigger" class="btn btn--secondary">¿Cuál es tu estilo?</button>
+              <a href="/nosotros.html" class="btn btn--secondary">Conoce Nuestro Equipo</a>
+              <button id="quiz-trigger" class="btn btn--ghost">¿Cuál es tu estilo?</button>
             </div>
           </div>
           <div class="about-intro__image-wrapper">
-            <img src="/assets/images/barber-working.jpg?v=2" alt="Maestro barbero KORTZEN en acción"
-              class="about-intro__image">
+            <img src="/assets/images/barber-working.jpg?v=2" alt="Maestro barbero KORTZEN realizando un corte de precisión"
+              class="about-intro__image" loading="lazy" width="600" height="450">
+          </div>
+        </div>
+
+        <!-- El Método KORTZEN -->
+        <div class="method-container" data-reveal>
+          <h3 class="method-title">El Método KORTZEN</h3>
+          <div class="method-grid">
+            <div class="method-step">
+              <span class="method-step__number">01</span>
+              <h4 class="method-step__title">Escucha & Asesoría</h4>
+              <p class="method-step__desc">Entendemos tus expectativas, estilo de vida y las necesidades de mantenimiento que buscas.</p>
+            </div>
+            <div class="method-step">
+              <span class="method-step__number">02</span>
+              <h4 class="method-step__title">Análisis de Facciones</h4>
+              <p class="method-step__desc">Evaluamos la geometría de tu cráneo, facciones faciales y la dirección del flujo del cabello.</p>
+            </div>
+            <div class="method-step">
+              <span class="method-step__number">03</span>
+              <h4 class="method-step__title">Corte de Precisión</h4>
+              <p class="method-step__desc">Esculpimos con herramientas premium y técnicas clásicas enfocadas en el detalle y la simetría.</p>
+            </div>
+            <div class="method-step">
+              <span class="method-step__number">04</span>
+              <h4 class="method-step__title">Mantenimiento Sano</h4>
+              <p class="method-step__desc">Te explicamos qué productos y técnicas usar para peinar y mantener la salud de tu cuero cabelludo.</p>
+            </div>
           </div>
         </div>
       </div>

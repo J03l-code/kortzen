@@ -69,7 +69,7 @@ $citasHistorial = query($sqlHistorial, [$cliente['id']]);
 
         .title {
             font-size: 2rem;
-            color: #333333;
+            color: #FFFFFF;
         }
 
         .back-btn {
@@ -99,7 +99,7 @@ $citasHistorial = query($sqlHistorial, [$cliente['id']]);
         }
 
         .cita-info h3 {
-            color: #333333;
+            color: #FFFFFF;
             margin-bottom: 5px;
             font-size: 1.1rem;
         }

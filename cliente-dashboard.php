@@ -45,9 +45,9 @@ $foto = $_SESSION['cliente_foto'] ?? null;
 
     <style>
         :root {
-            --gold-primary: #D4AF37;
-            --gold-hover: #F2C94C;
-            --gold-glow: rgba(212, 175, 55, 0.4);
+            --gold-primary: #FFFFFF;
+            --gold-hover: #D4D4D4;
+            --gold-glow: rgba(255, 255, 255, 0.2);
             --bg-dark: #050505;
             --glass-bg: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.08);
@@ -62,12 +62,8 @@ $foto = $_SESSION['cliente_foto'] ?? null;
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: var(--font-body);
             background-color: var(--bg-dark);
-            /* Gradient background for depth */
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 40%);
             min-height: 100vh;
             color: var(--text-primary);
             overflow-x: hidden;
