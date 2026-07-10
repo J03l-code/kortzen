@@ -678,3 +678,62 @@ body {
 .btn-icon i {
     font-style: normal;
 }
+
+/* PWA Standalone Mode Styling */
+@media (display-mode: standalone) and (max-width: 768px) {
+    /* Hide desktop-only mobile components in standalone mode */
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+    .sidebar, .sidebar-overlay {
+        display: none !important;
+        transform: translateX(-100%) !important;
+        visibility: hidden !important;
+    }
+    /* Adjust content padding so it doesn't get cut by bottom bar */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 20px 16px 85px 16px !important;
+    }
+    /* Render bottom navigation bar */
+    .pwa-bottom-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 65px;
+        background: #111111;
+        border-top: 1px solid #222222;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 10000;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+    }
+    .pwa-bottom-nav__item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #777777;
+        text-decoration: none;
+        font-size: 10px;
+        font-family: var(--font-body);
+        font-weight: 500;
+        gap: 5px;
+        flex: 1;
+        height: 100%;
+        transition: color 0.2s ease;
+    }
+    .pwa-bottom-nav__item.active {
+        color: #ffffff;
+    }
+    .pwa-bottom-nav__item svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+    }
+}

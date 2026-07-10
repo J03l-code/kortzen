@@ -279,6 +279,10 @@ if (file_exists($googleConfigPath)) {
 
         <a href="/contacto.html" class="btn-guest">Continuar sin cuenta →</a>
 
+        <div style="margin-top: 20px; margin-bottom: 10px;">
+            <a href="login.php" style="color: #aaaaaa; font-size: 0.85rem; text-decoration: none; display: inline-block; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#aaaaaa'">Acceso Barberos y Administradores →</a>
+        </div>
+
         <a href="/" class="back-link">← Volver al inicio</a>
     </div>
 </body>

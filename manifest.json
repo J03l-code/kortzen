@@ -2,7 +2,7 @@
   "name": "KORTZEN | Barbería Premium",
   "short_name": "KORTZEN",
   "description": "KORTZEN - Barbería Premium. Reserva tu experiencia de lujo.",
-  "start_url": "/cliente-dashboard.php",
+  "start_url": "/pwa-entry.php",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#050505",

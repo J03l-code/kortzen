@@ -89,6 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn-login">Iniciar Sesión</button>
             </form>
 
+            <div style="margin-top: 15px; margin-bottom: 15px;">
+                <a href="cliente-login.php" style="color: #aaaaaa; font-size: 0.85rem; text-decoration: none; display: inline-block; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#aaaaaa'">¿Eres Cliente? Inicia Sesión Aquí →</a>
+            </div>
+
             <a href="index.html" class="back-link">← Volver al sitio</a>
         </div>
     </div>

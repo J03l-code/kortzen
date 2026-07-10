@@ -1,5 +1,6 @@
-const CACHE_NAME = 'kortzen-v2';
+const CACHE_NAME = 'kortzen-v3';
 const ASSETS_TO_CACHE = [
+  '/pwa-entry.php',
   '/cliente-dashboard.php',
   '/cliente-login.php',
   '/',
