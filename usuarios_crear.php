@@ -148,7 +148,7 @@ include 'includes/header.php';
         <?php echo $isEdit ? htmlspecialchars($usuario['nombre']) : 'Nuevo Usuario'; ?>
     </h1>
 
-    <form method="POST" action="api/usuarios_action.php">
+    <form method="POST" action="api/usuarios_action.php" enctype="multipart/form-data">
         <input type="hidden" name="action" value="<?php echo $isEdit ? 'update' : 'create'; ?>">
         <?php if ($isEdit): ?>
             <input type="hidden" name="id" value="<?php echo $usuario['id']; ?>">
@@ -190,10 +190,14 @@ include 'includes/header.php';
         </div>
 
         <div class="form-group">
-            <label class="form-label">URL Foto Perfil</label>
-            <input type="text" name="foto_url" class="form-input"
-                value="<?php echo $isEdit && isset($usuario['foto_url']) ? htmlspecialchars($usuario['foto_url']) : ''; ?>"
-                placeholder="/assets/images/barbers/barber1.jpg">
+            <label class="form-label">Foto de Perfil</label>
+            <?php if ($isEdit && !empty($usuario['foto_url'])): ?>
+                <div style="margin-bottom: 12px;">
+                    <img src="<?php echo htmlspecialchars($usuario['foto_url']); ?>" alt="Foto actual" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+                </div>
+            <?php endif; ?>
+            <input type="file" name="foto_perfil" class="form-input" accept="image/*">
+            <input type="hidden" name="foto_url" value="<?php echo $isEdit && isset($usuario['foto_url']) ? htmlspecialchars($usuario['foto_url']) : ''; ?>">
         </div>
 
         <?php if (!$isEdit): ?>

@@ -12,6 +12,34 @@ $action = $_POST['action'] ?? '';
 try {
     $pdo = getConnection();
 
+    // Procesar foto de perfil si se subió un archivo
+    $foto_url = trim($_POST['foto_url'] ?? '');
+    if (isset($_FILES['foto_perfil']) && $_FILES['foto_perfil']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['foto_perfil']['tmp_name'];
+        $fileName = $_FILES['foto_perfil']['name'];
+        $fileNameCmps = explode(".", $fileName);
+        $fileExtension = strtolower(end($fileNameCmps));
+
+        $allowedfileExtensions = array('jpg', 'jpeg', 'png', 'gif', 'webp');
+        if (in_array($fileExtension, $allowedfileExtensions)) {
+            $newFileName = 'barber_' . uniqid() . '.' . $fileExtension;
+            $uploadFileDir = '../assets/images/barbers/';
+            
+            if (!file_exists($uploadFileDir)) {
+                mkdir($uploadFileDir, 0777, true);
+            }
+            
+            $dest_path = $uploadFileDir . $newFileName;
+            if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                $foto_url = '/assets/images/barbers/' . $newFileName;
+            } else {
+                throw new Exception('Error al mover la foto de perfil al directorio de destino.');
+            }
+        } else {
+            throw new Exception('Formato de imagen no permitido (solo JPG, JPEG, PNG, GIF, WEBP).');
+        }
+    }
+
     switch ($action) {
         case 'create':
             $nombre = trim($_POST['nombre'] ?? '');
@@ -22,7 +50,6 @@ try {
 
             $biografia = trim($_POST['biografia'] ?? '');
             $especialidades = trim($_POST['especialidades'] ?? '');
-            $foto_url = trim($_POST['foto_url'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
             $comision_fin_semana = floatval($_POST['comision_fin_semana'] ?? 50.00);
@@ -65,7 +92,6 @@ try {
             $sucursal_id = !empty($_POST['sucursal_id']) ? intval($_POST['sucursal_id']) : null;
             $biografia = trim($_POST['biografia'] ?? '');
             $especialidades = trim($_POST['especialidades'] ?? '');
-            $foto_url = trim($_POST['foto_url'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
             $comision_fin_semana = floatval($_POST['comision_fin_semana'] ?? 50.00);
