@@ -447,7 +447,7 @@ function updateBranchInfoBar() {
                         ${branch.phone}
                     </span>
                 </div>
-                <button class="branch-info-bar__change" onclick="KortzenBranches.showSelector()">Cambiar sucursal</button>
+                
             </div>
         </div>
     `;
@@ -461,23 +461,19 @@ function updateBranchInfoBar() {
 }
 
 /**
- * Muestra el selector de sucursales (para cambiar)
+ * Muestra el selector de sucursales (deshabilitado temporalmente)
  */
 function showBranchSelector() {
-    createBranchSelectorModal();
+    // Deshabilitado temporalmente ya que solo hay una sucursal
 }
 
 /**
  * Inicializa el sistema de sucursales
  */
 function initBranchSelector() {
-    if (isFirstVisit()) {
-        // Primera visita: mostrar modal
-        createBranchSelectorModal();
-    } else {
-        // Ya tiene sucursal seleccionada: mostrar barra
-        updateBranchInfoBar();
-    }
+    // Forzar siempre la sucursal 1 (Llano Chico)
+    localStorage.setItem(BRANCH_STORAGE_KEY, "1");
+    updateBranchInfoBar();
 }
 
 // Exponer funciones globalmente
