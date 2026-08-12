@@ -11,9 +11,9 @@
 // Si estamos en localhost (entorno local), usamos la IP remota. Si estamos en producción, usamos localhost.
 $db_host = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false) ? '195.35.61.92' : 'localhost';
 define('DB_HOST', $db_host);
-define('DB_NAME', 'u434851126_barb');  // Nombre de tu base de datos (actualiza este valor)
-define('DB_USER', 'u434851126_barb_usr');     // Usuario de base de datos (actualiza este valor)
-define('DB_PASS', 'Kortzen2026');                    // Contraseña de base de datos (actualiza este valor)
+define('DB_NAME', 'u434851126_kortzen');  // Nombre de tu base de datos (actualiza este valor)
+define('DB_USER', 'u434851126_kortzenusr');     // Usuario de base de datos (actualiza este valor)
+define('DB_PASS', 'Kortzen2026!');                    // Contraseña de base de datos (actualiza este valor)
 define('DB_CHARSET', 'utf8mb4');
 
 // Configuración de Zona Horaria (Ecuador)
