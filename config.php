@@ -20,7 +20,7 @@ define('DB_CHARSET', 'utf8mb4');
 date_default_timezone_set('America/Guayaquil');
 
 // Configuración de la aplicación
-define('SITE_URL', 'https://kortzenbrb.jiyanedesign.com');  // URL de tu sitio
+define('SITE_URL', 'https://kortzen.com');  // URL de tu sitio
 define('SITE_NAME', 'Sistema de Gestión de Barberías');  // Nombre del sitio
 
 // Configuración de sesión

@@ -40,8 +40,8 @@ if ($isLocalhost) {
     define('SITE_BASE_URL', 'http://localhost:2020');
 } else {
     // Producción
-    define('GOOGLE_REDIRECT_URI', 'https://kortzenbrb.jiyanedesign.com/api/auth/google-callback.php');
-    define('SITE_BASE_URL', 'https://kortzenbrb.jiyanedesign.com');
+    define('GOOGLE_REDIRECT_URI', 'https://kortzen.com/api/auth/google-callback.php');
+    define('SITE_BASE_URL', 'https://kortzen.com');
 }
 
 // URLs de Google OAuth 2.0
