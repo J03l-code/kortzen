@@ -70,7 +70,7 @@
 .marquee-content {
     display: flex;
     width: fit-content;
-    animation: marquee-scroll 30s linear infinite;
+    animation: marquee-scroll 60s linear infinite;
 }
 
 .marquee-item {
