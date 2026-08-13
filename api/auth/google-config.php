@@ -49,8 +49,8 @@ define('GOOGLE_AUTH_URL', 'https://accounts.google.com/o/oauth2/v2/auth');
 define('GOOGLE_TOKEN_URL', 'https://oauth2.googleapis.com/token');
 define('GOOGLE_USERINFO_URL', 'https://www.googleapis.com/oauth2/v2/userinfo');
 
-// Scopes que solicitamos (solo lectura de perfil y email)
-define('GOOGLE_SCOPES', 'openid email profile');
+// Scopes que solicitamos (perfil, email y calendario de eventos)
+define('GOOGLE_SCOPES', 'openid email profile https://www.googleapis.com/auth/calendar.events');
 
 /**
  * Genera la URL de autorización de Google

@@ -81,12 +81,25 @@ try {
         $stmt->execute([$clienteId, $servicioId, $barberoId, $sucursalId, $fechaHora, $precio]);
     }
 
-    // 5. Enviar Correo
+    // 5. Sincronización Automática con Google Calendar (Opción A)
+    if (!empty($_SESSION['google_access_token'])) {
+        require_once '../includes/google_calendar_helper.php';
+        try {
+            agendarEnGoogleCalendar($_SESSION['google_access_token'], [
+                'servicio' => $nombreServicio,
+                'barbero' => $nombreBarbero,
+                'fecha_hora' => $fechaHora,
+                'duracion_minutos' => 35
+            ]);
+        } catch (Exception $eg) {
+            // Silencioso para no romper el flujo principal
+        }
+    }
+
+    // 6. Enviar Correo
     require_once '../includes/email_helper.php';
     $fechaLegible = date('d/m/Y', strtotime($fecha));
 
-    // Intentar enviar correo pero no fallar si el mail server no responde (try catch silencioso o simplemente if)
-    // mail() devuelve bool, no lanza excep.
     enviarCorreoReserva($cliente['email'], $cliente['nombre'], [
         'servicio' => $nombreServicio,
         'barbero' => $nombreBarbero,

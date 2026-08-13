@@ -137,6 +137,7 @@ try {
     $_SESSION['cliente_email'] = $email;
     $_SESSION['cliente_foto'] = $fotoPerfil;
     $_SESSION['cliente_google_id'] = $googleId;
+    $_SESSION['google_access_token'] = $tokenData['access_token'] ?? null;
     $_SESSION['cliente_logged_in'] = true;
 
     // Regenerar ID de sesión por seguridad
