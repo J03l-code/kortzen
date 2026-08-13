@@ -16,6 +16,11 @@
     transition: all var(--transition-base);
 }
 
+/* Offset header cleanly below the top branch info bar */
+body.has-branch-bar .header {
+    top: 36px !important;
+}
+
 .header__container {
     padding-inline: var(--space-4);
     /* Default container padding */
