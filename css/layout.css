@@ -406,7 +406,7 @@
 
 .footer__social-link:hover {
     background-color: var(--color-gold);
-    color: var(--color-black-matte);
+    color: #FFFFFF;
 }
 
 /* Footer Bottom */
