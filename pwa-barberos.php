@@ -56,7 +56,7 @@ if (empty($barberos)) {
 
     <link rel="stylesheet" href="/css/variables.css?v=23">
     <link rel="stylesheet" href="/css/reset.css?v=23">
-    <link rel="stylesheet" href="/css/pwa-native.css?v=3">
+    <link rel="stylesheet" href="/css/pwa-native.css?v=50">
 
     <link rel="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
