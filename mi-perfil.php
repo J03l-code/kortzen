@@ -165,6 +165,23 @@ if ($cliente_id) {
                 </svg>
             </a>
 
+            <a href="https://wa.me/593988422770?text=Hola%20KORTZEN,%20tengo%20una%20consulta" target="_blank" class="pwa-benefit-item">
+                <div class="pwa-benefit-item__left">
+                    <div class="pwa-benefit-item__icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="pwa-benefit-item__title">Atención por WhatsApp</div>
+                        <div class="pwa-benefit-item__desc">Contacto directo con recepción</div>
+                    </div>
+                </div>
+                <svg class="pwa-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </a>
+
             <a href="mis-citas.php" class="pwa-benefit-item">
                 <div class="pwa-benefit-item__left">
                     <div class="pwa-benefit-item__icon">

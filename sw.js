@@ -22,6 +22,7 @@ const ASSETS_TO_CACHE = [
   '/css/layout.css',
   '/css/pages.css',
   '/css/animations.css',
+  '/js/calendar-helper.js',
   '/js/main.js',
   '/assets/icons/favicon.png',
   '/manifest.json'
@@ -84,5 +85,48 @@ self.addEventListener('fetch', event => {
           return networkResponse;
         });
       })
+  );
+});
+
+// Push Notification Event
+self.addEventListener('push', event => {
+  let data = { title: 'KORTZEN Barbería', body: 'Tienes un nuevo recordatorio de tu cita ✂️', icon: '/assets/icons/favicon.png' };
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/assets/icons/favicon.png',
+    badge: '/assets/icons/favicon.png',
+    vibrate: [100, 50, 100],
+    data: { url: data.url || '/cliente-dashboard.php' }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Notification Click Event
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const urlToOpen = event.notification.data.url || '/cliente-dashboard.php';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      for (let client of windowClients) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
   );
 });

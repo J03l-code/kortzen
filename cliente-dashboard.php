@@ -65,6 +65,7 @@ if ($cliente_id) {
     <meta name="apple-mobile-web-app-title" content="KORTZEN">
     <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
     <script src="/js/pwa.js" defer></script>
+    <script src="/js/calendar-helper.js?v=1"></script>
 </head>
 
 <body class="pwa-app-mode">
@@ -72,9 +73,13 @@ if ($cliente_id) {
     <div class="pwa-container">
         <!-- Native Top Bar (Screen 1) -->
         <header class="pwa-header">
-            <div style="width: 32px;"></div>
+            <a href="https://wa.me/593988422770?text=Hola%20KORTZEN,%20tengo%20una%20consulta" target="_blank" class="pwa-header__btn" title="Soporte WhatsApp">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg>
+            </a>
             <div class="pwa-header__logo">KORTZEN</div>
-            <button class="pwa-header__btn" title="Notificaciones" onclick="alert('No tienes notificaciones pendientes')">
+            <button class="pwa-header__btn" id="pwaBellBtn" title="Notificaciones Push" onclick="activarNotificacionesPWA()">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -186,7 +191,14 @@ if ($cliente_id) {
                     <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', $ts_cita); ?> • KORTZEN Llano Chico</div>
                 </div>
             </div>
-            <div style="display: flex; gap: 0.6rem; margin-top: 0.75rem;">
+            
+            <!-- Calendar buttons -->
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                <button type="button" class="pwa-btn-secondary" style="flex: 1; text-align: center; font-size: 0.75rem;" onclick="KortzenCalendar.addToGoogleCalendar('Cita en KORTZEN: <?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte'); ?>', 'Cita agendada con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Barbero'); ?>', 'KORTZEN Llano Chico, Quito', '<?php echo $proxima_cita['fecha_hora']; ?>')">📅 GOOGLE CALENDAR</button>
+                <button type="button" class="pwa-btn-secondary" style="flex: 1; text-align: center; font-size: 0.75rem;" onclick="KortzenCalendar.downloadIcs('Cita en KORTZEN: <?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte'); ?>', 'Cita agendada con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Barbero'); ?>', 'KORTZEN Llano Chico, Quito', '<?php echo $proxima_cita['fecha_hora']; ?>')">🍏 APPLE / ICS</button>
+            </div>
+
+            <div style="display: flex; gap: 0.6rem; margin-top: 0.5rem;">
                 <a href="mis-citas.php" class="pwa-btn-secondary" style="flex: 1; text-align: center;">VER CITAS</a>
                 <form action="/api/cancelar_cita.php" method="POST" style="flex: 1;" onsubmit="return confirm('¿Estás seguro de que deseas cancelar esta cita?');">
                     <input type="hidden" name="cita_id" value="<?php echo $proxima_cita['id']; ?>">
@@ -195,6 +207,85 @@ if ($cliente_id) {
             </div>
         </div>
         <?php endif; ?>
+
+        <!-- Calificar servicio (Reseña) Card -->
+        <div class="pwa-section-title" style="margin-top: 1.5rem;">Califica tu experiencia</div>
+        <div class="pwa-banner-card" style="flex-direction: column; align-items: flex-start; gap: 0.75rem;">
+            <div class="pwa-banner-card__title" style="font-size: 0.95rem;">¿Qué te pareció tu último servicio? ⭐</div>
+            <div class="pwa-banner-card__desc">Tu opinión nos ayuda a mantener el estándar de excelencia KORTZEN.</div>
+            
+            <form id="resenaPwaForm" onsubmit="enviarResenaPwa(event)" style="width: 100%; margin-top: 0.3rem;">
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem; font-size: 1.4rem;">
+                    <span class="star-rating" data-val="1" onclick="setRating(1)" style="cursor:pointer; opacity: 0.3;">★</span>
+                    <span class="star-rating" data-val="2" onclick="setRating(2)" style="cursor:pointer; opacity: 0.3;">★</span>
+                    <span class="star-rating" data-val="3" onclick="setRating(3)" style="cursor:pointer; opacity: 0.3;">★</span>
+                    <span class="star-rating" data-val="4" onclick="setRating(4)" style="cursor:pointer; opacity: 0.3;">★</span>
+                    <span class="star-rating" data-val="5" onclick="setRating(5)" style="cursor:pointer; color: #FFD700;">★</span>
+                </div>
+                <input type="hidden" name="calificacion" id="inputCalificacion" value="5">
+                <textarea name="comentario" placeholder="Escribe tu comentario o reseña..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--pwa-border); border-radius: 10px; font-family: inherit; font-size: 0.82rem; margin-bottom: 0.6rem; resize: none; min-height: 60px;" required></textarea>
+                <button type="submit" class="pwa-btn-black" style="padding: 0.75rem; font-size: 0.8rem; margin-top: 0;">ENVIAR CALIFICACIÓN</button>
+            </form>
+        </div>
+
+        <script>
+            function setRating(val) {
+                document.getElementById('inputCalificacion').value = val;
+                const stars = document.querySelectorAll('.star-rating');
+                stars.forEach((s, idx) => {
+                    if (idx < val) {
+                        s.style.opacity = '1';
+                        s.style.color = '#FFD700';
+                    } else {
+                        s.style.opacity = '0.3';
+                        s.style.color = '#111';
+                    }
+                });
+            }
+
+            async function enviarResenaPwa(e) {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+
+                try {
+                    const res = await fetch('/api/crear_resena_cliente.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    alert(data.message || 'Gracias por tu calificación');
+                    if (data.success) {
+                        form.reset();
+                        setRating(5);
+                    }
+                } catch (err) {
+                    alert('Gracias por tu opinión.');
+                }
+            }
+
+            function activarNotificacionesPWA() {
+                if ('Notification' in window) {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            alert('✓ Notificaciones Push activadas. Recibirás recordatorios directos de tus citas.');
+                            if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+                                navigator.serviceWorker.ready.then(reg => {
+                                    reg.showNotification('KORTZEN PWA ✂️', {
+                                        body: '¡Notificaciones de citas activadas correctamente!',
+                                        icon: '/assets/icons/favicon.png'
+                                    });
+                                });
+                            }
+                        } else {
+                            alert('Permiso de notificaciones no otorgado.');
+                        }
+                    });
+                } else {
+                    alert('Tu navegador no soporta notificaciones nativas.');
+                }
+            }
+        </script>
 
         <!-- Botón negro de Reserva flotante -->
         <a href="reservar.php" class="pwa-btn-black">
