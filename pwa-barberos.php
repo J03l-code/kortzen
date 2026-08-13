@@ -11,7 +11,7 @@ require_once 'config.php';
 $barberos = [];
 try {
     $pdo = getConnection();
-    $stmt = $pdo->query("SELECT id, nombre, rol, email, biografia, especialidades, foto_url FROM usuarios WHERE activo = 1 AND rol != 'cliente' ORDER BY id ASC");
+    $stmt = $pdo->query("SELECT id, nombre, rol, email, biografia, especialidades, foto_url FROM usuarios WHERE activo = 1 AND rol = 'barbero' ORDER BY id ASC");
     $barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
 }
