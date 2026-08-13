@@ -79,6 +79,18 @@ if ($cliente_id) {
             <div style="width: 32px;"></div>
         </header>
 
+        <!-- Alert Messages -->
+        <?php if (isset($_GET['success'])): ?>
+            <div style="background: #e6f4ea; color: #137333; border: 1px solid #ceead6; padding: 0.85rem 1rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1.25rem; font-weight: 500;">
+                ✓ <?php echo htmlspecialchars($_GET['success']); ?>
+            </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['error'])): ?>
+            <div style="background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; padding: 0.85rem 1rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1.25rem; font-weight: 500;">
+                ⚠️ <?php echo htmlspecialchars($_GET['error']); ?>
+            </div>
+        <?php endif; ?>
+
         <!-- Dynamic List of Appointments -->
         <div class="pwa-section-title">Próximas citas</div>
         
@@ -99,7 +111,13 @@ if ($cliente_id) {
                         <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', $ts_fut); ?> • <?php echo htmlspecialchars($c['sucursal'] ?? 'KORTZEN Llano Chico'); ?></div>
                     </div>
                 </div>
-                <a href="reservar.php?reagendar_id=<?php echo $c['id']; ?>" class="pwa-btn-secondary">REAGENDAR CITA</a>
+                <div style="display: flex; gap: 0.6rem; margin-top: 0.75rem;">
+                    <a href="reservar.php?reagendar_id=<?php echo $c['id']; ?>" class="pwa-btn-secondary" style="flex: 1; text-align: center;">REAGENDAR</a>
+                    <form action="/api/cancelar_cita.php" method="POST" style="flex: 1;" onsubmit="return confirm('¿Estás seguro de que deseas cancelar esta cita?');">
+                        <input type="hidden" name="cita_id" value="<?php echo $c['id']; ?>">
+                        <button type="submit" class="pwa-btn-secondary" style="width: 100%; color: #dc3545; border-color: #dc3545; background: #fff; cursor: pointer;">CANCELAR</button>
+                    </form>
+                </div>
             </div>
             <?php endforeach; ?>
         <?php else: ?>

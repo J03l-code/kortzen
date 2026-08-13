@@ -163,7 +163,13 @@ if ($cliente_id) {
                     <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', $ts_cita); ?> • KORTZEN Llano Chico</div>
                 </div>
             </div>
-            <a href="mis-citas.php" class="pwa-btn-secondary">VER TODAS MIS CITAS</a>
+            <div style="display: flex; gap: 0.6rem; margin-top: 0.75rem;">
+                <a href="mis-citas.php" class="pwa-btn-secondary" style="flex: 1; text-align: center;">VER CITAS</a>
+                <form action="/api/cancelar_cita.php" method="POST" style="flex: 1;" onsubmit="return confirm('¿Estás seguro de que deseas cancelar esta cita?');">
+                    <input type="hidden" name="cita_id" value="<?php echo $proxima_cita['id']; ?>">
+                    <button type="submit" class="pwa-btn-secondary" style="width: 100%; color: #dc3545; border-color: #dc3545; background: #fff; cursor: pointer;">CANCELAR</button>
+                </form>
+            </div>
         </div>
         <?php endif; ?>
 
