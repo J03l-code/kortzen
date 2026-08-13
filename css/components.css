@@ -49,13 +49,14 @@
 /* Secondary Button - Outlined */
 .btn--secondary {
     background-color: transparent;
-    color: var(--color-white-off);
-    border-color: var(--color-white-off);
+    color: #FFFFFF;
+    border-color: rgba(255, 255, 255, 0.7);
 }
 
 .btn--secondary:hover:not(:disabled) {
-    background-color: var(--color-white-off);
-    color: var(--color-black-matte);
+    background-color: #FFFFFF;
+    color: #111111;
+    border-color: #FFFFFF;
 }
 
 /* Ghost Button - Gold outlined */
