@@ -1,0 +1,771 @@
+/* =====================================================
+   KORTZEN - PWA Native App Design System
+   Matches exact native mobile app UI design spec
+   ===================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --pwa-bg: #FAF9F6;
+    --pwa-card-bg: #FFFFFF;
+    --pwa-border: #EAEAEA;
+    --pwa-text-main: #1A1A1A;
+    --pwa-text-muted: #777777;
+    --pwa-text-light: #999999;
+    --pwa-black: #111111;
+    --pwa-gold: #C0A062;
+    --pwa-gold-light: #F4EFE6;
+    --pwa-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    --pwa-radius-card: 16px;
+    --pwa-radius-hero: 20px;
+    --pwa-radius-btn: 12px;
+}
+
+body.pwa-app-mode {
+    background-color: var(--pwa-bg) !important;
+    color: var(--pwa-text-main) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    padding-bottom: 90px !important;
+    margin: 0 !important;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.pwa-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0 1rem 2rem 1rem;
+}
+
+/* --- Native Top Bar --- */
+.pwa-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    background: var(--pwa-bg);
+    z-index: 100;
+}
+
+.pwa-header__btn {
+    background: none;
+    border: none;
+    color: var(--pwa-text-main);
+    cursor: pointer;
+    padding: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.pwa-header__btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.pwa-header__logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--pwa-text-main);
+    text-transform: uppercase;
+}
+
+.pwa-header__title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--pwa-text-main);
+}
+
+.pwa-subtitle {
+    font-size: 0.875rem;
+    color: var(--pwa-text-muted);
+    text-align: center;
+    margin-bottom: 1.25rem;
+    line-height: 1.4;
+}
+
+/* --- Screen 1: Hero Banner --- */
+.pwa-hero-card {
+    position: relative;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.85) 100%), url('/assets/images/barber-working.jpg') center/cover no-repeat;
+    border-radius: var(--pwa-radius-hero);
+    min-height: 230px;
+    padding: 1.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    color: #FFFFFF;
+    box-shadow: var(--pwa-shadow);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.pwa-hero-card__title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 0.35rem;
+    color: #FFFFFF;
+}
+
+.pwa-hero-card__subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 400;
+}
+
+/* --- Quick Actions Grid (Accesos Rápidos) --- */
+.pwa-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--pwa-text-main);
+    margin-bottom: 0.85rem;
+}
+
+.pwa-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.65rem;
+    margin-bottom: 1.5rem;
+}
+
+.pwa-quick-action-btn {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: var(--pwa-radius-card);
+    padding: 1rem 0.35rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    text-decoration: none;
+    color: var(--pwa-text-main);
+    font-size: 0.75rem;
+    font-weight: 500;
+    box-shadow: var(--pwa-shadow);
+    transition: all 0.2s ease;
+}
+
+.pwa-quick-action-btn:active {
+    transform: scale(0.96);
+    background: #F0F0F0;
+}
+
+.pwa-quick-action-btn svg {
+    color: #333333;
+}
+
+/* --- Banner Card (El Método KORTZEN) --- */
+.pwa-banner-card {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: var(--pwa-radius-card);
+    padding: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    text-decoration: none;
+    color: var(--pwa-text-main);
+    box-shadow: var(--pwa-shadow);
+    margin-bottom: 1.5rem;
+}
+
+.pwa-banner-card__left {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.pwa-banner-card__icon-box {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--pwa-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pwa-black);
+    flex-shrink: 0;
+}
+
+.pwa-banner-card__title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--pwa-text-main);
+    margin-bottom: 0.15rem;
+}
+
+.pwa-banner-card__desc {
+    font-size: 0.8rem;
+    color: var(--pwa-text-muted);
+}
+
+.pwa-banner-card__link {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--pwa-text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+}
+
+/* --- Screen 2: Services Catalog Cards --- */
+.pwa-services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+.pwa-service-card {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: var(--pwa-radius-card);
+    padding: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+    color: var(--pwa-text-main);
+    box-shadow: var(--pwa-shadow);
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.pwa-service-card:active {
+    transform: scale(0.98);
+}
+
+.pwa-service-card__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.pwa-service-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--pwa-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pwa-black);
+    flex-shrink: 0;
+}
+
+.pwa-service-card__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pwa-service-card__name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--pwa-text-main);
+    margin-bottom: 0.2rem;
+}
+
+.pwa-service-card__desc {
+    font-size: 0.78rem;
+    color: var(--pwa-text-muted);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.pwa-service-card__right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    margin-left: 0.75rem;
+}
+
+.pwa-service-card__price {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--pwa-text-main);
+}
+
+.pwa-chevron {
+    color: var(--pwa-text-light);
+}
+
+/* --- Screen 3: Booking Wizard (Reservar Cita) --- */
+.pwa-booking-step {
+    margin-bottom: 1.5rem;
+}
+
+.pwa-booking-step__label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--pwa-text-main);
+    margin-bottom: 0.75rem;
+}
+
+/* Horizontal Calendar Scroll */
+.pwa-date-scroll {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.pwa-date-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.pwa-date-pill {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: 14px;
+    padding: 0.75rem 0.9rem;
+    text-align: center;
+    min-width: 62px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.pwa-date-pill__day {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--pwa-text-muted);
+    margin-bottom: 0.2rem;
+}
+
+.pwa-date-pill__num {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--pwa-text-main);
+}
+
+.pwa-date-pill--active {
+    background: var(--pwa-black) !important;
+    border-color: var(--pwa-black) !important;
+}
+
+.pwa-date-pill--active .pwa-date-pill__day,
+.pwa-date-pill--active .pwa-date-pill__num {
+    color: #FFFFFF !important;
+}
+
+/* Time Slots Grid */
+.pwa-time-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+}
+
+.pwa-time-pill {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: 10px;
+    padding: 0.65rem 0.2rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--pwa-text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pwa-time-pill--active {
+    background: var(--pwa-black) !important;
+    color: #FFFFFF !important;
+    border-color: var(--pwa-black) !important;
+}
+
+/* Barber Radio List */
+.pwa-barbers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.pwa-barber-card {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: var(--pwa-radius-card);
+    padding: 0.9rem 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pwa-barber-card__left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.pwa-barber-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--pwa-border);
+}
+
+.pwa-barber-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--pwa-text-main);
+}
+
+.pwa-barber-spec {
+    font-size: 0.76rem;
+    color: var(--pwa-text-muted);
+}
+
+.pwa-radio {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--pwa-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pwa-barber-card--active .pwa-radio {
+    border-color: var(--pwa-black);
+    background: var(--pwa-black);
+}
+
+.pwa-barber-card--active .pwa-radio::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #FFFFFF;
+}
+
+/* Summary Card */
+.pwa-summary-card {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: var(--pwa-radius-card);
+    padding: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pwa-summary-info {
+    font-size: 0.82rem;
+    color: var(--pwa-text-muted);
+    line-height: 1.45;
+}
+
+.pwa-summary-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--pwa-text-main);
+    margin-bottom: 0.25rem;
+}
+
+/* --- Primary Black Button --- */
+.pwa-btn-black {
+    width: 100%;
+    padding: 1.1rem;
+    background: var(--pwa-black) !important;
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: var(--pwa-radius-btn);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+    margin-top: 1rem;
+}
+
+.pwa-btn-black:active {
+    transform: scale(0.98);
+}
+
+/* --- Screen 4: Profile & Loyalty (Mi Perfil) --- */
+.pwa-profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: var(--pwa-radius-card);
+    padding: 1.15rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--pwa-shadow);
+}
+
+.pwa-profile-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pwa-profile-avatar-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #EAEAEA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--pwa-text-main);
+    border: 2px solid var(--pwa-card-bg);
+}
+
+.pwa-profile-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--pwa-text-main);
+    margin-bottom: 0.15rem;
+}
+
+.pwa-profile-tier {
+    font-size: 0.8rem;
+    color: var(--pwa-text-muted);
+}
+
+/* Points Black Card */
+.pwa-points-card {
+    background: var(--pwa-black);
+    color: #FFFFFF;
+    border-radius: var(--pwa-radius-hero);
+    padding: 1.35rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.pwa-points-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.35rem;
+}
+
+.pwa-points-value {
+    font-size: 1.85rem;
+    font-weight: 700;
+    margin-bottom: 0.85rem;
+    color: #FFFFFF;
+}
+
+.pwa-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.pwa-progress-fill {
+    height: 100%;
+    background: #C0A062;
+    border-radius: 4px;
+}
+
+/* Next Appointment Card */
+.pwa-upcoming-card {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: var(--pwa-radius-card);
+    padding: 1.15rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--pwa-shadow);
+}
+
+.pwa-upcoming-body {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.pwa-date-box {
+    background: var(--pwa-bg);
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.pwa-date-box__day {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--pwa-text-muted);
+}
+
+.pwa-date-box__num {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--pwa-text-main);
+    line-height: 1.1;
+}
+
+.pwa-date-box__month {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--pwa-text-muted);
+}
+
+.pwa-upcoming-info {
+    flex: 1;
+}
+
+.pwa-upcoming-service {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--pwa-text-main);
+    margin-bottom: 0.2rem;
+}
+
+.pwa-upcoming-detail {
+    font-size: 0.78rem;
+    color: var(--pwa-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.15rem;
+}
+
+.pwa-btn-secondary {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--pwa-bg);
+    color: var(--pwa-text-main);
+    border: 1px solid var(--pwa-border);
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+}
+
+/* Benefits Links List */
+.pwa-benefits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.pwa-benefit-item {
+    background: var(--pwa-card-bg);
+    border: 1px solid var(--pwa-border);
+    border-radius: var(--pwa-radius-card);
+    padding: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+    color: var(--pwa-text-main);
+    box-shadow: var(--pwa-shadow);
+}
+
+.pwa-benefit-item__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pwa-benefit-item__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--pwa-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pwa-black);
+}
+
+.pwa-benefit-item__title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--pwa-text-main);
+    margin-bottom: 0.15rem;
+}
+
+.pwa-benefit-item__desc {
+    font-size: 0.76rem;
+    color: var(--pwa-text-muted);
+}
+
+/* --- Native Fixed Bottom Bar --- */
+.pwa-bottom-nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #FFFFFF;
+    border-top: 1px solid var(--pwa-border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+    z-index: 9999;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.pwa-nav-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    color: var(--pwa-text-muted);
+    text-decoration: none;
+    font-size: 0.68rem;
+    font-weight: 500;
+    flex: 1;
+    transition: color 0.2s ease;
+}
+
+.pwa-nav-tab svg {
+    color: var(--pwa-text-muted);
+    transition: color 0.2s ease;
+}
+
+.pwa-nav-tab--active {
+    color: var(--pwa-black) !important;
+    font-weight: 700 !important;
+}
+
+.pwa-nav-tab--active svg {
+    color: var(--pwa-black) !important;
+}

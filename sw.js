@@ -1,7 +1,11 @@
-const CACHE_NAME = 'kortzen-v3';
+const CACHE_NAME = 'kortzen-v4';
 const ASSETS_TO_CACHE = [
   '/pwa-entry.php',
   '/cliente-dashboard.php',
+  '/pwa-servicios.php',
+  '/reservar.php',
+  '/mis-citas.php',
+  '/mi-perfil.php',
   '/cliente-login.php',
   '/',
   '/index.html',
@@ -12,6 +16,7 @@ const ASSETS_TO_CACHE = [
   '/css/variables.css',
   '/css/reset.css',
   '/css/base.css',
+  '/css/pwa-native.css',
   '/css/components.css',
   '/css/layout.css',
   '/css/pages.css',
