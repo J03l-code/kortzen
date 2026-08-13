@@ -7,19 +7,17 @@
 
 .header {
     position: fixed;
-    top: 0;
+    top: 42px !important;
     left: 0;
     right: 0;
     z-index: var(--z-fixed);
-    padding: var(--space-4) 0;
+    padding: var(--space-3) 0;
     background-color: transparent;
     transition: all var(--transition-base);
 }
 
-/* Offset header cleanly below the top branch info bar */
-body.has-branch-bar .header,
-body.has-branch-bar .header--scrolled {
-    top: 48px !important;
+.header--scrolled {
+    top: 42px !important;
 }
 
 .header__container {
