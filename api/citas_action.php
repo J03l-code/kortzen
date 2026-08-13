@@ -86,6 +86,18 @@ try {
             $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada' WHERE id = ?");
             $stmtComp->execute([$id]);
 
+            // Sumar 100 Puntos KORTZEN al cliente por completar cita
+            $stmtCitaClient = $pdo->prepare("SELECT cliente_id FROM citas WHERE id = ?");
+            $stmtCitaClient->execute([$id]);
+            $clientRow = $stmtCitaClient->fetch();
+            if ($clientRow && !empty($clientRow['cliente_id'])) {
+                try {
+                    $pdo->exec("ALTER TABLE clientes ADD COLUMN puntos INT DEFAULT 0 AFTER telefono");
+                } catch (Exception $ex) {}
+                $stmtAddPts = $pdo->prepare("UPDATE clientes SET puntos = COALESCE(puntos, 0) + 100 WHERE id = ?");
+                $stmtAddPts->execute([$clientRow['cliente_id']]);
+            }
+
             // Obtener sucursal de la cita
             $stmtCitaInfo = $pdo->prepare("SELECT sucursal_id FROM citas WHERE id = ?");
             $stmtCitaInfo->execute([$id]);

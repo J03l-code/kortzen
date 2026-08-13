@@ -20,8 +20,10 @@ $cliente_id = $_SESSION['cliente_id'] ?? $cliente['id'] ?? null;
 $nombres_arr = explode(' ', trim($nombre));
 $iniciales = strtoupper(substr($nombres_arr[0], 0, 1) . (isset($nombres_arr[1]) ? substr($nombres_arr[1], 0, 1) : ''));
 
-// Cita próxima
+// Cita próxima y Puntos KORTZEN
 $proxima_cita = null;
+$puntos_actuales = 0;
+
 if ($cliente_id) {
     try {
         $pdo = getConnection();
@@ -36,9 +38,39 @@ if ($cliente_id) {
         ");
         $stmt->execute([$cliente_id]);
         $proxima_cita = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Puntos KORTZEN
+        $stmtP = $pdo->prepare("SELECT puntos FROM clientes WHERE id = ?");
+        $stmtP->execute([$cliente_id]);
+        $rowP = $stmtP->fetch(PDO::FETCH_ASSOC);
+
+        if ($rowP && isset($rowP['puntos']) && $rowP['puntos'] !== null) {
+            $puntos_actuales = intval($rowP['puntos']);
+        } else {
+            // Si la columna no existe aún, calcular 100 pts por cita completada
+            $stmtC = $pdo->prepare("SELECT COUNT(*) * 100 as total_pts FROM citas WHERE cliente_id = ? AND estado = 'completada'");
+            $stmtC->execute([$cliente_id]);
+            $rowC = $stmtC->fetch(PDO::FETCH_ASSOC);
+            $puntos_actuales = intval($rowC['total_pts'] ?? 0);
+        }
     } catch (Exception $e) {
+        $puntos_actuales = 0;
     }
 }
+
+// Calcular Nivel y Progreso
+if ($puntos_actuales >= 1500) {
+    $tier_nombre = "Miembro KORTZEN • Nivel Oro 👑";
+    $siguiente_nivel = 3000;
+} elseif ($puntos_actuales >= 500) {
+    $tier_nombre = "Miembro KORTZEN • Nivel Plata 🥈";
+    $siguiente_nivel = 1500;
+} else {
+    $tier_nombre = "Miembro KORTZEN • Nivel Bronce 🥉";
+    $siguiente_nivel = 500;
+}
+
+$porcentaje_progreso = min(100, round(($puntos_actuales / $siguiente_nivel) * 100));
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -83,7 +115,7 @@ if ($cliente_id) {
                 <div class="pwa-profile-avatar-circle"><?php echo $iniciales; ?></div>
                 <div>
                     <div class="pwa-profile-name"><?php echo htmlspecialchars($nombre); ?></div>
-                    <div class="pwa-profile-tier">Miembro KORTZEN • Nivel Oro 👑</div>
+                    <div class="pwa-profile-tier"><?php echo htmlspecialchars($tier_nombre); ?></div>
                 </div>
             </div>
             <svg class="pwa-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -95,11 +127,11 @@ if ($cliente_id) {
         <div class="pwa-points-card">
             <div class="pwa-points-header">
                 <span>Puntos KORTZEN</span>
-                <span>Siguiente nivel 1,750 pts</span>
+                <span>Siguiente nivel <?php echo number_format($siguiente_nivel); ?> pts</span>
             </div>
-            <div class="pwa-points-value">1,250 <span style="font-size: 1rem; font-weight: 400;">pts</span></div>
+            <div class="pwa-points-value"><?php echo number_format($puntos_actuales); ?> <span style="font-size: 1rem; font-weight: 400;">pts</span></div>
             <div class="pwa-progress-bar">
-                <div class="pwa-progress-fill" style="width: 71%;"></div>
+                <div class="pwa-progress-fill" style="width: <?php echo $porcentaje_progreso; ?>%;"></div>
             </div>
         </div>
 

@@ -92,7 +92,23 @@ try {
                 $id
             ]);
 
-            header('Location: ../clientes.php?success=Cliente actualizado exitosamente');
+        case 'update_puntos':
+            $id = intval($_POST['id'] ?? 0);
+            $puntos = intval($_POST['puntos'] ?? 0);
+
+            if ($id <= 0) {
+                throw new Exception('ID de cliente inválido.');
+            }
+
+            try {
+                $pdo->exec("ALTER TABLE clientes ADD COLUMN puntos INT DEFAULT 0 AFTER telefono");
+            } catch (Exception $ex) {}
+
+            $stmt = $pdo->prepare("UPDATE clientes SET puntos = ? WHERE id = ?");
+            $stmt->execute([$puntos, $id]);
+
+            $redirect = !empty($_POST['redirect_to']) ? $_POST['redirect_to'] : '../clientes.php';
+            header('Location: ' . $redirect . (strpos($redirect, '?') !== false ? '&' : '?') . 'success=' . urlencode('Puntos KORTZEN actualizados a ' . number_format($puntos) . ' pts'));
             exit;
 
         case 'delete':

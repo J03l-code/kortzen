@@ -136,6 +136,7 @@ include 'includes/header.php';
                 <th>NOMBRE</th>
                 <th>EMAIL</th>
                 <th>TELÉFONO</th>
+                <th>PUNTOS KORTZEN</th>
                 <th>FECHA REGISTRO</th>
                 <th>ACCIONES</th>
             </tr>
@@ -144,9 +145,11 @@ include 'includes/header.php';
             <?php if (count($clientes) > 0): ?>
                 <?php foreach ($clientes as $cliente): ?>
                     <tr>
-                        <td><strong>
+                        <td>
+                            <a href="cliente_detalle.php?id=<?php echo $cliente['id']; ?>" style="color: var(--text-primary); text-decoration: none; font-weight: 700;">
                                 <?php echo htmlspecialchars($cliente['nombre']); ?>
-                            </strong></td>
+                            </a>
+                        </td>
                         <td>
                             <?php echo $cliente['email'] ? htmlspecialchars($cliente['email']) : '-'; ?>
                         </td>
@@ -173,10 +176,16 @@ include 'includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
+                            <strong style="color: var(--primary-gold, #C0A062);">
+                                🏆 <?php echo number_format(intval($cliente['puntos'] ?? 0)); ?> pts
+                            </strong>
+                        </td>
+                        <td>
                             <?php echo date('d/m/Y', strtotime($cliente['fecha_creacion'])); ?>
                         </td>
                         <td>
                             <div class="actions-cell">
+                                <a href="cliente_detalle.php?id=<?php echo $cliente['id']; ?>" class="btn-action" style="background: #111; color: #FFF; border-color: #111;">VER DETALLES</a>
                                 <a href="clientes_editar.php?id=<?php echo $cliente['id']; ?>" class="btn-action">EDITAR</a>
                                 <button
                                     onclick="confirmarEliminar(<?php echo $cliente['id']; ?>, '<?php echo htmlspecialchars($cliente['nombre']); ?>')"
@@ -187,7 +196,7 @@ include 'includes/header.php';
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
                         <?php echo $search ? 'No se encontraron clientes' : 'No hay clientes registrados'; ?>
                     </td>
                 </tr>
