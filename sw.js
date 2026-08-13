@@ -3,6 +3,7 @@ const ASSETS_TO_CACHE = [
   '/pwa-entry.php',
   '/cliente-dashboard.php',
   '/pwa-servicios.php',
+  '/pwa-barberos.php',
   '/reservar.php',
   '/mis-citas.php',
   '/mi-perfil.php',

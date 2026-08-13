@@ -98,12 +98,21 @@ if ($cliente_id) {
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                <span>Reservar cita</span>
+                <span>Reservar</span>
+            </a>
+            <a href="pwa-barberos.php" class="pwa-quick-action-btn">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Barberos</span>
             </a>
             <a href="mis-citas.php" class="pwa-quick-action-btn">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 <span>Mis citas</span>
             </a>
@@ -112,14 +121,28 @@ if ($cliente_id) {
                     <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
                     <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
-                <span>Promociones</span>
+                <span>Beneficios</span>
             </a>
-            <a href="javascript:void(0)" onclick="alert('Sucursal principal: KORTZEN Llano Chico\nHorarios: 10:00 - 20:00\nTeléfono: +593 098 842 2770')" class="pwa-quick-action-btn">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                <span>Sucursales</span>
+        </div>
+
+        <!-- Banner Card Nuestros Barberos -->
+        <div class="pwa-banner-card">
+            <div class="pwa-banner-card__left">
+                <div class="pwa-banner-card__icon-box">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="pwa-banner-card__title">Nuestros Barberos</div>
+                    <div class="pwa-banner-card__desc">Conoce a nuestro equipo experto.</div>
+                </div>
+            </div>
+            <a href="pwa-barberos.php" class="pwa-banner-card__link">
+                Conocer <span>→</span>
             </a>
         </div>
 
