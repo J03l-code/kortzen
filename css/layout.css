@@ -17,8 +17,9 @@
 }
 
 /* Offset header cleanly below the top branch info bar */
-body.has-branch-bar .header {
-    top: 36px !important;
+body.has-branch-bar .header,
+body.has-branch-bar .header--scrolled {
+    top: 48px !important;
 }
 
 .header__container {

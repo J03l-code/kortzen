@@ -54,7 +54,7 @@ function updateBranchInfoBar() {
     if (existingBar) existingBar.remove();
 
     const barHTML = `
-        <div class="branch-info-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid rgba(0,0,0,0.08); height: 36px; display: flex; align-items: center; backdrop-filter: blur(10px);">
+        <div class="branch-info-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid rgba(0,0,0,0.08); height: 42px; display: flex; align-items: center; backdrop-filter: blur(10px);">
             <div class="branch-info-bar__content" style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
                 <div class="branch-info-bar__location" style="display: flex; align-items: center; gap: 0.5rem; color: #111;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -86,6 +86,7 @@ function updateBranchInfoBar() {
     if (header) {
         header.insertAdjacentHTML('beforebegin', barHTML);
         document.body.classList.add('has-branch-bar');
+        header.style.top = '48px';
     }
 }
 
