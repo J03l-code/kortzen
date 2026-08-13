@@ -25,8 +25,8 @@ if ($cliente_id) {
                        LEFT JOIN servicios s ON c.servicio_id = s.id
                        LEFT JOIN usuarios u ON c.barbero_id = u.id
                        LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
-                       WHERE c.cliente_id = ? AND c.fecha >= CURDATE() AND c.estado IN ('pendiente', 'confirmada')
-                       ORDER BY c.fecha ASC, c.hora ASC";
+                       WHERE c.cliente_id = ? AND c.fecha_hora >= NOW() AND c.estado IN ('pendiente', 'confirmada')
+                       ORDER BY c.fecha_hora ASC";
         $stmtF = $pdo->prepare($sqlFuturas);
         $stmtF->execute([$cliente_id]);
         $citasFuturas = $stmtF->fetchAll(PDO::FETCH_ASSOC);
@@ -36,8 +36,8 @@ if ($cliente_id) {
                          FROM citas c
                          LEFT JOIN servicios s ON c.servicio_id = s.id
                          LEFT JOIN usuarios u ON c.barbero_id = u.id
-                         WHERE c.cliente_id = ? AND (c.fecha < CURDATE() OR c.estado IN ('completada', 'cancelada'))
-                         ORDER BY c.fecha DESC LIMIT 10";
+                         WHERE c.cliente_id = ? AND (c.fecha_hora < NOW() OR c.estado IN ('completada', 'cancelada'))
+                         ORDER BY c.fecha_hora DESC LIMIT 10";
         $stmtH = $pdo->prepare($sqlHistorial);
         $stmtH->execute([$cliente_id]);
         $citasHistorial = $stmtH->fetchAll(PDO::FETCH_ASSOC);
@@ -83,18 +83,20 @@ if ($cliente_id) {
         <div class="pwa-section-title">Próximas citas</div>
         
         <?php if (!empty($citasFuturas)): ?>
-            <?php foreach ($citasFuturas as $c): ?>
+            <?php foreach ($citasFuturas as $c): 
+                $ts_fut = strtotime($c['fecha_hora']);
+            ?>
             <div class="pwa-upcoming-card">
                 <div class="pwa-upcoming-body">
                     <div class="pwa-date-box">
-                        <div class="pwa-date-box__day"><?php echo date('D', strtotime($c['fecha'])); ?></div>
-                        <div class="pwa-date-box__num"><?php echo date('d', strtotime($c['fecha'])); ?></div>
-                        <div class="pwa-date-box__month"><?php echo date('M', strtotime($c['fecha'])); ?></div>
+                        <div class="pwa-date-box__day"><?php echo date('D', $ts_fut); ?></div>
+                        <div class="pwa-date-box__num"><?php echo date('d', $ts_fut); ?></div>
+                        <div class="pwa-date-box__month"><?php echo date('M', $ts_fut); ?></div>
                     </div>
                     <div class="pwa-upcoming-info">
                         <div class="pwa-upcoming-service"><?php echo htmlspecialchars($c['servicio'] ?? 'Corte de Autor'); ?></div>
                         <div class="pwa-upcoming-detail">con <?php echo htmlspecialchars($c['barbero'] ?? 'Master Barber'); ?></div>
-                        <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', strtotime($c['hora'])); ?> • <?php echo htmlspecialchars($c['sucursal'] ?? 'KORTZEN Llano Chico'); ?></div>
+                        <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', $ts_fut); ?> • <?php echo htmlspecialchars($c['sucursal'] ?? 'KORTZEN Llano Chico'); ?></div>
                     </div>
                 </div>
                 <a href="reservar.php?reagendar_id=<?php echo $c['id']; ?>" class="pwa-btn-secondary">REAGENDAR CITA</a>
@@ -113,7 +115,9 @@ if ($cliente_id) {
         <?php if (!empty($citasHistorial)): ?>
         <div class="pwa-section-title" style="margin-top: 1.5rem;">Historial de citas</div>
         <div class="pwa-benefits-list">
-            <?php foreach ($citasHistorial as $h): ?>
+            <?php foreach ($citasHistorial as $h): 
+                $ts_hist = strtotime($h['fecha_hora']);
+            ?>
             <div class="pwa-benefit-item">
                 <div class="pwa-benefit-item__left">
                     <div class="pwa-benefit-item__icon">
@@ -124,7 +128,7 @@ if ($cliente_id) {
                     </div>
                     <div>
                         <div class="pwa-benefit-item__title"><?php echo htmlspecialchars($h['servicio'] ?? 'Corte de Autor'); ?></div>
-                        <div class="pwa-benefit-item__desc"><?php echo date('d/m/Y', strtotime($h['fecha'])); ?> con <?php echo htmlspecialchars($h['barbero'] ?? 'Barbero'); ?></div>
+                        <div class="pwa-benefit-item__desc"><?php echo date('d/m/Y', $ts_hist); ?> con <?php echo htmlspecialchars($h['barbero'] ?? 'Barbero'); ?></div>
                     </div>
                 </div>
                 <a href="reservar.php?reagendar_id=<?php echo $h['id']; ?>" style="font-size: 0.78rem; font-weight: 600; color: #111; text-decoration: none;">Volver a pedir</a>

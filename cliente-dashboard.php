@@ -35,8 +35,8 @@ if ($cliente_id) {
             FROM citas c
             LEFT JOIN servicios s ON c.servicio_id = s.id
             LEFT JOIN usuarios b ON c.barbero_id = b.id
-            WHERE c.cliente_id = ? AND c.fecha >= CURDATE() AND c.estado IN ('pendiente', 'confirmada')
-            ORDER BY c.fecha ASC, c.hora ASC
+            WHERE c.cliente_id = ? AND c.fecha_hora >= NOW() AND c.estado IN ('pendiente', 'confirmada')
+            ORDER BY c.fecha_hora ASC
             LIMIT 1
         ");
         $stmt->execute([$cliente_id]);
@@ -145,20 +145,22 @@ if ($cliente_id) {
             </a>
         </div>
 
-        <?php if ($proxima_cita): ?>
+        <?php if ($proxima_cita): 
+            $ts_cita = strtotime($proxima_cita['fecha_hora']);
+        ?>
         <!-- Proxima cita widget -->
         <div class="pwa-section-title">Tu próxima cita</div>
         <div class="pwa-upcoming-card">
             <div class="pwa-upcoming-body">
                 <div class="pwa-date-box">
-                    <div class="pwa-date-box__day"><?php echo date('D', strtotime($proxima_cita['fecha'])); ?></div>
-                    <div class="pwa-date-box__num"><?php echo date('d', strtotime($proxima_cita['fecha'])); ?></div>
-                    <div class="pwa-date-box__month"><?php echo date('M', strtotime($proxima_cita['fecha'])); ?></div>
+                    <div class="pwa-date-box__day"><?php echo date('D', $ts_cita); ?></div>
+                    <div class="pwa-date-box__num"><?php echo date('d', $ts_cita); ?></div>
+                    <div class="pwa-date-box__month"><?php echo date('M', $ts_cita); ?></div>
                 </div>
                 <div class="pwa-upcoming-info">
                     <div class="pwa-upcoming-service"><?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte de Autor'); ?></div>
                     <div class="pwa-upcoming-detail">con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Master Barber'); ?></div>
-                    <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', strtotime($proxima_cita['hora'])); ?> • KORTZEN Llano Chico</div>
+                    <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', $ts_cita); ?> • KORTZEN Llano Chico</div>
                 </div>
             </div>
             <a href="mis-citas.php" class="pwa-btn-secondary">VER TODAS MIS CITAS</a>
