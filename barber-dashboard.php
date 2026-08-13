@@ -1,7 +1,7 @@
 <?php
 /**
  * KORTZEN - Dashboard Exclusivo para Barberos
- * Interfaz única para barberos: ganancias, ventas de productos con comisión, descuento de insumos y turnos
+ * Interfaz nativa blanca y elegante para barberos (mismo sistema de diseño que la PWA del cliente)
  */
 
 require_once 'config.php';
@@ -111,388 +111,166 @@ $turnosHoy = query("
     ORDER BY c.fecha_hora ASC
 ", [$barbero_id]);
 
-// 4. Inventario de la Sucursal (para ventas e insumos)
+// 4. Inventario de la Sucursal
 $inventarioItems = query("SELECT id, producto, cantidad, precio FROM inventario WHERE sucursal_id = ? ORDER BY producto ASC", [$sucursal_id]);
 
-$inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
+$nombreBarbero = explode(' ', trim($currentUser['nombre']))[0];
+$inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
 ?>
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Panel de Barbero - KORTZEN</title>
+
     <link rel="stylesheet" href="/css/variables.css?v=23">
     <link rel="stylesheet" href="/css/reset.css?v=23">
+    <link rel="stylesheet" href="/css/pwa-native.css?v=3">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KORTZEN">
+    <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
 
     <style>
-        :root {
-            --barber-bg: #0C0C0C;
-            --barber-card: #161616;
-            --barber-border: rgba(255, 255, 255, 0.08);
-            --barber-accent: #FFFFFF;
-            --barber-gold: #D4AF37;
-            --barber-text: #F0F0F0;
-            --barber-muted: #888888;
+        .pwa-barber-card {
+            background: var(--pwa-card-bg);
+            border: 1px solid var(--pwa-border);
+            border-radius: var(--pwa-radius-card);
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            box-shadow: var(--pwa-shadow);
         }
 
-        body {
-            background-color: var(--barber-bg);
-            color: var(--barber-text);
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            margin: 0;
-            padding-bottom: 40px;
-        }
-
-        .barber-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 1.25rem 1rem;
-        }
-
-        /* Top Header */
-        .barber-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--barber-border);
-        }
-
-        .barber-profile {
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-        }
-
-        .barber-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: #222222;
-            border: 2px solid var(--barber-gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.2rem;
-            color: #FFFFFF;
-        }
-
-        .barber-name {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #FFFFFF;
-        }
-
-        .barber-role {
-            font-size: 0.78rem;
-            color: var(--barber-gold);
-            font-weight: 500;
-        }
-
-        .logout-link {
-            color: #ff4d4d;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 600;
-            border: 1px solid rgba(255, 77, 77, 0.3);
-            padding: 0.4rem 0.8rem;
-            border-radius: 8px;
-        }
-
-        /* Metrics Grid (Mis Ganancias) */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.85rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .metric-card {
-            background: var(--barber-card);
-            border: 1px solid var(--barber-border);
-            border-radius: 16px;
-            padding: 1.25rem 1rem;
-        }
-
-        .metric-title {
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--barber-muted);
-            margin-bottom: 0.4rem;
-        }
-
-        .metric-value {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--barber-gold);
-        }
-
-        .metric-sub {
-            font-size: 0.75rem;
-            color: var(--barber-muted);
-            margin-top: 0.2rem;
-        }
-
-        .section-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #FFFFFF;
-            margin-bottom: 0.85rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        /* Next Client Banner */
-        .next-client-box {
-            background: linear-gradient(135deg, #1A1A1A 0%, #242424 100%);
-            border: 1px solid var(--barber-gold);
-            border-radius: 18px;
-            padding: 1.35rem;
-            margin-bottom: 1.75rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-        }
-
-        .next-client-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-
-        .next-time-pill {
-            background: var(--barber-gold);
-            color: #000000;
-            font-weight: 800;
-            padding: 0.4rem 0.85rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-        }
-
-        .next-service-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #FFFFFF;
-            margin-bottom: 0.25rem;
-        }
-
-        .next-client-name {
-            font-size: 0.9rem;
-            color: var(--barber-muted);
-            margin-bottom: 1rem;
-        }
-
-        .btn-complete {
+        .pwa-form-control {
             width: 100%;
-            padding: 0.9rem;
-            background: #2ECC71;
-            color: #FFFFFF;
-            border: none;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            cursor: pointer;
-        }
-
-        /* Action Box Cards for Sales & Supplies */
-        .action-box {
-            background: var(--barber-card);
-            border: 1px solid var(--barber-border);
-            border-radius: 16px;
-            padding: 1.2rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.78rem;
-            color: var(--barber-muted);
-            margin-bottom: 0.35rem;
-            font-weight: 600;
-        }
-
-        .form-select, .form-input {
-            width: 100%;
-            padding: 0.75rem;
-            background: #222222;
-            border: 1px solid var(--barber-border);
-            border-radius: 10px;
-            color: #FFFFFF;
+            padding: 0.85rem;
+            border: 1px solid var(--pwa-border);
+            border-radius: 12px;
+            background: #FAFAFA;
+            color: var(--pwa-text-main);
             font-family: inherit;
             font-size: 0.85rem;
             margin-bottom: 0.75rem;
             box-sizing: border-box;
         }
 
-        .btn-action-gold {
-            width: 100%;
-            padding: 0.85rem;
-            background: var(--barber-gold);
-            color: #000000;
-            border: none;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
+        .pwa-form-control:focus {
+            outline: none;
+            border-color: #111111;
+            background: #FFFFFF;
         }
 
-        .btn-action-dark {
-            width: 100%;
-            padding: 0.85rem;
-            background: #2A2A2A;
-            color: #FFFFFF;
-            border: 1px solid var(--barber-border);
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-        }
-
-        /* Shift Items List */
-        .turnos-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .turno-card {
-            background: var(--barber-card);
-            border: 1px solid var(--barber-border);
-            border-radius: 14px;
-            padding: 1rem 1.15rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .turno-time {
-            font-weight: 800;
-            font-size: 1.1rem;
-            color: var(--barber-gold);
-            width: 65px;
-            flex-shrink: 0;
-        }
-
-        .turno-info {
-            flex: 1;
-            padding: 0 0.75rem;
-        }
-
-        .turno-service {
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: #FFFFFF;
-            margin-bottom: 0.15rem;
-        }
-
-        .turno-client {
-            font-size: 0.8rem;
-            color: var(--barber-muted);
-        }
-
-        .badge-status {
+        .badge-turno {
             font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
             padding: 0.35rem 0.65rem;
-            border-radius: 6px;
+            border-radius: 20px;
         }
 
-        .badge-pendiente { background: rgba(212, 175, 55, 0.2); color: var(--barber-gold); }
-        .badge-completada { background: rgba(46, 204, 113, 0.2); color: #2ECC71; }
-        .badge-cancelada { background: rgba(231, 76, 60, 0.2); color: #E74C3C; }
+        .badge-pendiente { background: #FFF8E7; color: #B78103; border: 1px solid #F3E0B5; }
+        .badge-completada { background: #E8F8F0; color: #1E824C; border: 1px solid #A3E4D7; }
+        .badge-cancelada { background: #FADBD8; color: #78281F; border: 1px solid #F5B7B1; }
     </style>
 </head>
 
-<body>
+<body class="pwa-app-mode">
 
-    <div class="barber-container">
-        <!-- Top Profile Bar -->
-        <div class="barber-header">
-            <div class="barber-profile">
-                <div class="barber-avatar">
-                    <?php if (!empty($currentUser['foto_url'])): ?>
-                        <img src="<?php echo htmlspecialchars($currentUser['foto_url']); ?>" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                    <?php else: ?>
-                        <?php echo $inicial_barbero; ?>
-                    <?php endif; ?>
-                </div>
-                <div>
-                    <div class="barber-name"><?php echo htmlspecialchars($currentUser['nombre']); ?></div>
-                    <div class="barber-role">✦ Barbero Profesional KORTZEN</div>
-                </div>
+    <div class="pwa-container">
+        <!-- Header Blanco Nativo -->
+        <header class="pwa-header">
+            <div class="pwa-header__logo">KORTZEN</div>
+            <div class="pwa-header__title" style="font-size: 0.95rem; font-weight: 700;">PANEL BARBERO</div>
+            <a href="logout.php" class="pwa-header__btn" title="Cerrar sesión" style="color: #dc3545;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </a>
+        </header>
+
+        <!-- Saludo e Información del Barbero -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; margin-top: 0.5rem;">
+            <div>
+                <h1 class="pwa-greeting">Hola, <?php echo htmlspecialchars($nombreBarbero); ?> 👋</h1>
+                <p class="pwa-subtitle" style="margin-bottom: 0;">Barbero Profesional • KORTZEN</p>
             </div>
-            <a href="logout.php" class="logout-link">Salir</a>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #111111; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; flex-shrink: 0;">
+                <?php echo $inicial_barbero; ?>
+            </div>
         </div>
 
         <?php if ($mensaje): ?>
-            <div style="background: rgba(46, 204, 113, 0.15); border: 1px solid #2ECC71; color: #2ECC71; padding: 0.85rem 1rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1.25rem; font-weight: 600;">
+            <div style="background: #E8F8F0; border: 1px solid #A3E4D7; color: #1E824C; padding: 0.85rem 1rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1.25rem; font-weight: 600;">
                 ✓ <?php echo htmlspecialchars($mensaje); ?>
             </div>
         <?php endif; ?>
 
-        <!-- Metrics Grid (Mis Ganancias = Servicios + Ventas) -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-title">Mis Ganancias (Hoy)</div>
-                <div class="metric-value">$<?php echo number_format($miGananciaDia, 2); ?></div>
-                <div class="metric-sub"><?php echo $totalCitasHoy; ?> cortes + ventas hoy</div>
+        <!-- Tarjetas de Métricas de Ganancias -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; margin-bottom: 1.25rem;">
+            <div class="pwa-card" style="margin-bottom: 0; padding: 1.1rem;">
+                <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pwa-text-muted); margin-bottom: 0.3rem;">Ganancias Hoy</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--pwa-text-main);">$<?php echo number_format($miGananciaDia, 2); ?></div>
+                <div style="font-size: 0.75rem; color: var(--pwa-text-muted); margin-top: 0.2rem;"><?php echo $totalCitasHoy; ?> cortes + ventas</div>
             </div>
-            <div class="metric-card">
-                <div class="metric-title">Mis Ganancias (Mes)</div>
-                <div class="metric-value">$<?php echo number_format($miGananciaMes, 2); ?></div>
-                <div class="metric-sub">Servicios + comisiones acumuladas</div>
+            <div class="pwa-card" style="margin-bottom: 0; padding: 1.1rem;">
+                <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pwa-text-muted); margin-bottom: 0.3rem;">Ganancias Mes</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--pwa-text-main);">$<?php echo number_format($miGananciaMes, 2); ?></div>
+                <div style="font-size: 0.75rem; color: var(--pwa-text-muted); margin-top: 0.2rem;">Comisiones acumuladas</div>
             </div>
         </div>
 
-        <!-- Next Client Box -->
-        <div class="section-title">Próximo Cliente</div>
+        <!-- Próximo Cliente Widget -->
+        <div class="pwa-section-title">Próximo Cliente</div>
         <?php if ($proximo): 
             $horaProxima = date('H:i', strtotime($proximo['fecha_hora']));
         ?>
-        <div class="next-client-box">
-            <div class="next-client-header">
-                <span class="next-time-pill">⏰ HOY <?php echo $horaProxima; ?></span>
-                <span style="font-size: 0.75rem; color: #888;"><?php echo $proximo['duracion_minutos'] ?? 30; ?> min</span>
+        <div class="pwa-upcoming-card">
+            <div class="pwa-upcoming-body">
+                <div class="pwa-date-box" style="background: #111111; color: #FFFFFF;">
+                    <div class="pwa-date-box__day" style="color: #CCCCCC;">⏰</div>
+                    <div class="pwa-date-box__num" style="font-size: 1rem; color: #FFFFFF;"><?php echo $horaProxima; ?></div>
+                </div>
+                <div class="pwa-upcoming-info">
+                    <div class="pwa-upcoming-service"><?php echo htmlspecialchars($proximo['servicio'] ?? 'Corte de Autor'); ?></div>
+                    <div class="pwa-upcoming-detail">Cliente: <strong><?php echo htmlspecialchars($proximo['cliente'] ?? 'Cliente'); ?></strong></div>
+                    <?php if (!empty($proximo['cliente_telefono'])): ?>
+                        <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $proximo['cliente_telefono']); ?>" target="_blank" class="pwa-upcoming-detail" style="color: #25D366; text-decoration: none; font-weight: 600;">
+                            📞 Contactar por WhatsApp (<?php echo htmlspecialchars($proximo['cliente_telefono']); ?>)
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="next-service-title"><?php echo htmlspecialchars($proximo['servicio'] ?? 'Corte de Autor'); ?></div>
-            <div class="next-client-name">Cliente: <strong><?php echo htmlspecialchars($proximo['cliente'] ?? 'Cliente'); ?></strong> <?php echo !empty($proximo['cliente_telefono']) ? ' • 📞 ' . htmlspecialchars($proximo['cliente_telefono']) : ''; ?></div>
             
-            <form method="POST">
+            <form method="POST" style="margin-top: 0.85rem;">
                 <input type="hidden" name="action" value="completar_cita">
                 <input type="hidden" name="cita_id" value="<?php echo $proximo['id']; ?>">
-                <button type="submit" class="btn-complete">✓ MARCAR SERVICIO COMO COMPLETADO</button>
+                <button type="submit" class="pwa-btn-black" style="background: #10B981; border: none; padding: 0.85rem;">
+                    ✓ MARCAR SERVICIO COMO COMPLETADO
+                </button>
             </form>
         </div>
         <?php else: ?>
-        <div class="next-client-box" style="text-align: center; border-color: var(--barber-border);">
-            <div style="font-size: 1rem; color: #FFFFFF; font-weight: 700;">No tienes más turnos pendientes por hoy</div>
-            <div style="font-size: 0.8rem; color: var(--barber-muted); margin-top: 0.3rem;">¡Excelente trabajo! Tus ganancias de hoy se encuentran actualizadas arriba.</div>
+        <div class="pwa-card" style="text-align: center; padding: 1.5rem;">
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--pwa-text-main);">No tienes más turnos pendientes por hoy 🎉</div>
+            <div style="font-size: 0.8rem; color: var(--pwa-text-muted); margin-top: 0.3rem;">¡Excelente trabajo! Tus ganancias se encuentran actualizadas en las tarjetas de arriba.</div>
         </div>
         <?php endif; ?>
 
-        <!-- REGISTRAR VENTA DE PRODUCTO (CON COMISIÓN) -->
-        <div class="section-title">
-            <span>🛍️ Registrar Venta de Producto</span>
-            <span style="font-size: 0.7rem; color: var(--barber-gold);">+ <?php echo $com_diaria; ?>% Comisión</span>
-        </div>
-        <div class="action-box">
+        <!-- Registrar Venta de Producto (Comisión) -->
+        <div class="pwa-section-title" style="margin-top: 1.5rem;">🛍️ Registrar Venta de Producto</div>
+        <div class="pwa-barber-card">
+            <p style="font-size: 0.8rem; color: var(--pwa-text-muted); margin-bottom: 0.85rem;">
+                Suma comisiones instantáneas a tus ganancias al vender productos de barbería a tus clientes.
+            </p>
             <form id="formVentaProducto" onsubmit="registrarVentaProductoBarbero(event)">
-                <label class="form-label">Selecciona el Producto Vendido:</label>
-                <select name="producto_id" class="form-select" required>
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--pwa-text-main); display: block; margin-bottom: 0.35rem;">Producto Vendido:</label>
+                <select name="producto_id" class="pwa-form-control" required>
                     <option value="">-- Seleccionar producto del inventario --</option>
                     <?php foreach ($inventarioItems as $item): ?>
                         <option value="<?php echo $item['id']; ?>">
@@ -503,25 +281,27 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
 
                 <div style="display: flex; gap: 0.75rem;">
                     <div style="flex: 1;">
-                        <label class="form-label">Cantidad:</label>
-                        <input type="number" name="cantidad" value="1" min="1" class="form-input" required>
+                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--pwa-text-main); display: block; margin-bottom: 0.35rem;">Cantidad:</label>
+                        <input type="number" name="cantidad" value="1" min="1" class="pwa-form-control" required>
                     </div>
                     <div style="flex: 2; display: flex; align-items: flex-end;">
-                        <button type="submit" class="btn-action-gold">VENDER (+ COMISIÓN)</button>
+                        <button type="submit" class="pwa-btn-black" style="padding: 0.85rem; font-size: 0.8rem;">
+                            REGISTRAR VENTA
+                        </button>
                     </div>
                 </div>
             </form>
         </div>
 
-        <!-- DEBITAR INSUMOS DEL TURNO (CUCHILLAS, TOALLAS, ETC) -->
-        <div class="section-title">
-            <span>📦 Gastos / Consumo de Insumos</span>
-            <span style="font-size: 0.7rem; color: var(--barber-muted);">Descuento Automático</span>
-        </div>
-        <div class="action-box">
+        <!-- Debitar Insumos de Inventario -->
+        <div class="pwa-section-title" style="margin-top: 1.5rem;">📦 Consumo de Insumos del Turno</div>
+        <div class="pwa-barber-card">
+            <p style="font-size: 0.8rem; color: var(--pwa-text-muted); margin-bottom: 0.85rem;">
+                Registra los materiales gastados al final del turno para mantener actualizado el inventario.
+            </p>
             <form id="formConsumoInsumo" onsubmit="descontarInsumoBarbero(event)">
-                <label class="form-label">Material / Insumo Gastado (Cuchilla, Toalla, Gel, etc.):</label>
-                <select name="producto_id" class="form-select" required>
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--pwa-text-main); display: block; margin-bottom: 0.35rem;">Insumo / Material Gastado:</label>
+                <select name="producto_id" class="pwa-form-control" required>
                     <option value="">-- Seleccionar insumo a debitar --</option>
                     <?php foreach ($inventarioItems as $item): ?>
                         <option value="<?php echo $item['id']; ?>">
@@ -532,19 +312,21 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
 
                 <div style="display: flex; gap: 0.75rem;">
                     <div style="flex: 1;">
-                        <label class="form-label">Cantidad Gastada:</label>
-                        <input type="number" name="cantidad" value="1" min="1" class="form-input" required>
+                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--pwa-text-main); display: block; margin-bottom: 0.35rem;">Cantidad Gastada:</label>
+                        <input type="number" name="cantidad" value="1" min="1" class="pwa-form-control" required>
                     </div>
                     <div style="flex: 2; display: flex; align-items: flex-end;">
-                        <button type="submit" class="btn-action-dark">DEBITAR INSUMO</button>
+                        <button type="submit" class="pwa-btn-secondary" style="padding: 0.85rem; font-size: 0.8rem; border-color: #111111; color: #111111;">
+                            DEBITAR INSUMO
+                        </button>
                     </div>
                 </div>
             </form>
         </div>
 
         <!-- Turnos de Hoy List -->
-        <div class="section-title">Mis Turnos de Hoy (<?php echo date('d/m/Y'); ?>)</div>
-        <div class="turnos-list">
+        <div class="pwa-section-title" style="margin-top: 1.5rem;">Mis Turnos de Hoy (<?php echo date('d/m/Y'); ?>)</div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             <?php if (!empty($turnosHoy)): ?>
                 <?php foreach ($turnosHoy as $t): 
                     $horaT = date('H:i', strtotime($t['fecha_hora']));
@@ -553,23 +335,30 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
                     if ($est === 'completada') $badgeClass = 'badge-completada';
                     if ($est === 'cancelada') $badgeClass = 'badge-cancelada';
                 ?>
-                <div class="turno-card">
-                    <div class="turno-time"><?php echo $horaT; ?></div>
-                    <div class="turno-info">
-                        <div class="turno-service"><?php echo htmlspecialchars($t['servicio'] ?? 'Corte'); ?></div>
-                        <div class="turno-client"><?php echo htmlspecialchars($t['cliente'] ?? 'Cliente'); ?></div>
+                <div class="pwa-card" style="margin-bottom: 0; padding: 1rem 1.15rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-weight: 800; font-size: 1.1rem; color: var(--pwa-text-main); width: 60px;">
+                        <?php echo $horaT; ?>
+                    </div>
+                    <div style="flex: 1; padding: 0 0.75rem;">
+                        <div style="font-weight: 700; font-size: 0.95rem; color: var(--pwa-text-main); margin-bottom: 0.15rem;">
+                            <?php echo htmlspecialchars($t['servicio'] ?? 'Corte'); ?>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--pwa-text-muted);">
+                            Cliente: <?php echo htmlspecialchars($t['cliente'] ?? 'Cliente'); ?>
+                        </div>
                     </div>
                     <div>
-                        <span class="badge-status <?php echo $badgeClass; ?>"><?php echo strtoupper($est); ?></span>
+                        <span class="badge-turno <?php echo $badgeClass; ?>"><?php echo strtoupper($est); ?></span>
                     </div>
                 </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <div class="turno-card" style="text-align: center; justify-content: center; color: var(--barber-muted); font-size: 0.85rem; padding: 2rem;">
+                <div class="pwa-card" style="text-align: center; padding: 2rem; color: var(--pwa-text-muted); font-size: 0.85rem;">
                     No tienes agendamientos para el día de hoy.
                 </div>
             <?php endif; ?>
         </div>
+
     </div>
 
     <script>
