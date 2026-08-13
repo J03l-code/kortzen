@@ -57,9 +57,9 @@
 /* Infinite Marquee */
 .marquee-section {
     padding: var(--space-8) 0;
-    background-color: #111111;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background-color: #FFFFFF;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     overflow: hidden;
     position: relative;
     width: 100vw;
@@ -70,14 +70,14 @@
 .marquee-content {
     display: flex;
     width: fit-content;
-    animation: marquee-scroll 60s linear infinite;
+    animation: marquee-scroll 90s linear infinite;
 }
 
 .marquee-item {
     font-family: var(--font-heading);
     font-size: 3rem;
     font-weight: 300;
-    color: #FFFFFF;
+    color: #111111;
     text-transform: uppercase;
     white-space: nowrap;
     padding: 0 4rem;
@@ -92,8 +92,8 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: 1.5rem;
-    color: #FFFFFF;
-    opacity: 0.4;
+    color: #111111;
+    opacity: 0.3;
 }
 
 @keyframes marquee-scroll {
