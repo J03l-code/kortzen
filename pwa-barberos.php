@@ -128,6 +128,16 @@ if (empty($barberos)) {
             font-size: 0.82rem;
             color: var(--pwa-text-muted);
             line-height: 1.45;
+            flex-grow: 1;
+            margin-bottom: 0.85rem;
+        }
+
+        .pwa-barber-bottom-wrapper {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: flex-start;
         }
 
         .pwa-barber-specs {
@@ -188,13 +198,15 @@ if (empty($barberos)) {
                     <?php echo htmlspecialchars($bio_b); ?>
                 </div>
 
-                <div class="pwa-barber-specs">
-                    ✦ <?php echo htmlspecialchars($specs_b); ?>
-                </div>
+                <div class="pwa-barber-bottom-wrapper" style="width: 100%;">
+                    <div class="pwa-barber-specs">
+                        ✦ <?php echo htmlspecialchars($specs_b); ?>
+                    </div>
 
-                <a href="reservar.php?barbero_id=<?php echo $b['id']; ?>" class="pwa-btn-black" style="padding: 0.85rem; font-size: 0.8rem; margin-top: auto;">
-                    <span>RESERVAR CON <?php echo strtoupper($nombre_b); ?></span>
-                </a>
+                    <a href="reservar.php?barbero_id=<?php echo $b['id']; ?>" class="pwa-btn-black" style="padding: 0.85rem; font-size: 0.8rem; width: 100%;">
+                        <span>RESERVAR CON <?php echo strtoupper($nombre_b); ?></span>
+                    </a>
+                </div>
             </div>
             <?php endforeach; ?>
         </div>
