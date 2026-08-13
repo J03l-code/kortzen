@@ -41,11 +41,12 @@ body.pwa-app-mode {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 0;
+    padding: calc(1.4rem + env(safe-area-inset-top, 25px)) 0 1rem 0 !important;
     position: sticky;
     top: 0;
     background: var(--pwa-bg);
     z-index: 100;
+    margin-bottom: 0.5rem;
 }
 
 .pwa-header__btn {
@@ -768,4 +769,16 @@ body.pwa-app-mode {
 
 .pwa-nav-tab--active svg {
     color: var(--pwa-black) !important;
+}
+
+/* Fast Instant Touch Feedback */
+.pwa-nav-tab:active,
+.pwa-quick-action-btn:active,
+.pwa-service-card:active,
+.pwa-benefit-item:active,
+.pwa-btn-black:active,
+.pwa-header__btn:active {
+    opacity: 0.7;
+    transform: scale(0.96) !important;
+    transition: transform 0.05s ease, opacity 0.05s ease !important;
 }

@@ -18,6 +18,9 @@ $email = $_SESSION['cliente_email'] ?? '';
 $foto = $_SESSION['cliente_foto'] ?? null;
 $cliente_id = $_SESSION['cliente_id'] ?? null;
 
+// Primer nombre para saludo personalizado
+$primer_nombre = htmlspecialchars(explode(' ', trim($nombre))[0]);
+
 // Iniciales para el avatar
 $nombres_arr = explode(' ', trim($nombre));
 $iniciales = strtoupper(substr($nombres_arr[0], 0, 1) . (isset($nombres_arr[1]) ? substr($nombres_arr[1], 0, 1) : ''));
@@ -53,7 +56,7 @@ if ($cliente_id) {
 
     <link rel="stylesheet" href="/css/variables.css?v=23">
     <link rel="stylesheet" href="/css/reset.css?v=23">
-    <link rel="stylesheet" href="/css/pwa-native.css?v=1">
+    <link rel="stylesheet" href="/css/pwa-native.css?v=2">
 
     <!-- PWA Manifest & Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -81,7 +84,7 @@ if ($cliente_id) {
 
         <!-- Hero Banner Card -->
         <div class="pwa-hero-card">
-            <h1 class="pwa-hero-card__title">Bienvenido a<br>KORTZEN</h1>
+            <h1 class="pwa-hero-card__title">Bienvenido,<br><?php echo $primer_nombre; ?></h1>
             <p class="pwa-hero-card__subtitle">Precisión. Estilo. Confianza.</p>
         </div>
 
