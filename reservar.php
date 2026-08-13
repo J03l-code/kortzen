@@ -257,41 +257,46 @@ $pageTitle = 'Reservar Cita';
         .wizard-nav {
             display: flex;
             justify-content: space-between;
-            margin-top: 40px;
+            gap: 1rem;
+            margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #333;
+            padding-bottom: 90px; /* Space above bottom nav bar */
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .btn {
-            padding: 12px 30px;
-            border-radius: 6px;
+            padding: 14px 24px;
+            border-radius: 12px;
             font-weight: 600;
+            font-size: 0.85rem;
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
             border: none;
+            flex: 1;
+            text-align: center;
         }
 
         .btn-prev {
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid #333;
+            background: #FFFFFF;
+            color: #111111;
+            border: 1px solid #DDDDDD;
         }
 
-        .btn-prev:hover {
-            border-color: #666;
-            color: var(--text-primary);
+        .btn-prev:hover, .btn-prev:active {
+            background: #F0F0F0;
         }
 
         .btn-next {
-            background: var(--gold);
-            color: #000;
+            background: #FFFFFF;
+            color: #111111;
+            font-weight: 700;
         }
 
         .btn-next:disabled {
-            background: #333;
-            color: #666;
+            background: #333333;
+            color: #777777;
             cursor: not-allowed;
         }
 

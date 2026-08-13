@@ -1,26 +1,40 @@
 <?php
 /**
  * Servicios - Native App UI (Screen 2)
+ * Carga dinámicamente todos los servicios reales agrupados por categoría
  */
 
 session_start();
 require_once 'config.php';
 
-// Obtener servicios de la BD
-$servicios = [];
+// Obtener servicios reales de la BD
+$servicios_por_cat = [];
 try {
     $pdo = getConnection();
-    $stmt = $query = $pdo->query("SELECT * FROM servicios WHERE activo = 1 ORDER BY orden ASC, id ASC");
-    $servicios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->query("SELECT * FROM servicios WHERE activo = 1 ORDER BY categoria ASC, id ASC");
+    $todos_servicios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!empty($todos_servicios)) {
+        foreach ($todos_servicios as $s) {
+            $cat = !empty($s['categoria']) ? trim($s['categoria']) : 'Servicios';
+            $servicios_por_cat[$cat][] = $s;
+        }
+    }
 } catch (Exception $e) {
-    // Mock fallbacks if database error
-    $servicios = [
-        ['nombre' => 'Estilo Pro', 'descripcion' => 'Corte personalizado + lavado + peinado premium.', 'precio' => 45.00],
-        ['nombre' => 'Ondulación o Semi Ondulación', 'descripcion' => 'Ondas naturales con acabado profesional.', 'precio' => 60.00],
-        ['nombre' => 'Corte con Mateo', 'descripcion' => 'Experiencia exclusiva con nuestro barbero experto.', 'precio' => 70.00],
-        ['nombre' => 'Barba Premium', 'descripcion' => 'Perfilado y diseño de barba + toallas calientes.', 'precio' => 40.00],
-        ['nombre' => 'Cejas', 'descripcion' => 'Diseño y definición personalizada.', 'precio' => 20.00],
-        ['nombre' => 'Limpieza Facial Completa', 'descripcion' => 'Limpieza profunda, exfoliación e hidratación.', 'precio' => 60.00]
+}
+
+// Fallback por si la base de datos estuviera vacía
+if (empty($servicios_por_cat)) {
+    $servicios_por_cat = [
+        'Corte & Estilo' => [
+            ['id' => 1, 'nombre' => 'Corte de Cabello Tradicional', 'descripcion' => 'Corte clásico o moderno con acabado a navaja y peinado.', 'precio' => 10.00, 'duracion_minutos' => 35]
+        ],
+        'Afeitado Tradicional' => [
+            ['id' => 2, 'nombre' => 'Afeitado Tradicional', 'descripcion' => 'Ritual completo con espuma caliente, toalla aromática y bálsamo.', 'precio' => 10.00, 'duracion_minutos' => 30]
+        ],
+        'Cuidado de Barba' => [
+            ['id' => 3, 'nombre' => 'Barba Premium', 'descripcion' => 'Perfilado, corte y diseño de barba con toalla caliente e hidratación.', 'precio' => 5.00, 'duracion_minutos' => 30]
+        ]
     ];
 }
 ?>
@@ -34,7 +48,7 @@ try {
 
     <link rel="stylesheet" href="/css/variables.css?v=23">
     <link rel="stylesheet" href="/css/reset.css?v=23">
-    <link rel="stylesheet" href="/css/pwa-native.css?v=2">
+    <link rel="stylesheet" href="/css/pwa-native.css?v=3">
 
     <link rel="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -55,21 +69,27 @@ try {
                 </svg>
             </button>
             <div class="pwa-header__title">Servicios</div>
-            <button class="pwa-header__btn" onclick="location.href='reservar.php'" title="Bolsa">
+            <button class="pwa-header__btn" onclick="location.href='reservar.php'" title="Reservar">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
             </button>
         </header>
 
         <p class="pwa-subtitle">Servicios premium para un estilo impecable y duradero.</p>
 
-        <!-- Services List -->
-        <div class="pwa-services-list">
-            <?php foreach ($servicios as $s): ?>
-            <a href="reservar.php?servicio_id=<?php echo $s['id'] ?? ''; ?>" class="pwa-service-card">
+        <!-- Services Categorized List -->
+        <?php foreach ($servicios_por_cat as $categoria_nombre => $lista_servicios): ?>
+        <div class="pwa-section-title" style="margin-top: 1.5rem; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; border-bottom: 1px solid var(--pwa-border); padding-bottom: 0.4rem;">
+            <?php echo htmlspecialchars($categoria_nombre); ?>
+        </div>
+
+        <div class="pwa-services-list" style="margin-top: 0.75rem;">
+            <?php foreach ($lista_servicios as $s): ?>
+            <a href="reservar.php?servicio_id=<?php echo $s['id']; ?>" class="pwa-service-card">
                 <div class="pwa-service-card__left">
                     <div class="pwa-service-card__icon">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,17 +102,35 @@ try {
                     </div>
                     <div class="pwa-service-card__info">
                         <div class="pwa-service-card__name"><?php echo htmlspecialchars($s['nombre']); ?></div>
-                        <div class="pwa-service-card__desc"><?php echo htmlspecialchars($s['descripcion'] ?? 'Cuidado y estilismo personalizado.'); ?></div>
+                        <div class="pwa-service-card__desc">
+                            <?php if (!empty($s['duracion_minutos'])): ?>
+                                <span style="font-weight: 600; color: var(--pwa-text-main);"><?php echo $s['duracion_minutos']; ?> min</span> • 
+                            <?php endif; ?>
+                            <?php echo htmlspecialchars($s['descripcion'] ?? 'Servicio de barbería profesional.'); ?>
+                        </div>
                     </div>
                 </div>
                 <div class="pwa-service-card__right">
-                    <div class="pwa-service-card__price">$<?php echo number_format($s['precio'], 0); ?></div>
+                    <div class="pwa-service-card__price">$<?php echo number_format($s['precio'], 2); ?></div>
                     <svg class="pwa-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
                 </div>
             </a>
             <?php endforeach; ?>
+        </div>
+        <?php endforeach; ?>
+
+        <div style="margin-top: 2rem; margin-bottom: 2rem;">
+            <a href="reservar.php" class="pwa-btn-black">
+                <span>IR A RESERVAR</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </a>
         </div>
     </div>
 
