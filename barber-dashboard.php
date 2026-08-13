@@ -1,7 +1,7 @@
 <?php
 /**
  * KORTZEN - Dashboard Exclusivo para Barberos
- * Interfaz única para barberos: ganancias, turnos de hoy, agenda y gestión de estado
+ * Interfaz única para barberos: ganancias, ventas de productos con comisión, descuento de insumos y turnos
  */
 
 require_once 'config.php';
@@ -9,19 +9,19 @@ requireLogin();
 
 $currentUser = getCurrentUser();
 
-// Si el usuario es admin general, permitir navegar o redirigir a dashboard.php si prefiere admin
 if ($currentUser['rol'] !== 'barbero' && $currentUser['rol'] !== 'admin_local' && $currentUser['rol'] !== 'admin') {
     header('Location: dashboard.php');
     exit;
 }
 
 $barbero_id = $currentUser['id'];
+$sucursal_id = $currentUser['sucursal_id'] ?? 1;
 
 // Mensajes de estado
 $mensaje = '';
 $tipoMensaje = '';
 
-// Marcar cita como completada si se presiona el botón
+// Marcar cita como completada
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'completar_cita') {
         $citaId = intval($_POST['cita_id'] ?? 0);
@@ -40,35 +40,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// 1. Ganancias con doble tasa de comisión (Semana vs Fin de Semana)
+// 1. Ganancias por Servicios + Comisión por Ventas de Productos
 $com_diaria = floatval($currentUser['comision_porcentaje'] ?? 50);
 $com_finde = floatval($currentUser['comision_fin_semana'] ?? 50);
 
-$sqlGanancia = "
-    SUM(
-        (IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)
-    ) as total_ganancia
-";
-
-// 1.1 Ganancia Hoy
-$gananciaHoy = query("
-    SELECT $sqlGanancia
+// Ganancia Citas Hoy
+$gananciaHoyServicios = query("
+    SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
     FROM citas 
     WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
-", [$barbero_id]);
-$miGananciaDia = floatval($gananciaHoy[0]['total_ganancia'] ?? 0);
+", [$barbero_id])[0]['total'] ?? 0;
 
-// 1.2 Ganancia Mes
+// Ganancia Ventas Productos Hoy (Comisión para el barbero)
+$gananciaHoyVentas = query("
+    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * (CASE WHEN DAYOFWEEK(fecha) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
+    FROM ventas_productos 
+    WHERE usuario_id = ? AND DATE(fecha) = CURDATE()
+", [$barbero_id])[0]['total'] ?? 0;
+
+$miGananciaDia = floatval($gananciaHoyServicios) + floatval($gananciaHoyVentas);
+
+// Ganancia Mes (Servicios + Ventas)
 $monthStart = date('Y-m-01');
 $monthEnd = date('Y-m-t');
-$gananciaMes = query("
-    SELECT $sqlGanancia
+
+$gananciaMesServicios = query("
+    SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
     FROM citas 
     WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
-", [$barbero_id, $monthStart, $monthEnd]);
-$miGananciaMes = floatval($gananciaMes[0]['total_ganancia'] ?? 0);
+", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
 
-// 1.3 Total de citas completadas hoy
+$gananciaMesVentas = query("
+    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * (CASE WHEN DAYOFWEEK(fecha) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
+    FROM ventas_productos 
+    WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
+", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
+
+$miGananciaMes = floatval($gananciaMesServicios) + floatval($gananciaMesVentas);
+
+// Total de citas completadas hoy
 $countHoy = query("
     SELECT COUNT(*) as total
     FROM citas 
@@ -91,7 +101,7 @@ $nextClient = query("
 
 $proximo = $nextClient ? $nextClient[0] : null;
 
-// 3. Turnos de Hoy (Lista de citas programadas para hoy)
+// 3. Turnos de Hoy
 $turnosHoy = query("
     SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.nombre as cliente, cli.telefono as cliente_telefono
     FROM citas c
@@ -100,6 +110,9 @@ $turnosHoy = query("
     WHERE c.barbero_id = ? AND DATE(c.fecha_hora) = CURDATE()
     ORDER BY c.fecha_hora ASC
 ", [$barbero_id]);
+
+// 4. Inventario de la Sucursal (para ventas e insumos)
+$inventarioItems = query("SELECT id, producto, cantidad, precio FROM inventario WHERE sucursal_id = ? ORDER BY producto ASC", [$sucursal_id]);
 
 $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
 ?>
@@ -190,7 +203,7 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
             border-radius: 8px;
         }
 
-        /* Earnings Cards Grid */
+        /* Metrics Grid (Mis Ganancias) */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -225,7 +238,6 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
             margin-top: 0.2rem;
         }
 
-        /* Next Client Banner */
         .section-title {
             font-size: 0.9rem;
             font-weight: 700;
@@ -233,8 +245,12 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
             letter-spacing: 0.08em;
             color: #FFFFFF;
             margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
+        /* Next Client Banner */
         .next-client-box {
             background: linear-gradient(135deg, #1A1A1A 0%, #242424 100%);
             border: 1px solid var(--barber-gold);
@@ -284,6 +300,64 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
+            cursor: pointer;
+        }
+
+        /* Action Box Cards for Sales & Supplies */
+        .action-box {
+            background: var(--barber-card);
+            border: 1px solid var(--barber-border);
+            border-radius: 16px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--barber-muted);
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: #222222;
+            border: 1px solid var(--barber-border);
+            border-radius: 10px;
+            color: #FFFFFF;
+            font-family: inherit;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            box-sizing: border-box;
+        }
+
+        .btn-action-gold {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--barber-gold);
+            color: #000000;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+        }
+
+        .btn-action-dark {
+            width: 100%;
+            padding: 0.85rem;
+            background: #2A2A2A;
+            color: #FFFFFF;
+            border: 1px solid var(--barber-border);
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             cursor: pointer;
         }
 
@@ -370,17 +444,17 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
             </div>
         <?php endif; ?>
 
-        <!-- Metrics Grid (Mis Ganancias) -->
+        <!-- Metrics Grid (Mis Ganancias = Servicios + Ventas) -->
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="metric-title">Mis Ganancias (Hoy)</div>
                 <div class="metric-value">$<?php echo number_format($miGananciaDia, 2); ?></div>
-                <div class="metric-sub"><?php echo $totalCitasHoy; ?> cortes realizados hoy</div>
+                <div class="metric-sub"><?php echo $totalCitasHoy; ?> cortes + ventas hoy</div>
             </div>
             <div class="metric-card">
                 <div class="metric-title">Mis Ganancias (Mes)</div>
                 <div class="metric-value">$<?php echo number_format($miGananciaMes, 2); ?></div>
-                <div class="metric-sub">Comisión estimada acumulada</div>
+                <div class="metric-sub">Servicios + comisiones acumuladas</div>
             </div>
         </div>
 
@@ -409,6 +483,64 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
             <div style="font-size: 0.8rem; color: var(--barber-muted); margin-top: 0.3rem;">¡Excelente trabajo! Tus ganancias de hoy se encuentran actualizadas arriba.</div>
         </div>
         <?php endif; ?>
+
+        <!-- REGISTRAR VENTA DE PRODUCTO (CON COMISIÓN) -->
+        <div class="section-title">
+            <span>🛍️ Registrar Venta de Producto</span>
+            <span style="font-size: 0.7rem; color: var(--barber-gold);">+ <?php echo $com_diaria; ?>% Comisión</span>
+        </div>
+        <div class="action-box">
+            <form id="formVentaProducto" onsubmit="registrarVentaProductoBarbero(event)">
+                <label class="form-label">Selecciona el Producto Vendido:</label>
+                <select name="producto_id" class="form-select" required>
+                    <option value="">-- Seleccionar producto del inventario --</option>
+                    <?php foreach ($inventarioItems as $item): ?>
+                        <option value="<?php echo $item['id']; ?>">
+                            <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <div style="display: flex; gap: 0.75rem;">
+                    <div style="flex: 1;">
+                        <label class="form-label">Cantidad:</label>
+                        <input type="number" name="cantidad" value="1" min="1" class="form-input" required>
+                    </div>
+                    <div style="flex: 2; display: flex; align-items: flex-end;">
+                        <button type="submit" class="btn-action-gold">VENDER (+ COMISIÓN)</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- DEBITAR INSUMOS DEL TURNO (CUCHILLAS, TOALLAS, ETC) -->
+        <div class="section-title">
+            <span>📦 Gastos / Consumo de Insumos</span>
+            <span style="font-size: 0.7rem; color: var(--barber-muted);">Descuento Automático</span>
+        </div>
+        <div class="action-box">
+            <form id="formConsumoInsumo" onsubmit="descontarInsumoBarbero(event)">
+                <label class="form-label">Material / Insumo Gastado (Cuchilla, Toalla, Gel, etc.):</label>
+                <select name="producto_id" class="form-select" required>
+                    <option value="">-- Seleccionar insumo a debitar --</option>
+                    <?php foreach ($inventarioItems as $item): ?>
+                        <option value="<?php echo $item['id']; ?>">
+                            <?php echo htmlspecialchars($item['producto']); ?> (Quedan: <?php echo $item['cantidad']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <div style="display: flex; gap: 0.75rem;">
+                    <div style="flex: 1;">
+                        <label class="form-label">Cantidad Gastada:</label>
+                        <input type="number" name="cantidad" value="1" min="1" class="form-input" required>
+                    </div>
+                    <div style="flex: 2; display: flex; align-items: flex-end;">
+                        <button type="submit" class="btn-action-dark">DEBITAR INSUMO</button>
+                    </div>
+                </div>
+            </form>
+        </div>
 
         <!-- Turnos de Hoy List -->
         <div class="section-title">Mis Turnos de Hoy (<?php echo date('d/m/Y'); ?>)</div>
@@ -439,6 +571,50 @@ $inicial_barbero = strtoupper(substr($currentUser['nombre'], 0, 1));
             <?php endif; ?>
         </div>
     </div>
+
+    <script>
+        async function registrarVentaProductoBarbero(e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            formData.append('action', 'registrar_venta');
+
+            try {
+                const res = await fetch('/api/barbero_inventario_action.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.success) {
+                    window.location.reload();
+                }
+            } catch (err) {
+                alert('Error al registrar la venta');
+            }
+        }
+
+        async function descontarInsumoBarbero(e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            formData.append('action', 'descontar_insumo');
+
+            try {
+                const res = await fetch('/api/barbero_inventario_action.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.success) {
+                    window.location.reload();
+                }
+            } catch (err) {
+                alert('Error al debitar insumo');
+            }
+        }
+    </script>
 
 </body>
 </html>
