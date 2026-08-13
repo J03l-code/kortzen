@@ -784,28 +784,150 @@ body.pwa-app-mode {
 }
 
 /* =====================================================
-   DESKTOP WEB ADAPTATION (PC & Wide Screen Browsers)
-   Only show bottom app bar when in Mobile PWA Standalone Mode
+   DESKTOP WEB ADAPTATION (PC Browsers @media min-width: 769px)
    ===================================================== */
+
+.pwa-desktop-navbar {
+    display: none;
+}
+
+.pwa-collapsible-menu {
+    display: none;
+}
+
 @media (min-width: 769px) {
-    /* Hide native mobile bottom tab bar on desktop web browsers */
-    body:not(.is-pwa-standalone) .pwa-bottom-nav-bar {
+    /* Hide native mobile bottom tab bar on desktop browsers */
+    .pwa-bottom-nav-bar {
         display: none !important;
     }
 
-    /* Expand PWA container gracefully for desktop screens */
-    body:not(.is-pwa-standalone) .pwa-container {
-        max-width: 1100px;
-        padding-top: 2rem;
-        padding-bottom: 4rem;
+    /* Expand PWA container for desktop web experience */
+    .pwa-container {
+        max-width: 1050px !important;
+        padding-top: 1.5rem !important;
+        padding-bottom: 4rem !important;
     }
 
-    body:not(.is-pwa-standalone) .pwa-quick-actions {
+    /* Hide mobile-only sticky header on desktop */
+    .pwa-header {
+        display: none !important;
+    }
+
+    /* Show Desktop Web Navbar & Collapsible Menu */
+    .pwa-desktop-navbar {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.2rem 0;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--pwa-border);
+    }
+
+    .pwa-desktop-logo {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        color: #111111;
+        text-decoration: none;
+    }
+
+    .pwa-desktop-menu-links {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .pwa-desktop-nav-link {
+        color: var(--pwa-text-main);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 0.55rem 1rem;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .pwa-desktop-nav-link:hover,
+    .pwa-desktop-nav-link--active {
+        background: #111111;
+        color: #FFFFFF !important;
+    }
+
+    .pwa-desktop-toggle-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #FFFFFF;
+        border: 1px solid var(--pwa-border);
+        padding: 0.55rem 1.1rem;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #111111;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .pwa-desktop-toggle-btn:hover {
+        background: #F4F4F4;
+    }
+
+    /* Collapsible Menu Drawer on Desktop */
+    .pwa-collapsible-menu {
+        background: #FFFFFF;
+        border: 1px solid var(--pwa-border);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        animation: fadeInDown 0.3s ease-out;
+    }
+
+    .pwa-collapsible-menu--active {
+        display: block !important;
+    }
+
+    .pwa-collapsible-grid {
+        display: grid;
         grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
     }
 
-    body:not(.is-pwa-standalone) .pwa-header {
-        max-width: 1100px;
-        margin: 0 auto;
+    .pwa-collapsible-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+        background: #F9F9F9;
+        border: 1px solid var(--pwa-border);
+        border-radius: 12px;
+        color: #111111;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+
+    .pwa-collapsible-item:hover {
+        background: #111111;
+        color: #FFFFFF;
+    }
+
+    /* Multi-column Grid Expansions for Desktop */
+    .pwa-quick-actions {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+
+    .pwa-services-list {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1.25rem !important;
+    }
+
+    .pwa-barber-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
     }
 }

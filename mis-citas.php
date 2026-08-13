@@ -68,6 +68,8 @@ if ($cliente_id) {
 <body class="pwa-app-mode">
 
     <div class="pwa-container">
+        <?php include_once 'includes/pwa_desktop_header.php'; ?>
+
         <!-- Native Top Bar -->
         <header class="pwa-header">
             <button class="pwa-header__btn" onclick="history.back()" title="Atrás">

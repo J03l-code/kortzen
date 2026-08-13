@@ -145,7 +145,9 @@ if (empty($barberos)) {
 <body class="pwa-app-mode">
 
     <div class="pwa-container">
-        <!-- Native Top Bar -->
+        <?php include_once 'includes/pwa_desktop_header.php'; ?>
+
+        <!-- Native Top Bar (Mobile Only) -->
         <header class="pwa-header">
             <button class="pwa-header__btn" onclick="history.back()" title="Atrás">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -159,7 +161,7 @@ if (empty($barberos)) {
         <p class="pwa-subtitle">Conoce a nuestros maestros barberos expertos en técnicas de lujo y estilismo masculino.</p>
 
         <!-- Barber Cards -->
-        <div style="margin-top: 1rem;">
+        <div class="pwa-barber-grid" style="margin-top: 1rem;">
             <?php foreach ($barberos as $b): 
                 $nombre_b = htmlspecialchars($b['nombre']);
                 $inicial_b = strtoupper(substr($nombre_b, 0, 1));

@@ -309,6 +309,7 @@ $pageTitle = 'Reservar Cita';
 <body>
 
     <div class="booking-container">
+        <?php include_once 'includes/pwa_desktop_header.php'; ?>
         <div class="booking-header">
             <h1 class="booking-title">Tu Cita</h1>
             <p>Hola,

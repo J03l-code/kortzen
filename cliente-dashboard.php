@@ -71,6 +71,8 @@ if ($cliente_id) {
 <body class="pwa-app-mode">
 
     <div class="pwa-container">
+        <?php include_once 'includes/pwa_desktop_header.php'; ?>
+
         <!-- Native Top Bar (Screen 1) -->
         <header class="pwa-header">
             <a href="https://wa.me/593988422770?text=Hola%20KORTZEN,%20tengo%20una%20consulta" target="_blank" class="pwa-header__btn" title="Soporte WhatsApp">

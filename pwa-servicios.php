@@ -61,6 +61,8 @@ if (empty($servicios_por_cat)) {
 <body class="pwa-app-mode">
 
     <div class="pwa-container">
+        <?php include_once 'includes/pwa_desktop_header.php'; ?>
+
         <!-- Native Top Bar (Screen 2) -->
         <header class="pwa-header">
             <button class="pwa-header__btn" onclick="history.back()" title="Atrás">

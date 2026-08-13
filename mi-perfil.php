@@ -63,6 +63,8 @@ if ($cliente_id) {
 <body class="pwa-app-mode">
 
     <div class="pwa-container">
+        <?php include_once 'includes/pwa_desktop_header.php'; ?>
+        
         <!-- Native Top Bar (Screen 4) -->
         <header class="pwa-header">
             <div style="width: 32px;"></div>
