@@ -40,20 +40,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// 1. Ganancias por Servicios + Comisión por Ventas de Productos
+// 1. Ganancias por Servicios + Comisión por Ventas de Productos (Separadas)
 $com_diaria = floatval($currentUser['comision_porcentaje'] ?? 50);
 $com_finde = floatval($currentUser['comision_fin_semana'] ?? 50);
+$com_productos = floatval($currentUser['comision_productos'] ?? 10.00);
 
-// Ganancia Citas Hoy
+// Ganancia Citas Hoy (Servicios)
 $gananciaHoyServicios = query("
     SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
     FROM citas 
     WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
 ", [$barbero_id])[0]['total'] ?? 0;
 
-// Ganancia Ventas Productos Hoy (Comisión para el barbero)
+// Ganancia Ventas Productos Hoy (Comisión de productos asignada)
 $gananciaHoyVentas = query("
-    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * (CASE WHEN DAYOFWEEK(fecha) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
+    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
     FROM ventas_productos 
     WHERE usuario_id = ? AND DATE(fecha) = CURDATE()
 ", [$barbero_id])[0]['total'] ?? 0;
@@ -71,7 +72,7 @@ $gananciaMesServicios = query("
 ", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
 
 $gananciaMesVentas = query("
-    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * (CASE WHEN DAYOFWEEK(fecha) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
+    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
     FROM ventas_productos 
     WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
 ", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;

@@ -239,6 +239,14 @@ include 'includes/header.php';
         </div>
 
         <div class="form-group">
+            <label class="form-label" style="color: var(--color-gold, #C0A062); font-weight: 700;">Comisión Venta de Productos (%)</label>
+            <input type="number" name="comision_productos" class="form-input" 
+                   value="<?php echo $isEdit && isset($usuario['comision_productos']) ? $usuario['comision_productos'] : '10.00'; ?>" 
+                   min="0" max="100" step="0.01" placeholder="Ej. 10.00">
+            <small style="color: var(--text-muted); font-size: 0.8em;">Porcentaje exclusivo asignado por venta de productos</small>
+        </div>
+
+        <div class="form-group">
             <label class="form-label">Sucursal</label>
             <select name="sucursal_id" class="form-select">
                 <option value="">Todas las sucursales</option>
