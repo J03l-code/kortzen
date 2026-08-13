@@ -3,6 +3,11 @@ require_once 'config.php';
 requireLogin();
 $currentUser = getCurrentUser();
 
+if ($currentUser['rol'] === 'barbero') {
+    header('Location: barber-dashboard.php');
+    exit;
+}
+
 // Obtener estadísticas generales (solo si es Admin o Admin Local, mantenemos la lógica original)
 // ... (código original de admins omitido/mantenido igual, nos enfocamos en mejorar la vista de BARBERO)
 

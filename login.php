@@ -36,7 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     session_regenerate_id(true);
 
-                    header('Location: dashboard.php');
+                    if ($user['rol'] === 'barbero') {
+                        header('Location: barber-dashboard.php');
+                    } else {
+                        header('Location: dashboard.php');
+                    }
                     exit;
                 } else {
                     $error = 'Credenciales incorrectas';
