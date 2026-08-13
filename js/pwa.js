@@ -108,10 +108,16 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
   document.head.appendChild(style);
 
-  // Check device type
+  // Check device & standalone mode
   const userAgent = window.navigator.userAgent.toLowerCase();
   const isIos = /iphone|ipad|ipod/.test(userAgent);
-  const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+  const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (('standalone' in window.navigator) && (window.navigator.standalone));
+
+  if (isInStandaloneMode) {
+    document.body.classList.add('is-pwa-standalone');
+  } else {
+    document.body.classList.add('is-desktop-web');
+  }
 
   // Show iOS-specific install prompt if inside Safari but not added to Home Screen
   if (isIos && !isInStandaloneMode) {

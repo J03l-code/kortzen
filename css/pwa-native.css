@@ -782,3 +782,30 @@ body.pwa-app-mode {
     transform: scale(0.96) !important;
     transition: transform 0.05s ease, opacity 0.05s ease !important;
 }
+
+/* =====================================================
+   DESKTOP WEB ADAPTATION (PC & Wide Screen Browsers)
+   Only show bottom app bar when in Mobile PWA Standalone Mode
+   ===================================================== */
+@media (min-width: 769px) {
+    /* Hide native mobile bottom tab bar on desktop web browsers */
+    body:not(.is-pwa-standalone) .pwa-bottom-nav-bar {
+        display: none !important;
+    }
+
+    /* Expand PWA container gracefully for desktop screens */
+    body:not(.is-pwa-standalone) .pwa-container {
+        max-width: 1100px;
+        padding-top: 2rem;
+        padding-bottom: 4rem;
+    }
+
+    body:not(.is-pwa-standalone) .pwa-quick-actions {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    body:not(.is-pwa-standalone) .pwa-header {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+}
