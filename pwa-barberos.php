@@ -75,7 +75,8 @@ if (empty($barberos)) {
             box-shadow: var(--pwa-shadow);
             display: flex;
             flex-direction: column;
-            gap: 0.85rem;
+            justify-content: space-between;
+            height: 100%;
         }
 
         .pwa-barber-profile-header {
@@ -191,7 +192,7 @@ if (empty($barberos)) {
                     ✦ <?php echo htmlspecialchars($specs_b); ?>
                 </div>
 
-                <a href="reservar.php?barbero_id=<?php echo $b['id']; ?>" class="pwa-btn-black" style="padding: 0.85rem; font-size: 0.8rem; margin-top: 0.25rem;">
+                <a href="reservar.php?barbero_id=<?php echo $b['id']; ?>" class="pwa-btn-black" style="padding: 0.85rem; font-size: 0.8rem; margin-top: auto;">
                     <span>RESERVAR CON <?php echo strtoupper($nombre_b); ?></span>
                 </a>
             </div>
