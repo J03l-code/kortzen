@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /scratch/
+Disallow: /logs.php
+Disallow: /config.php
+
+Sitemap: https://kortzen.com/sitemap.xml
