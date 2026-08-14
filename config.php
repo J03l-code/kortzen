@@ -24,8 +24,8 @@ define('SITE_URL', 'https://kortzen.com');  // URL de tu sitio
 define('SITE_NAME', 'KORTZEN Barbería');  // Nombre del sitio
 
 // Configuración de Google reCAPTCHA
-define('RECAPTCHA_SITE_KEY', '6Ld_SITE_KEY_KORTZEN');    // Clave Pública (sitio)
-define('RECAPTCHA_SECRET_KEY', '6Ld_SECRET_KEY_KORTZEN');  // Clave Secreta (servidor)
+define('RECAPTCHA_SITE_KEY', '6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop');    // Clave Pública (sitio)
+define('RECAPTCHA_SECRET_KEY', '6Ldm9oUtAAAAAItTxMMq49FFc2Gl76ppbDsJfBIU');  // Clave Secreta (servidor)
 
 // Configuración de sesión
 ini_set('session.cookie_httponly', 1);
