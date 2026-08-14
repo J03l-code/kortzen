@@ -966,12 +966,6 @@ $pageTitle = 'Reservar Cita';
                 }
             }
         }
-
-            // Add Phone to summary if desired, or just leave it
-            const phoneDiv = document.createElement('div');
-            phoneDiv.innerHTML = `<span style="color:var(--text-secondary); font-size:0.9rem;">TELEFONO</span><div style="font-size:1.2rem; margin-top:5px;">${bookingData.phone}</div>`;
-            // Append if needed implementation
-        }
     </script>
     <!-- Native Bottom Navigation Bar -->
     <nav class="pwa-bottom-nav-bar">
