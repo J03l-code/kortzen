@@ -146,19 +146,28 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
     ";
 
     // Intentar envío vía SMTP si está configurado
+    // Intentar envío vía SMTP (Hostinger info@kortzen.com)
     try {
-        $pdo = getConnection();
-        $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave LIKE 'smtp_%'");
-        $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+        $cfgs = [];
+        try {
+            $pdo = getConnection();
+            $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave LIKE 'smtp_%'");
+            $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+        } catch (Exception $eDb) {}
 
-        if (!empty($cfgs['smtp_user']) && !empty($cfgs['smtp_pass'])) {
-            $smtpOk = enviarCorreoSMTPDirecto($toEmail, $subject, $message, $cfgs);
-            @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "SMTP RESERVA: Para: $toEmail | Resultado: " . ($smtpOk ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
-            if ($smtpOk) return true;
+        if (empty($cfgs['smtp_user']) || empty($cfgs['smtp_pass'])) {
+            $cfgs['smtp_host'] = 'smtp.hostinger.com';
+            $cfgs['smtp_port'] = 465;
+            $cfgs['smtp_user'] = 'info@kortzen.com';
+            $cfgs['smtp_pass'] = 'Kortzen2026!';
         }
+
+        $smtpOk = enviarCorreoSMTPDirecto($toEmail, $subject, $message, $cfgs);
+        @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "SMTP RESERVA: Para: $toEmail | Resultado: " . ($smtpOk ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
+        if ($smtpOk) return true;
     } catch (Exception $exSmtp) {}
 
-    // Fallback Mail Nativo Automático (Sin necesidad de contraseña)
+    // Fallback Mail Nativo
     $fromEmail = "info@kortzen.com";
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
@@ -238,15 +247,23 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
     ";
 
     try {
-        $pdo = getConnection();
-        $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave LIKE 'smtp_%'");
-        $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+        $cfgs = [];
+        try {
+            $pdo = getConnection();
+            $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave LIKE 'smtp_%'");
+            $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+        } catch (Exception $eDb) {}
 
-        if (!empty($cfgs['smtp_user']) && !empty($cfgs['smtp_pass'])) {
-            $smtpOk = enviarCorreoSMTPDirecto($toEmail, $subject, $message, $cfgs);
-            @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "SMTP RECORDATORIO: Para: $toEmail | Resultado: " . ($smtpOk ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
-            if ($smtpOk) return true;
+        if (empty($cfgs['smtp_user']) || empty($cfgs['smtp_pass'])) {
+            $cfgs['smtp_host'] = 'smtp.hostinger.com';
+            $cfgs['smtp_port'] = 465;
+            $cfgs['smtp_user'] = 'info@kortzen.com';
+            $cfgs['smtp_pass'] = 'Kortzen2026!';
         }
+
+        $smtpOk = enviarCorreoSMTPDirecto($toEmail, $subject, $message, $cfgs);
+        @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "SMTP RECORDATORIO: Para: $toEmail | Resultado: " . ($smtpOk ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
+        if ($smtpOk) return true;
     } catch (Exception $exSmtp) {}
 
     $fromEmail = "info@kortzen.com";
