@@ -5,19 +5,22 @@
 
 /* =================== HEADER =================== */
 
-.header,
-.header--scrolled {
+.header {
     position: fixed;
     top: 42px !important;
     left: 0;
     right: 0;
     z-index: 10000 !important;
     padding: var(--space-3) 0;
-    background-color: #111111 !important;
-    background: #111111 !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    background-color: transparent !important;
     transition: all var(--transition-base);
+}
+
+.header--scrolled {
+    top: 42px !important;
+    background-color: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
 }
 
 .header__container {
@@ -34,33 +37,37 @@
     }
 }
 
-/* Header Text & Links - Force White & Gold High Contrast */
+/* Header Text & Links - Elegant Black (#111111) */
 .header .header__logo-text,
-.header--scrolled .header__logo-text,
-.header .nav__link,
-.header--scrolled .nav__link {
-    color: #FFFFFF !important;
+.header .nav__link {
+    color: #111111 !important;
+    font-weight: 700 !important;
 }
 
-.header .header__logo-text span,
-.header--scrolled .header__logo-text span {
+.header .header__logo-text span {
     color: var(--color-gold, #C0A062) !important;
 }
 
 .header .nav__link:hover,
-.header--scrolled .nav__link:hover,
-.header .nav__link--active,
-.header--scrolled .nav__link--active {
+.header .nav__link--active {
     color: var(--color-gold, #C0A062) !important;
 }
 
-.header .nav__link::after,
-.header--scrolled .nav__link::after {
+.header .nav__link::after {
     background-color: var(--color-gold, #C0A062) !important;
 }
 
-.header .menu-toggle__line,
-.header--scrolled .menu-toggle__line {
+.header .menu-toggle__line {
+    background-color: #111111 !important;
+}
+
+/* Home Page Header (White Text on Dark Hero Background) */
+body.page-home .header:not(.header--scrolled) .header__logo-text,
+body.page-home .header:not(.header--scrolled) .nav__link {
+    color: #FFFFFF !important;
+}
+
+body.page-home .header:not(.header--scrolled) .menu-toggle__line {
     background-color: #FFFFFF !important;
 }
 
