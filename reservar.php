@@ -435,17 +435,17 @@ $pageTitle = 'Reservar Cita';
                 </div>
 
                 <div class="policy-section"
-                    style="margin-bottom: 25px; padding: 15px; background: #fff5e6; border-left: 4px solid var(--gold); border-radius: 4px;">
-                    <h4 style="margin-top: 0; color: #b38600; font-size: 0.95rem;">POLÍTICA DE RESERVAS</h4>
-                    <ul style="font-size: 0.85rem; color: #555; padding-left: 20px; margin-bottom: 10px;">
-                        <li style="margin-bottom: 5px;">Si no puede llegar a su cita, informar con 1 hora de
+                    style="margin-bottom: 25px; padding: 15px; background: #fff5e6; border-left: 4px solid var(--gold); border-radius: 6px;">
+                    <h4 style="margin-top: 0; color: #8a6d3b; font-size: 0.95rem; font-weight: 800;">POLÍTICA DE RESERVAS</h4>
+                    <ul style="font-size: 0.85rem; color: #222222 !important; padding-left: 20px; margin-bottom: 10px; line-height: 1.4;">
+                        <li style="margin-bottom: 5px; color: #222222 !important;">Si no puede llegar a su cita, informar con 1 hora de
                             anticipación, caso contrario tendrá un recargo adicional en su próxima cita.</li>
-                        <li>Si llega 10 minutos tarde, pierde el servicio de toalla caliente y limpieza facial.</li>
+                        <li style="color: #222222 !important;">Si llega 10 minutos tarde, pierde el servicio de toalla caliente y limpieza facial.</li>
                     </ul>
                     <div style="display: flex; align-items: flex-start; gap: 10px; margin-top: 10px;">
                         <input type="checkbox" id="policyCheckbox"
                             style="margin-top: 3px; transform: scale(1.2); cursor: pointer;">
-                        <label for="policyCheckbox" style="font-size: 0.9rem; font-weight: 600; cursor: pointer;">
+                        <label for="policyCheckbox" style="color: #111111 !important; font-size: 0.9rem; font-weight: 700 !important; cursor: pointer;">
                             He leído y acepto los términos y condiciones.
                         </label>
                     </div>
