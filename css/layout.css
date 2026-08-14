@@ -42,7 +42,11 @@
 .header .nav__link,
 .header .header__user,
 .header .header__user span,
-.header .header__user-name {
+.header .header__user-name,
+.user-indicator,
+.user-indicator *,
+.user-indicator span,
+.user-indicator a {
     color: #111111 !important;
     font-weight: 700 !important;
 }
