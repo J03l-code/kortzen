@@ -5,6 +5,7 @@
  */
 
 require_once 'config.php';
+require_once 'includes/recaptcha_helper.php';
 
 // Si ya está logueado como staff, redirigir al dashboard
 if (isLoggedIn()) {
@@ -17,8 +18,11 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $recaptchaToken = $_POST['g-recaptcha-response'] ?? '';
 
-    if (empty($email) || empty($password)) {
+    if (!verificarRecaptcha($recaptchaToken)) {
+        $error = 'Por favor confirma la casilla de seguridad reCAPTCHA.';
+    } elseif (empty($email) || empty($password)) {
         $error = 'Por favor complete todos los campos';
     } else {
         try {

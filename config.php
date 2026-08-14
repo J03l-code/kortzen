@@ -21,7 +21,11 @@ date_default_timezone_set('America/Guayaquil');
 
 // Configuración de la aplicación
 define('SITE_URL', 'https://kortzen.com');  // URL de tu sitio
-define('SITE_NAME', 'Sistema de Gestión de Barberías');  // Nombre del sitio
+define('SITE_NAME', 'KORTZEN Barbería');  // Nombre del sitio
+
+// Configuración de Google reCAPTCHA
+define('RECAPTCHA_SITE_KEY', '6Ld_SITE_KEY_KORTZEN');    // Clave Pública (sitio)
+define('RECAPTCHA_SECRET_KEY', '6Ld_SECRET_KEY_KORTZEN');  // Clave Secreta (servidor)
 
 // Configuración de sesión
 ini_set('session.cookie_httponly', 1);
