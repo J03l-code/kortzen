@@ -96,8 +96,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         autocomplete="current-password">
                 </div>
 
-                <!-- Google reCAPTCHA Widget -->
-                <div class="g-recaptcha" data-sitekey="<?php echo defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : ''; ?>" style="margin: 16px 0; display: flex; justify-content: center;"></div>
+                <!-- Google reCAPTCHA v3 (Invisible Score) -->
+                <script src="https://www.google.com/recaptcha/api.js?render=<?php echo defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : ''; ?>"></script>
+                <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
+                <script>
+                  if (typeof grecaptcha !== 'undefined') {
+                    grecaptcha.ready(function() {
+                        grecaptcha.execute('<?php echo defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : ''; ?>', {action: 'login'}).then(function(token) {
+                            var el = document.getElementById('g-recaptcha-response');
+                            if (el) el.value = token;
+                        });
+                    });
+                  }
+                </script>
 
                 <button type="submit" class="btn-login">Iniciar Sesión</button>
             </form>

@@ -127,8 +127,19 @@
                                 <textarea id="message" name="message" class="form-input form-textarea"
                                     placeholder="¿En qué podemos ayudarte?" required></textarea>
                             </div>
-                            <!-- Google reCAPTCHA -->
-                            <div class="g-recaptcha" data-sitekey="6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop" style="margin: 16px 0;"></div>
+                            <!-- Google reCAPTCHA v3 (Invisible Score) -->
+                            <script src="https://www.google.com/recaptcha/api.js?render=6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop"></script>
+                            <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
+                            <script>
+                              if (typeof grecaptcha !== 'undefined') {
+                                grecaptcha.ready(function() {
+                                    grecaptcha.execute('6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop', {action: 'contact'}).then(function(token) {
+                                        var el = document.getElementById('g-recaptcha-response');
+                                        if (el) el.value = token;
+                                    });
+                                });
+                              }
+                            </script>
                             <button type="submit" class="btn btn--primary" style="width: 100%;">Enviar Mensaje</button>
                         </form>
                     </div>
