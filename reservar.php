@@ -753,15 +753,9 @@ $pageTitle = 'Reservar Cita';
             el.classList.add('selected');
             updateNavButtons();
 
-            // Auto-advance to Step 4 (Client Info) or 5 (Summary) depending on logic
+            // Auto-advance to Step 4 (Datos de Contacto & Código de Referido)
             setTimeout(() => {
-                // Logic mimics btnNext click
-                // Skip step 4 if client already has phone
-                if (hasExistingPhone) {
-                    currentStep = 5;
-                } else {
-                    currentStep = 4;
-                }
+                currentStep = 4;
                 showStep(currentStep);
             }, 300);
         }
