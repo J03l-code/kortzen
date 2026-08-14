@@ -20,12 +20,18 @@ if ($action === 'save_configs') {
         $puntos_por_referido = max(0, intval($_POST['puntos_por_referido'] ?? 200));
         $descuento_referido_amigo = max(0, floatval($_POST['descuento_referido_amigo'] ?? 2.00));
         $descuento_referente = max(0, floatval($_POST['descuento_referente'] ?? 2.00));
+        $puntos_nivel_plata = max(1, intval($_POST['puntos_nivel_plata'] ?? 500));
+        $puntos_nivel_oro = max($puntos_nivel_plata + 1, intval($_POST['puntos_nivel_oro'] ?? 1500));
+        $puntos_nivel_vip = max($puntos_nivel_oro + 1, intval($_POST['puntos_nivel_vip'] ?? 3000));
 
         $configs = [
             'puntos_por_corte' => (string)$puntos_por_corte,
             'puntos_por_referido' => (string)$puntos_por_referido,
             'descuento_referido_amigo' => number_format($descuento_referido_amigo, 2, '.', ''),
-            'descuento_referente' => number_format($descuento_referente, 2, '.', '')
+            'descuento_referente' => number_format($descuento_referente, 2, '.', ''),
+            'puntos_nivel_plata' => (string)$puntos_nivel_plata,
+            'puntos_nivel_oro' => (string)$puntos_nivel_oro,
+            'puntos_nivel_vip' => (string)$puntos_nivel_vip
         ];
 
         $stmt = $pdo->prepare("INSERT INTO configuracion (clave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor = VALUES(valor)");

@@ -58,19 +58,36 @@ if ($cliente_id) {
     }
 }
 
-// Calcular Nivel y Progreso
-if ($puntos_actuales >= 1500) {
+// Cargar configuraciones de nivel
+$puntos_nivel_plata = 500;
+$puntos_nivel_oro = 1500;
+$puntos_nivel_vip = 3000;
+
+try {
+    $pdo = getConnection();
+    $stmtCfgsN = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave IN ('puntos_nivel_plata', 'puntos_nivel_oro', 'puntos_nivel_vip')");
+    $cfgsN = $stmtCfgsN->fetchAll(PDO::FETCH_KEY_PAIR);
+    if (!empty($cfgsN['puntos_nivel_plata'])) $puntos_nivel_plata = intval($cfgsN['puntos_nivel_plata']);
+    if (!empty($cfgsN['puntos_nivel_oro'])) $puntos_nivel_oro = intval($cfgsN['puntos_nivel_oro']);
+    if (!empty($cfgsN['puntos_nivel_vip'])) $puntos_nivel_vip = intval($cfgsN['puntos_nivel_vip']);
+} catch (Exception $exN) {}
+
+// Calcular Nivel y Progreso Dinámicamente
+if ($puntos_actuales >= $puntos_nivel_vip) {
+    $tier_nombre = "Miembro KORTZEN • Nivel VIP 💎";
+    $siguiente_nivel = $puntos_nivel_vip;
+} elseif ($puntos_actuales >= $puntos_nivel_oro) {
     $tier_nombre = "Miembro KORTZEN • Nivel Oro 👑";
-    $siguiente_nivel = 3000;
-} elseif ($puntos_actuales >= 500) {
+    $siguiente_nivel = $puntos_nivel_vip;
+} elseif ($puntos_actuales >= $puntos_nivel_plata) {
     $tier_nombre = "Miembro KORTZEN • Nivel Plata 🥈";
-    $siguiente_nivel = 1500;
+    $siguiente_nivel = $puntos_nivel_oro;
 } else {
     $tier_nombre = "Miembro KORTZEN • Nivel Bronce 🥉";
-    $siguiente_nivel = 500;
+    $siguiente_nivel = $puntos_nivel_plata;
 }
 
-$porcentaje_progreso = min(100, round(($puntos_actuales / $siguiente_nivel) * 100));
+$porcentaje_progreso = min(100, round(($puntos_actuales / max(1, $siguiente_nivel)) * 100));
 ?>
 <!DOCTYPE html>
 <html lang="es">

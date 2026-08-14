@@ -30,7 +30,10 @@ try {
         ['puntos_por_corte', '100', 'Puntos otorgados al cliente por cada cita/corte completado'],
         ['puntos_por_referido', '200', 'Puntos otorgados al cliente referente por cada referido exitoso'],
         ['descuento_referido_amigo', '2.00', 'Descuento ($) en la primera reserva del amigo que aplica el código'],
-        ['descuento_referente', '2.00', 'Descuento ($) otorgado al cliente referente para su próxima cita']
+        ['descuento_referente', '2.00', 'Descuento ($) otorgado al cliente referente para su próxima cita'],
+        ['puntos_nivel_plata', '500', 'Puntos requeridos para alcanzar Nivel Plata'],
+        ['puntos_nivel_oro', '1500', 'Puntos requeridos para alcanzar Nivel Oro'],
+        ['puntos_nivel_vip', '3000', 'Puntos requeridos para alcanzar Nivel VIP / Máximo']
     ];
 
     $stmtCfg = $pdo->prepare("INSERT INTO configuracion (clave, valor, descripcion) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion)");
@@ -135,6 +138,51 @@ include 'includes/header.php';
             </div>
         </div>
 
+    </div>
+
+    <!-- Tarjeta de Niveles y Rangos KORTZEN -->
+    <div style="background: #181818; border: 1px solid #333333; border-radius: 14px; padding: 24px; color: #FFFFFF; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: #C0A062; margin-bottom: 18px; border-bottom: 1px solid #333333; padding-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <span>👑</span> Niveles de Fidelización & Metas de Puntos
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+            <div>
+                <label style="font-weight: 700; color: #E0E0E0; display: block; margin-bottom: 6px; font-size: 0.92rem;">
+                    🥈 Nivel Plata (Puntos requeridos):
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="number" name="puntos_nivel_plata" value="<?php echo htmlspecialchars($configs['puntos_nivel_plata'] ?? '500'); ?>" required min="0" 
+                           style="width: 100%; padding: 12px; background: #222222; border: 1px solid #444444; color: #FFFFFF; border-radius: 8px; font-weight: 800; font-size: 1.1rem;">
+                    <span style="color: #CCCCCC; font-weight: 700; font-size: 0.85rem;">pts</span>
+                </div>
+                <small style="color: #888888; font-size: 0.8rem; display: block; margin-top: 4px;">Puntos necesarios para pasar de Bronce 🥉 a Plata 🥈.</small>
+            </div>
+
+            <div>
+                <label style="font-weight: 700; color: #FFD700; display: block; margin-bottom: 6px; font-size: 0.92rem;">
+                    👑 Nivel Oro (Puntos requeridos):
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="number" name="puntos_nivel_oro" value="<?php echo htmlspecialchars($configs['puntos_nivel_oro'] ?? '1500'); ?>" required min="0" 
+                           style="width: 100%; padding: 12px; background: #222222; border: 1px solid #444444; color: #FFFFFF; border-radius: 8px; font-weight: 800; font-size: 1.1rem;">
+                    <span style="color: #FFD700; font-weight: 700; font-size: 0.85rem;">pts</span>
+                </div>
+                <small style="color: #888888; font-size: 0.8rem; display: block; margin-top: 4px;">Puntos necesarios para pasar de Plata 🥈 a Oro 👑.</small>
+            </div>
+
+            <div>
+                <label style="font-weight: 700; color: #C0A062; display: block; margin-bottom: 6px; font-size: 0.92rem;">
+                    💎 Nivel VIP / Máximo (Puntos requeridos):
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="number" name="puntos_nivel_vip" value="<?php echo htmlspecialchars($configs['puntos_nivel_vip'] ?? '3000'); ?>" required min="0" 
+                           style="width: 100%; padding: 12px; background: #222222; border: 1px solid #444444; color: #FFFFFF; border-radius: 8px; font-weight: 800; font-size: 1.1rem;">
+                    <span style="color: #C0A062; font-weight: 700; font-size: 0.85rem;">pts</span>
+                </div>
+                <small style="color: #888888; font-size: 0.8rem; display: block; margin-top: 4px;">Meta máxima de puntos para el nivel VIP 💎.</small>
+            </div>
+        </div>
     </div>
 
     <!-- Botón Guardar Cambios -->
