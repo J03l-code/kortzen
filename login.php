@@ -67,6 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KORTZEN - Acceso Barberos</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
@@ -93,6 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" id="password" name="password" class="form-input" required
                         autocomplete="current-password">
                 </div>
+
+                <!-- Google reCAPTCHA Widget -->
+                <div class="g-recaptcha" data-sitekey="<?php echo defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : ''; ?>" style="margin: 16px 0; display: flex; justify-content: center;"></div>
 
                 <button type="submit" class="btn-login">Iniciar Sesión</button>
             </form>
