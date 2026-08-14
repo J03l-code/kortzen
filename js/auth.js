@@ -173,10 +173,10 @@ const KortzenAuth = {
                 const avatar = this.user.avatar || this.user.name?.charAt(0).toUpperCase() || 'U';
 
                 const profileHTML = `
-                    <div class="header__user" id="user-dropdown">
+                    <div class="header__user" id="user-dropdown" style="color: #111111 !important;">
                         <div class="header__user-avatar">${avatar}</div>
-                        <span>${this.user.name}</span>
-                        <svg class="header__user-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <span style="color: #111111 !important; font-weight: 700 !important; margin: 0 4px;">${this.user.name}</span>
+                        <svg class="header__user-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" style="stroke: #111111 !important;">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                         
