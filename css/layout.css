@@ -757,3 +757,9 @@
     max-width: 600px;
     margin-inline: auto;
 }
+
+@media (min-width: 992px) {
+    .footer__copyright {
+        margin-left: 270px;
+    }
+}

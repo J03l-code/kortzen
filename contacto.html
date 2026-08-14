@@ -28,13 +28,18 @@
     <meta name="apple-mobile-web-app-title" content="KORTZEN">
     <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
     <script src="/js/pwa.js" defer></script>
-    <!-- Google reCAPTCHA Badge Position Left -->
+    <!-- Google reCAPTCHA Badge Position Left & Footer Layout -->
     <style>
         .grecaptcha-badge {
-            left: 20px !important;
+            left: 15px !important;
             right: auto !important;
-            bottom: 20px !important;
+            bottom: 15px !important;
             z-index: 99999 !important;
+        }
+        @media (min-width: 992px) {
+            .footer__copyright {
+                margin-left: 270px !important;
+            }
         }
         @media (max-width: 768px) {
             .grecaptcha-badge {
