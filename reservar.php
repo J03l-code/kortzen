@@ -394,13 +394,13 @@ $pageTitle = 'Reservar Cita';
                 <p style="font-size: 0.8rem; color: #999;">* Obligatorio para notificaciones de la cita.</p>
 
                 <!-- Campo Código de Referido -->
-                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #DDD;">
-                    <label style="display:block; margin-bottom:6px; color:#111111; font-weight:700; font-size: 0.88rem;">🎁 ¿Tienes un Código de Referido?</label>
-                    <div style="display:flex; gap:8px;">
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #444444; width: 100%; box-sizing: border-box;">
+                    <label style="display:block; margin-bottom:8px; color:var(--color-gold, #C0A062); font-weight:800; font-size: 0.9rem;">🎁 ¿Tienes un Código de Referido?</label>
+                    <div style="display:flex; gap:8px; width:100%; box-sizing: border-box;">
                         <input type="text" id="referralCodeInput" placeholder="Ej: KORTZEN-AMIGO" 
-                               style="flex:1; padding:10px; border:1px solid #CCCCCC; border-radius:6px; text-transform:uppercase; font-weight:800; font-size:0.95rem;">
+                               style="flex:1; min-width:0; padding:12px; background:#FFFFFF; border:1px solid #CCCCCC; border-radius:8px; text-transform:uppercase; font-weight:800; font-size:0.95rem; color:#111111; box-sizing: border-box;">
                         <button type="button" onclick="aplicarCodigoReferidoReserva()" 
-                                style="padding:10px 16px; background:#111111; color:#FFFFFF; border:none; border-radius:6px; font-weight:800; font-size:0.8rem; cursor:pointer; text-transform:uppercase;">
+                                style="padding:12px 18px; background:var(--color-gold, #C0A062); color:#111111; border:none; border-radius:8px; font-weight:900; font-size:0.85rem; cursor:pointer; text-transform:uppercase; white-space:nowrap; flex-shrink:0;">
                             Aplicar
                         </button>
                     </div>
