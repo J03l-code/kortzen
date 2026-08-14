@@ -39,7 +39,10 @@
 
 /* Header Text & Links - Elegant Black (#111111) */
 .header .header__logo-text,
-.header .nav__link {
+.header .nav__link,
+.header .header__user,
+.header .header__user span,
+.header .header__user-name {
     color: #111111 !important;
     font-weight: 700 !important;
 }

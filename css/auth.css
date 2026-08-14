@@ -141,15 +141,22 @@
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 20px;
     border: 1px solid rgba(0, 0, 0, 0.1);
-    color: var(--color-gold);
+    color: #111111 !important;
     font-size: 0.9rem;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
 }
 
+.header__user span,
+.header__user-name {
+    color: #111111 !important;
+    font-weight: 700 !important;
+}
+
 .header__user:hover {
-    background-color: rgba(224, 224, 224, 0.1);
-    border-color: var(--color-gold);
+    background-color: rgba(0, 0, 0, 0.08);
+    border-color: #111111;
 }
 
 .header__user-avatar {
