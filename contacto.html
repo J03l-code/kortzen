@@ -28,6 +28,8 @@
     <meta name="apple-mobile-web-app-title" content="KORTZEN">
     <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
     <script src="/js/pwa.js" defer></script>
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
@@ -125,6 +127,8 @@
                                 <textarea id="message" name="message" class="form-input form-textarea"
                                     placeholder="¿En qué podemos ayudarte?" required></textarea>
                             </div>
+                            <!-- Google reCAPTCHA -->
+                            <div class="g-recaptcha" data-sitekey="6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop" style="margin: 16px 0;"></div>
                             <button type="submit" class="btn btn--primary" style="width: 100%;">Enviar Mensaje</button>
                         </form>
                     </div>
