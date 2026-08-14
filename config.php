@@ -6,26 +6,41 @@
  * IMPORTANTE: Modifica estos valores con las credenciales de tu base de datos en Hostinger
  */
 
+// Cargar variables de entorno desde .env si existe en el servidor
+if (file_exists(__DIR__ . '/.env')) {
+    $env_lines = @file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($env_lines) {
+        foreach ($env_lines as $line) {
+            if (strpos(trim($line), '#') === 0) continue;
+            list($key, $val) = explode('=', $line, 2) + [null, null];
+            if ($key && $val !== null) {
+                $k = trim($key);
+                $v = trim($val);
+                putenv("$k=$v");
+                $_ENV[$k] = $v;
+            }
+        }
+    }
+}
+
 // Configuración de la Base de Datos
-// Configuración de la Base de Datos
-// Si estamos en localhost (entorno local), usamos la IP remota. Si estamos en producción, usamos localhost.
 $db_host = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false) ? '195.35.61.92' : 'localhost';
-define('DB_HOST', $db_host);
-define('DB_NAME', 'u434851126_kortzen');  // Nombre de tu base de datos (actualiza este valor)
-define('DB_USER', 'u434851126_kortzenusr');     // Usuario de base de datos (actualiza este valor)
-define('DB_PASS', 'Kortzen2026!');                    // Contraseña de base de datos (actualiza este valor)
+define('DB_HOST', getenv('DB_HOST') ?: $db_host);
+define('DB_NAME', getenv('DB_NAME') ?: 'u434851126_kortzen');
+define('DB_USER', getenv('DB_USER') ?: 'u434851126_kortzenusr');
+define('DB_PASS', getenv('DB_PASS') ?: 'Kortzen2026!');
 define('DB_CHARSET', 'utf8mb4');
 
 // Configuración de Zona Horaria (Ecuador)
 date_default_timezone_set('America/Guayaquil');
 
 // Configuración de la aplicación
-define('SITE_URL', 'https://kortzen.com');  // URL de tu sitio
-define('SITE_NAME', 'KORTZEN Barbería');  // Nombre del sitio
+define('SITE_URL', getenv('SITE_URL') ?: 'https://kortzen.com');
+define('SITE_NAME', getenv('SITE_NAME') ?: 'KORTZEN Barbería');
 
 // Configuración de Google reCAPTCHA
-define('RECAPTCHA_SITE_KEY', '6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop');    // Clave Pública (sitio)
-define('RECAPTCHA_SECRET_KEY', '6Ldm9oUtAAAAAItTxMMq49FFc2Gl76ppbDsJfBIU');  // Clave Secreta (servidor)
+define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop');
+define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '6Ldm9oUtAAAAAItTxMMq49FFc2Gl76ppbDsJfBIU');
 
 // Configuración de sesión
 ini_set('session.cookie_httponly', 1);

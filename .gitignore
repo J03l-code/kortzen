@@ -1,6 +1,7 @@
 # Archivos de configuración sensibles
-# Archivos de configuración sensibles
-# config.php (Comentado para subir a este repo privado)
+.env
+.env.local
+
 
 # Archivos temporales y de sistema
 *.log
