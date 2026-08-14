@@ -158,12 +158,12 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
         }
     } catch (Exception $exSmtp) {}
 
-    // Fallback Mail Nativo
-    $fromEmail = "contacto@kortzen.com";
+    // Fallback Mail Nativo Automático (Sin necesidad de contraseña)
+    $fromEmail = "info@kortzen.com";
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     $headers .= "From: KORTZEN Barbería <$fromEmail>\r\n";
-    $headers .= "Reply-To: KORTZEN <contacto@kortzen.com>\r\n";
+    $headers .= "Reply-To: KORTZEN Barbería <$fromEmail>\r\n";
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
     $res = @mail($toEmail, $subject, $message, $headers, "-f $fromEmail");
@@ -249,11 +249,11 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
         }
     } catch (Exception $exSmtp) {}
 
-    $fromEmail = "contacto@kortzen.com";
+    $fromEmail = "info@kortzen.com";
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     $headers .= "From: KORTZEN Barbería <$fromEmail>\r\n";
-    $headers .= "Reply-To: KORTZEN <contacto@kortzen.com>\r\n";
+    $headers .= "Reply-To: KORTZEN Barbería <$fromEmail>\r\n";
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
     $res = @mail($toEmail, $subject, $message, $headers, "-f $fromEmail");
