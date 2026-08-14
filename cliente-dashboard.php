@@ -25,11 +25,40 @@ $primer_nombre = htmlspecialchars(explode(' ', trim($nombre))[0]);
 $nombres_arr = explode(' ', trim($nombre));
 $iniciales = strtoupper(substr($nombres_arr[0], 0, 1) . (isset($nombres_arr[1]) ? substr($nombres_arr[1], 0, 1) : ''));
 
-// Obtener próxima cita del cliente
+// Obtener próxima cita del cliente y código de referido
 $proxima_cita = null;
+$codigo_referido = '';
+$puntos_por_referido_cfg = 200;
+$descuento_referido_amigo_cfg = '2.00';
+
 if ($cliente_id) {
     try {
         $pdo = getConnection();
+
+        // Cargar configuraciones
+        $stmtCfgs = $pdo->query("SELECT clave, valor FROM configuracion");
+        $cfgsList = $stmtCfgs->fetchAll(PDO::FETCH_KEY_PAIR);
+        $puntos_por_referido_cfg = intval($cfgsList['puntos_por_referido'] ?? 200);
+        $descuento_referido_amigo_cfg = number_format(floatval($cfgsList['descuento_referido_amigo'] ?? 2.00), 2);
+
+        // Código de referido
+        $stmtCod = $pdo->prepare("SELECT codigo_referido FROM clientes WHERE id = ?");
+        $stmtCod->execute([$cliente_id]);
+        $codigo_referido = $stmtCod->fetchColumn();
+
+        if (empty($codigo_referido)) {
+            $nombreLimpio = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $primer_nombre));
+            if (empty($nombreLimpio)) $nombreLimpio = 'CLIENTE';
+            $codigo_referido = 'KORTZEN-' . $nombreLimpio . rand(100, 999);
+            
+            try {
+                $pdo->exec("ALTER TABLE clientes ADD COLUMN codigo_referido VARCHAR(30) UNIQUE NULL AFTER puntos");
+            } catch (Exception $ex) {}
+            
+            $stmtUpdCod = $pdo->prepare("UPDATE clientes SET codigo_referido = ? WHERE id = ?");
+            $stmtUpdCod->execute([$codigo_referido, $cliente_id]);
+        }
+
         $stmt = $pdo->prepare("
             SELECT c.*, s.nombre as servicio_nombre, b.nombre as barbero_nombre
             FROM citas c
@@ -129,6 +158,25 @@ if ($cliente_id) {
                     <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
                 <span>Beneficios</span>
+            </a>
+        </div>
+
+        <!-- Banner Card Código de Referido -->
+        <?php
+        $wa_share_dash = urlencode("¡Hola! Te regalo $" . $descuento_referido_amigo_cfg . " de descuento en tu corte de pelo en KORTZEN Barbería 💈. Usa mi código " . $codigo_referido . " al reservar aquí: https://kortzen.com/reservar.php");
+        ?>
+        <div class="pwa-banner-card" style="background: #111111; border: 1px solid #C0A062;">
+            <div class="pwa-banner-card__left">
+                <div class="pwa-banner-card__icon-box" style="background: rgba(192,160,98,0.2); color: #C0A062; font-size: 1.2rem;">
+                    🎁
+                </div>
+                <div>
+                    <div class="pwa-banner-card__title" style="color: #C0A062; font-weight: 800;">Invita y Gana: <strong><?php echo htmlspecialchars($codigo_referido); ?></strong></div>
+                    <div class="pwa-banner-card__desc" style="color: #CCCCCC;">Gana +<?php echo $puntos_por_referido_cfg; ?> pts y regala $<?php echo $descuento_referido_amigo_cfg; ?> dcto.</div>
+                </div>
+            </div>
+            <a href="https://wa.me/?text=<?php echo $wa_share_dash; ?>" target="_blank" class="pwa-banner-card__link" style="background: #25D366; color: #FFFFFF; padding: 8px 14px; border-radius: 8px; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                Compartir 💬
             </a>
         </div>
 

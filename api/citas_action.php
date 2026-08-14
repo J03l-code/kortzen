@@ -86,7 +86,12 @@ try {
             $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada' WHERE id = ?");
             $stmtComp->execute([$id]);
 
-            // Sumar 100 Puntos KORTZEN al cliente por completar cita
+            // Cargar puntos configurados
+            $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
+            $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+            $puntosPorCorte = intval($cfgs['puntos_por_corte'] ?? 100);
+
+            // Sumar Puntos KORTZEN al cliente por completar cita
             $stmtCitaClient = $pdo->prepare("SELECT cliente_id FROM citas WHERE id = ?");
             $stmtCitaClient->execute([$id]);
             $clientRow = $stmtCitaClient->fetch();
@@ -94,9 +99,31 @@ try {
                 try {
                     $pdo->exec("ALTER TABLE clientes ADD COLUMN puntos INT DEFAULT 0 AFTER telefono");
                 } catch (Exception $ex) {}
-                $stmtAddPts = $pdo->prepare("UPDATE clientes SET puntos = COALESCE(puntos, 0) + 100 WHERE id = ?");
-                $stmtAddPts->execute([$clientRow['cliente_id']]);
+                $stmtAddPts = $pdo->prepare("UPDATE clientes SET puntos = COALESCE(puntos, 0) + ? WHERE id = ?");
+                $stmtAddPts->execute([$puntosPorCorte, $clientRow['cliente_id']]);
             }
+
+            // Procesar recompensa de referido pendiente
+            try {
+                $stmtPendingRef = $pdo->prepare("SELECT * FROM referidos WHERE cita_id = ? AND estado = 'pendiente'");
+                $stmtPendingRef->execute([$id]);
+                $refPending = $stmtPendingRef->fetch(PDO::FETCH_ASSOC);
+
+                if ($refPending) {
+                    $referenteId = $refPending['referente_id'];
+                    $puntosBonus = intval($refPending['puntos_otorgados'] ?? 200);
+
+                    // 1. Marcar referido como completado
+                    $stmtMarkRef = $pdo->prepare("UPDATE referidos SET estado = 'completado' WHERE id = ?");
+                    $stmtMarkRef->execute([$refPending['id']]);
+
+                    // 2. Sumar puntos bonus al referente
+                    if ($referenteId > 0 && $puntosBonus > 0) {
+                        $stmtAddRefPts = $pdo->prepare("UPDATE clientes SET puntos = COALESCE(puntos, 0) + ? WHERE id = ?");
+                        $stmtAddRefPts->execute([$puntosBonus, $referenteId]);
+                    }
+                }
+            } catch (Exception $exRef) {}
 
             // Obtener sucursal de la cita
             $stmtCitaInfo = $pdo->prepare("SELECT sucursal_id FROM citas WHERE id = ?");

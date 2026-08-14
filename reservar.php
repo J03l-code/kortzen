@@ -392,6 +392,20 @@ $pageTitle = 'Reservar Cita';
                         style="width: 100%; padding: 12px; background: #FFF; border: 2px solid var(--gold); color: #333; border-radius: 6px; font-weight: bold; font-size: 1.1rem;">
                 </div>
                 <p style="font-size: 0.8rem; color: #999;">* Obligatorio para notificaciones de la cita.</p>
+
+                <!-- Campo Código de Referido -->
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #DDD;">
+                    <label style="display:block; margin-bottom:6px; color:#111111; font-weight:700; font-size: 0.88rem;">🎁 ¿Tienes un Código de Referido?</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="referralCodeInput" placeholder="Ej: KORTZEN-AMIGO" 
+                               style="flex:1; padding:10px; border:1px solid #CCCCCC; border-radius:6px; text-transform:uppercase; font-weight:800; font-size:0.95rem;">
+                        <button type="button" onclick="aplicarCodigoReferidoReserva()" 
+                                style="padding:10px 16px; background:#111111; color:#FFFFFF; border:none; border-radius:6px; font-weight:800; font-size:0.8rem; cursor:pointer; text-transform:uppercase;">
+                            Aplicar
+                        </button>
+                    </div>
+                    <div id="referralCodeMessage" style="margin-top:8px; font-size:0.85rem;"></div>
+                </div>
             </div>
         </div>
 
@@ -868,6 +882,45 @@ $pageTitle = 'Reservar Cita';
                 btn.textContent = "CONFIRMAR RESERVA";
             }
         });
+
+        let referralCodeApplied = '';
+
+        async function aplicarCodigoReferidoReserva() {
+            const input = document.getElementById('referralCodeInput');
+            const msgDiv = document.getElementById('referralCodeMessage');
+            if (!input || !msgDiv) return;
+
+            const code = input.value.trim();
+
+            if (!code) {
+                msgDiv.style.color = '#dc3545';
+                msgDiv.textContent = 'Por favor ingresa un código.';
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'validar');
+                formData.append('codigo', code);
+
+                const res = await fetch('api/referidos_action.php', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.success) {
+                    referralCodeApplied = data.codigo;
+                    msgDiv.style.color = '#28a745';
+                    msgDiv.innerHTML = `<strong>✅ ${data.message}</strong>`;
+                    input.disabled = true;
+                    input.style.background = '#e8f5e9';
+                } else {
+                    msgDiv.style.color = '#dc3545';
+                    msgDiv.textContent = data.message;
+                }
+            } catch (e) {
+                msgDiv.style.color = '#dc3545';
+                msgDiv.textContent = 'Error al validar el código.';
+            }
+        }
 
         function showStep(step) {
             document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));

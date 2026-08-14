@@ -135,6 +135,57 @@ $porcentaje_progreso = min(100, round(($puntos_actuales / $siguiente_nivel) * 10
             </div>
         </div>
 
+        <!-- Tarjeta de Programa de Referidos & Recompensas -->
+        <?php
+        $wa_share_msg = urlencode("¡Hola! Te regalo $" . $descuento_referido_amigo_cfg . " de descuento en tu corte de pelo en KORTZEN Barbería 💈. Usa mi código " . $codigo_referido . " al reservar aquí: https://kortzen.com/reservar.php");
+        ?>
+        <div style="background: #111111; border: 1px solid #C0A062; border-radius: 16px; padding: 20px; color: #FFFFFF; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #C0A062; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>🎁</span> Invita un Amigo y Gana
+                </h3>
+                <span style="background: rgba(192, 160, 98, 0.2); color: #C0A062; border: 1px solid #C0A062; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem;">
+                    +<?php echo $puntos_por_referido_cfg; ?> pts / amigo
+                </span>
+            </div>
+            
+            <p style="font-size: 0.85rem; color: #CCCCCC; margin-bottom: 14px; line-height: 1.4;">
+                Comparte tu código con tus amigos. Ellos reciben <strong>$<?php echo $descuento_referido_amigo_cfg; ?> de descuento</strong> en su primera reserva y tú ganas <strong>+<?php echo $puntos_por_referido_cfg; ?> Puntos KORTZEN</strong> por cada visita.
+            </p>
+
+            <div style="background: #222222; border: 1px dashed #C0A062; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div>
+                    <span style="font-size: 0.75rem; color: #888888; display: block; font-weight: 600;">TU CÓDIGO PERSONAL:</span>
+                    <strong id="referral-code-text" style="font-size: 1.25rem; font-weight: 900; color: #FFFFFF; letter-spacing: 0.05em;"><?php echo htmlspecialchars($codigo_referido); ?></strong>
+                </div>
+                <button onclick="copiarCodigoReferido()" style="background: #333333; color: #FFFFFF; border: 1px solid #555; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
+                    📋 Copiar
+                </button>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <a href="https://wa.me/?text=<?php echo $wa_share_msg; ?>" target="_blank" style="flex: 1; background: #25D366; color: #FFFFFF; text-decoration: none; padding: 11px; border-radius: 10px; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);">
+                    💬 Compartir por WhatsApp
+                </a>
+            </div>
+
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #222222; display: flex; justify-content: space-between; font-size: 0.82rem; color: #AAAAAA;">
+                <span>Amigos invitados: <strong style="color: #FFFFFF;"><?php echo $total_referidos; ?></strong></span>
+                <span>Puntos por referidos: <strong style="color: #C0A062;"><?php echo number_format($total_referidos * $puntos_por_referido_cfg); ?> pts</strong></span>
+            </div>
+        </div>
+
+        <script>
+        function copiarCodigoReferido() {
+            var code = document.getElementById('referral-code-text').innerText;
+            navigator.clipboard.writeText(code).then(function() {
+                alert('¡Código ' + code + ' copiado al portapapeles!');
+            }).catch(function() {
+                prompt('Copia tu código:', code);
+            });
+        }
+        </script>
+
         <?php if ($proxima_cita): 
             $ts_prof = strtotime($proxima_cita['fecha_hora']);
         ?>

@@ -59,6 +59,33 @@ try {
     $nombreServicio = $servicioData['nombre'];
     $precio = $servicioData['precio'];
 
+    // 3.5. Procesar Código de Referido y Descuentos
+    $codigoReferido = strtoupper(trim($_POST['codigo_referido'] ?? ''));
+    $montoDescuento = 0.00;
+    $referenteId = null;
+    $puntosPorReferido = 200;
+
+    if (!empty($codigoReferido)) {
+        // Cargar configuraciones
+        $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
+        $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+        $montoDescuento = floatval($cfgs['descuento_referido_amigo'] ?? 2.00);
+        $puntosPorReferido = intval($cfgs['puntos_por_referido'] ?? 200);
+
+        // Buscar referente
+        $stmtRefCheck = $pdo->prepare("SELECT id FROM clientes WHERE codigo_referido = ?");
+        $stmtRefCheck->execute([$codigoReferido]);
+        $refRow = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
+
+        if ($refRow && $refRow['id'] != $clienteId) {
+            $referenteId = $refRow['id'];
+        } else {
+            $montoDescuento = 0.00;
+        }
+    }
+
+    $precioFinal = max(0.00, floatval($precio) - $montoDescuento);
+
     $reagendarId = isset($_POST['reagendar_id']) ? intval($_POST['reagendar_id']) : 0;
 
     if ($reagendarId > 0) {
@@ -72,13 +99,36 @@ try {
         // Actualizar la cita existente
         $sql = "UPDATE citas SET servicio_id = ?, barbero_id = ?, sucursal_id = ?, fecha_hora = ?, estado = 'pendiente', precio_final = ? WHERE id = ? AND cliente_id = ?";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$servicioId, $barberoId, $sucursalId, $fechaHora, $precio, $reagendarId, $clienteId]);
+        $stmt->execute([$servicioId, $barberoId, $sucursalId, $fechaHora, $precioFinal, $reagendarId, $clienteId]);
+        $citaId = $reagendarId;
     } else {
         // 4. Insertar la cita
         $sql = "INSERT INTO citas (cliente_id, servicio_id, barbero_id, sucursal_id, fecha_hora, estado, precio_final) 
                 VALUES (?, ?, ?, ?, ?, 'pendiente', ?)";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$clienteId, $servicioId, $barberoId, $sucursalId, $fechaHora, $precio]);
+        $stmt->execute([$clienteId, $servicioId, $barberoId, $sucursalId, $fechaHora, $precioFinal]);
+        $citaId = $pdo->lastInsertId();
+    }
+
+    // Registrar seguimiento de referido si aplica
+    if ($referenteId && $citaId > 0) {
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS referidos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    referente_id INT NOT NULL,
+                    referido_id INT NULL,
+                    codigo_usado VARCHAR(30) NOT NULL,
+                    cita_id INT NULL,
+                    descuento_aplicado DECIMAL(10,2) DEFAULT 0.00,
+                    puntos_otorgados INT DEFAULT 0,
+                    estado ENUM('pendiente', 'completado', 'cancelado') DEFAULT 'pendiente',
+                    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+            $stmtInsertRef = $pdo->prepare("INSERT INTO referidos (referente_id, referido_id, codigo_usado, cita_id, descuento_aplicado, puntos_otorgados, estado) VALUES (?, ?, ?, ?, ?, ?, 'pendiente')");
+            $stmtInsertRef->execute([$referenteId, $clienteId, $codigoReferido, $citaId, $montoDescuento, $puntosPorReferido]);
+        } catch (Exception $exRef) {}
     }
 
     // 5. Sincronización Automática con Google Calendar (Opción A)
