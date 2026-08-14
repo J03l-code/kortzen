@@ -75,12 +75,12 @@
         `;
 
         indicator.innerHTML = `
-            <a href="/cliente-dashboard.php" style="display: flex; align-items: center; gap: 0.5rem; color: #333333; text-decoration: none; font-size: 0.85rem;">
+            <a href="/cliente-dashboard.php" style="display: flex; align-items: center; gap: 0.5rem; color: #111111; text-decoration: none; font-size: 0.85rem; font-weight: 700;">
                 ${user.foto
-                ? `<img src="${user.foto}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #333333;">`
-                : `<span style="width: 24px; height: 24px; border-radius: 50%; background: #333333; color: #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600;">${user.inicial}</span>`
+                ? `<img src="${user.foto}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #111111;">`
+                : `<span style="width: 24px; height: 24px; border-radius: 50%; background: #111111; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">${user.inicial}</span>`
             }
-                <span style="color: #F5F5F5;">${user.nombre.split(' ')[0]}</span>
+                <span style="color: #111111 !important; font-weight: 700 !important;">${user.nombre.split(' ')[0]}</span>
             </a>
         `;
 
