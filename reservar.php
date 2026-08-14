@@ -795,26 +795,13 @@ $pageTitle = 'Reservar Cita';
 
         document.getElementById('btnPrev').addEventListener('click', () => {
             if (currentStep > 1) {
-                // Skip step 4 going backwards if phone exists
-                if (currentStep === 5 && hasExistingPhone) {
-                    currentStep = 3;
-                } else {
-                    currentStep--;
-                }
+                currentStep--;
                 showStep(currentStep);
             }
         });
 
         document.getElementById('btnNext').addEventListener('click', () => {
             if (currentStep < 5) {
-
-                // Skip step 4 if client already has phone
-                if (currentStep === 3 && hasExistingPhone) {
-                    currentStep = 5;
-                    showStep(currentStep);
-                    return;
-                }
-
                 // Validation Step 4
                 if (currentStep === 4) {
                     const phone = document.getElementById('clientPhone').value.trim();

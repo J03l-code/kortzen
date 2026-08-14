@@ -153,13 +153,23 @@ try {
     require_once '../includes/email_helper.php';
     $fechaLegible = date('d/m/Y', strtotime($fecha));
 
-    enviarCorreoReserva($cliente['email'], $cliente['nombre'], [
-        'servicio' => $nombreServicio,
-        'barbero' => $nombreBarbero,
-        'fecha' => $fechaLegible,
-        'hora' => $hora,
-        'precio' => number_format($precioFinal, 2)
-    ]);
+    // Obtener datos del cliente actualizados de la BD
+    $stmtCInfo = $pdo->prepare("SELECT nombre, email FROM clientes WHERE id = ?");
+    $stmtCInfo->execute([$clienteId]);
+    $cInfo = $stmtCInfo->fetch(PDO::FETCH_ASSOC);
+
+    $finalEmail = !empty($cInfo['email']) ? $cInfo['email'] : ($_SESSION['cliente_email'] ?? '');
+    $finalNombre = !empty($cInfo['nombre']) ? $cInfo['nombre'] : ($_SESSION['cliente_nombre'] ?? 'Cliente');
+
+    if (!empty($finalEmail)) {
+        enviarCorreoReserva($finalEmail, $finalNombre, [
+            'servicio' => $nombreServicio,
+            'barbero' => $nombreBarbero,
+            'fecha' => $fechaLegible,
+            'hora' => $hora,
+            'precio' => number_format($precioFinal, 2)
+        ]);
+    }
 
     echo json_encode(['success' => true]);
 

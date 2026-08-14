@@ -78,7 +78,11 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
     $headers .= "Reply-To: KORTZEN <contacto@kortzen.com>\r\n";
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
-    return @mail($toEmail, $subject, $message, $headers, "-f $fromEmail");
+    $res = @mail($toEmail, $subject, $message, $headers, "-f $fromEmail");
+    
+    @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "RESERVA: Para: $toEmail | Resultado: " . ($res ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
+
+    return $res;
 }
 
 /**
@@ -153,5 +157,9 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
     $headers .= "Reply-To: KORTZEN <contacto@kortzen.com>\r\n";
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
-    return @mail($toEmail, $subject, $message, $headers, "-f $fromEmail");
+    $res = @mail($toEmail, $subject, $message, $headers, "-f $fromEmail");
+
+    @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "RECORDATORIO: Para: $toEmail | Resultado: " . ($res ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
+
+    return $res;
 }
