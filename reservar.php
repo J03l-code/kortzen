@@ -865,6 +865,7 @@ $pageTitle = 'Reservar Cita';
         });
 
         let referralCodeApplied = '';
+        let appliedDiscountAmount = 0.0;
 
         async function aplicarCodigoReferidoReserva() {
             const input = document.getElementById('referralCodeInput');
@@ -889,10 +890,12 @@ $pageTitle = 'Reservar Cita';
 
                 if (data.success) {
                     referralCodeApplied = data.codigo;
+                    appliedDiscountAmount = parseFloat(data.descuento || 0);
                     msgDiv.style.color = '#28a745';
                     msgDiv.innerHTML = `<strong>✅ ${data.message}</strong>`;
                     input.disabled = true;
                     input.style.background = '#e8f5e9';
+                    if (currentStep === 5) updateSummary();
                 } else {
                     msgDiv.style.color = '#dc3545';
                     msgDiv.textContent = data.message;
@@ -947,7 +950,22 @@ $pageTitle = 'Reservar Cita';
             document.getElementById('confirmService').textContent = bookingData.serviceName;
             document.getElementById('confirmBarber').textContent = bookingData.barberName;
             document.getElementById('confirmDateTime').textContent = `${bookingData.date} a las ${bookingData.time}`;
-            document.getElementById('confirmPrice').textContent = `$${bookingData.servicePrice}`;
+
+            const rawPrice = parseFloat(bookingData.servicePrice || 0);
+            const finalPrice = Math.max(0, rawPrice - appliedDiscountAmount);
+
+            const priceContainer = document.getElementById('confirmPrice');
+            if (priceContainer) {
+                if (appliedDiscountAmount > 0) {
+                    priceContainer.innerHTML = `
+                        <div style="font-size: 0.9rem; color: #888888; text-decoration: line-through;">$${rawPrice.toFixed(2)}</div>
+                        <div style="font-size: 1.4rem; font-weight: 900; color: #28a745;">$${finalPrice.toFixed(2)} <span style="font-size: 0.8rem; font-weight: 800; color: #28a745; border: 1px solid #28a745; padding: 2px 8px; border-radius: 12px; margin-left: 6px;">-$${appliedDiscountAmount.toFixed(2)} DESCUENTO REFERIDO</span></div>
+                    `;
+                } else {
+                    priceContainer.textContent = `$${rawPrice.toFixed(2)}`;
+                }
+            }
+        }
 
             // Add Phone to summary if desired, or just leave it
             const phoneDiv = document.createElement('div');

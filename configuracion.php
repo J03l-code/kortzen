@@ -185,6 +185,40 @@ include 'includes/header.php';
         </div>
     </div>
 
+    <!-- Tarjeta de Configuración de Servidor de Correos (SMTP Hostinger / Webmail) -->
+    <div style="background: #181818; border: 1px solid #333333; border-radius: 14px; padding: 24px; color: #FFFFFF; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: #C0A062; margin-bottom: 18px; border-bottom: 1px solid #333333; padding-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <span>📧</span> Configuración del Servidor de Correos (SMTP Hostinger)
+        </h3>
+        <p style="color: #CCCCCC; font-size: 0.88rem; margin-bottom: 16px;">Configura tu correo corporativo de Hostinger (ej. <code>contacto@kortzen.com</code>) para garantizar que el 100% de las confirmaciones y recordatorios lleguen directo a la bandeja de entrada del cliente.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <label style="font-weight: 700; color: #E0E0E0; display: block; margin-bottom: 6px; font-size: 0.92rem;">Servidor SMTP (Host):</label>
+                <input type="text" name="smtp_host" value="<?php echo htmlspecialchars($configs['smtp_host'] ?? 'smtp.hostinger.com'); ?>" 
+                       style="width: 100%; padding: 12px; background: #222222; border: 1px solid #444444; color: #FFFFFF; border-radius: 8px; font-weight: 700;">
+            </div>
+
+            <div>
+                <label style="font-weight: 700; color: #E0E0E0; display: block; margin-bottom: 6px; font-size: 0.92rem;">Puerto SMTP:</label>
+                <input type="number" name="smtp_port" value="<?php echo htmlspecialchars($configs['smtp_port'] ?? '465'); ?>" 
+                       style="width: 100%; padding: 12px; background: #222222; border: 1px solid #444444; color: #FFFFFF; border-radius: 8px; font-weight: 700;">
+            </div>
+
+            <div>
+                <label style="font-weight: 700; color: #E0E0E0; display: block; margin-bottom: 6px; font-size: 0.92rem;">Correo Remitente / Usuario SMTP:</label>
+                <input type="email" name="smtp_user" placeholder="ej. contacto@kortzen.com" value="<?php echo htmlspecialchars($configs['smtp_user'] ?? ''); ?>" 
+                       style="width: 100%; padding: 12px; background: #222222; border: 1px solid #444444; color: #FFFFFF; border-radius: 8px; font-weight: 700;">
+            </div>
+
+            <div>
+                <label style="font-weight: 700; color: #E0E0E0; display: block; margin-bottom: 6px; font-size: 0.92rem;">Contraseña de Correo SMTP:</label>
+                <input type="password" name="smtp_pass" placeholder="••••••••••••" value="<?php echo htmlspecialchars($configs['smtp_pass'] ?? ''); ?>" 
+                       style="width: 100%; padding: 12px; background: #222222; border: 1px solid #444444; color: #FFFFFF; border-radius: 8px; font-weight: 700;">
+            </div>
+        </div>
+    </div>
+
     <!-- Botón Guardar Cambios -->
     <div style="display: flex; justify-content: flex-end;">
         <button type="submit" class="btn btn-primary" style="background: #C0A062; color: #111111; border: none; padding: 14px 28px; border-radius: 10px; font-weight: 800; font-size: 1rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 15px rgba(192, 160, 98, 0.3);">

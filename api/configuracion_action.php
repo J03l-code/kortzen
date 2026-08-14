@@ -24,6 +24,11 @@ if ($action === 'save_configs') {
         $puntos_nivel_oro = max($puntos_nivel_plata + 1, intval($_POST['puntos_nivel_oro'] ?? 1500));
         $puntos_nivel_vip = max($puntos_nivel_oro + 1, intval($_POST['puntos_nivel_vip'] ?? 3000));
 
+        $smtp_host = trim($_POST['smtp_host'] ?? 'smtp.hostinger.com');
+        $smtp_port = intval($_POST['smtp_port'] ?? 465);
+        $smtp_user = trim($_POST['smtp_user'] ?? '');
+        $smtp_pass = trim($_POST['smtp_pass'] ?? '');
+
         $configs = [
             'puntos_por_corte' => (string)$puntos_por_corte,
             'puntos_por_referido' => (string)$puntos_por_referido,
@@ -31,7 +36,11 @@ if ($action === 'save_configs') {
             'descuento_referente' => number_format($descuento_referente, 2, '.', ''),
             'puntos_nivel_plata' => (string)$puntos_nivel_plata,
             'puntos_nivel_oro' => (string)$puntos_nivel_oro,
-            'puntos_nivel_vip' => (string)$puntos_nivel_vip
+            'puntos_nivel_vip' => (string)$puntos_nivel_vip,
+            'smtp_host' => $smtp_host,
+            'smtp_port' => (string)$smtp_port,
+            'smtp_user' => $smtp_user,
+            'smtp_pass' => $smtp_pass
         ];
 
         $stmt = $pdo->prepare("INSERT INTO configuracion (clave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor = VALUES(valor)");

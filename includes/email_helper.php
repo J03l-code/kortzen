@@ -1,7 +1,81 @@
 <?php
 /**
  * KORTZEN - Helper para Envío de Correos Electrónicos (Confirmaciones & Recordatorios)
+ * Soporta SMTP Autenticado (Hostinger) y fallback de mail() nativo
  */
+
+require_once __DIR__ . '/../config.php';
+
+/**
+ * Enviar correo a través de SMTP Sockets (Sin dependencias externas)
+ */
+function enviarCorreoSMTPDirecto($toEmail, $subject, $htmlMessage, $smtpConfig) {
+    $host = $smtpConfig['smtp_host'] ?? 'smtp.hostinger.com';
+    $port = intval($smtpConfig['smtp_port'] ?? 465);
+    $username = $smtpConfig['smtp_user'] ?? '';
+    $password = $smtpConfig['smtp_pass'] ?? '';
+    $fromName = "KORTZEN Barbería";
+
+    if (empty($username) || empty($password)) {
+        return false;
+    }
+
+    $socketHost = ($port == 465) ? "ssl://{$host}" : $host;
+    $socket = @fsockopen($socketHost, $port, $errno, $errstr, 10);
+
+    if (!$socket) {
+        return false;
+    }
+
+    $read = function($socket) {
+        $response = '';
+        while ($str = fgets($socket, 515)) {
+            $response .= $str;
+            if (substr($str, 3, 1) == ' ') break;
+        }
+        return $response;
+    };
+
+    $send = function($socket, $cmd) use ($read) {
+        fputs($socket, $cmd . "\r\n");
+        return $read($socket);
+    };
+
+    $read($socket); // banner
+    $send($socket, "EHLO " . gethostname());
+
+    if ($port == 587) {
+        $send($socket, "STARTTLS");
+        stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+        $send($socket, "EHLO " . gethostname());
+    }
+
+    $authRes = $send($socket, "AUTH LOGIN");
+    if (substr($authRes, 0, 3) != '334') { fclose($socket); return false; }
+
+    $send($socket, base64_encode($username));
+    $passRes = $send($socket, base64_encode($password));
+    if (substr($passRes, 0, 3) != '235') { fclose($socket); return false; }
+
+    $send($socket, "MAIL FROM: <{$username}>");
+    $send($socket, "RCPT TO: <{$toEmail}>");
+    $send($socket, "DATA");
+
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: {$fromName} <{$username}>\r\n";
+    $headers .= "To: <{$toEmail}>\r\n";
+    $headers .= "Subject: {$subject}\r\n";
+    $headers .= "Date: " . date('r') . "\r\n";
+
+    $messageData = $headers . "\r\n" . $htmlMessage . "\r\n.";
+    $dataRes = $send($socket, $messageData);
+
+    $send($socket, "QUIT");
+    fclose($socket);
+
+    return (substr($dataRes, 0, 3) == '250');
+}
 
 /**
  * Enviar correo de confirmación de reserva
@@ -71,7 +145,21 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
     </html>
     ";
 
-    $fromEmail = "no-reply@kortzen.com";
+    // Intentar envío vía SMTP si está configurado
+    try {
+        $pdo = getConnection();
+        $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave LIKE 'smtp_%'");
+        $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        if (!empty($cfgs['smtp_user']) && !empty($cfgs['smtp_pass'])) {
+            $smtpOk = enviarCorreoSMTPDirecto($toEmail, $subject, $message, $cfgs);
+            @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "SMTP RESERVA: Para: $toEmail | Resultado: " . ($smtpOk ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
+            if ($smtpOk) return true;
+        }
+    } catch (Exception $exSmtp) {}
+
+    // Fallback Mail Nativo
+    $fromEmail = "contacto@kortzen.com";
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     $headers .= "From: KORTZEN Barbería <$fromEmail>\r\n";
@@ -79,8 +167,7 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
     $res = @mail($toEmail, $subject, $message, $headers, "-f $fromEmail");
-    
-    @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "RESERVA: Para: $toEmail | Resultado: " . ($res ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
+    @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "MAIL NATIVO RESERVA: Para: $toEmail | Resultado: " . ($res ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
 
     return $res;
 }
@@ -150,7 +237,19 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
     </html>
     ";
 
-    $fromEmail = "no-reply@kortzen.com";
+    try {
+        $pdo = getConnection();
+        $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave LIKE 'smtp_%'");
+        $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        if (!empty($cfgs['smtp_user']) && !empty($cfgs['smtp_pass'])) {
+            $smtpOk = enviarCorreoSMTPDirecto($toEmail, $subject, $message, $cfgs);
+            @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "SMTP RECORDATORIO: Para: $toEmail | Resultado: " . ($smtpOk ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
+            if ($smtpOk) return true;
+        }
+    } catch (Exception $exSmtp) {}
+
+    $fromEmail = "contacto@kortzen.com";
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     $headers .= "From: KORTZEN Barbería <$fromEmail>\r\n";
@@ -158,8 +257,7 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
     $res = @mail($toEmail, $subject, $message, $headers, "-f $fromEmail");
-
-    @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "RECORDATORIO: Para: $toEmail | Resultado: " . ($res ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
+    @file_put_contents(__DIR__ . '/../logs/email_log.txt', date('[Y-m-d H:i:s] ') . "MAIL NATIVO RECORDATORIO: Para: $toEmail | Resultado: " . ($res ? 'EXITO' : 'FALLO') . "\n", FILE_APPEND);
 
     return $res;
 }
