@@ -1,7 +1,6 @@
 <?php
 /**
- * KORTZEN - Helper para Envío de Correos Electrónicos (Confirmaciones & Recordatorios)
- * Soporta SMTP Autenticado (Hostinger) y fallback de mail() nativo
+ * KORTZEN - Helper para Envío de Correos Electrónicos (Diseño Blanco y Negro Minimalista)
  */
 
 require_once __DIR__ . '/../config.php';
@@ -12,13 +11,9 @@ require_once __DIR__ . '/../config.php';
 function enviarCorreoSMTPDirecto($toEmail, $subject, $htmlMessage, $smtpConfig) {
     $host = $smtpConfig['smtp_host'] ?? 'smtp.hostinger.com';
     $port = intval($smtpConfig['smtp_port'] ?? 465);
-    $username = $smtpConfig['smtp_user'] ?? '';
-    $password = $smtpConfig['smtp_pass'] ?? '';
+    $username = $smtpConfig['smtp_user'] ?? 'info@kortzen.com';
+    $password = $smtpConfig['smtp_pass'] ?? 'Kortzen2026!';
     $fromName = "KORTZEN Barbería";
-
-    if (empty($username) || empty($password)) {
-        return false;
-    }
 
     $socketHost = ($port == 465) ? "ssl://{$host}" : $host;
     $socket = @fsockopen($socketHost, $port, $errno, $errstr, 10);
@@ -84,13 +79,14 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
 {
     if (empty($toEmail)) return false;
 
-    $subject = "Confirmación de tu Cita - KORTZEN Barbería";
+    $subject = "Confirmación de Cita - KORTZEN Barbería";
 
     $servicio = htmlspecialchars($datosCita['servicio'] ?? 'Servicio de Barbería');
     $barbero = htmlspecialchars($datosCita['barbero'] ?? 'Barbero Profesional');
     $fecha = htmlspecialchars($datosCita['fecha'] ?? '');
     $hora = htmlspecialchars($datosCita['hora'] ?? '');
     $precio = htmlspecialchars($datosCita['precio'] ?? '0.00');
+    $nombreCliente = htmlspecialchars($clienteNombre ?? 'Cliente');
 
     $message = "
     <!DOCTYPE html>
@@ -99,19 +95,21 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
         <meta charset='UTF-8'>
         <title>Confirmación de Cita - KORTZEN</title>
         <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0A0A0A; color: #FFFFFF; margin: 0; padding: 20px; }
-            .container { max-width: 580px; margin: 0 auto; background-color: #161616; border: 1px solid #C0A062; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-            .header { background-color: #111111; padding: 25px; text-align: center; border-bottom: 2px solid #C0A062; }
-            .logo { color: #C0A062; font-size: 26px; font-weight: 800; letter-spacing: 2px; text-decoration: none; }
-            .content { padding: 30px 25px; line-height: 1.6; }
-            .h2-title { color: #C0A062; margin-top: 0; font-size: 20px; font-weight: 700; text-align: center; }
-            .box { background: #222222; border-left: 4px solid #C0A062; padding: 18px; border-radius: 8px; margin: 20px 0; }
-            .row { border-bottom: 1px solid #333333; padding: 10px 0; font-size: 14px; display: flex; justify-content: space-between; }
-            .row:last-child { border-bottom: none; }
-            .label { color: #AAAAAA; font-weight: 600; }
-            .value { color: #FFFFFF; font-weight: 800; float: right; }
-            .btn { display: block; width: 220px; margin: 25px auto 10px auto; background-color: #C0A062; color: #111111; padding: 14px 20px; text-decoration: none; border-radius: 8px; font-weight: 800; text-align: center; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
-            .footer { text-align: center; padding: 20px; font-size: 12px; color: #777777; background: #0E0E0E; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F8F9FA; color: #111111; margin: 0; padding: 30px 15px; }
+            .container { max-width: 540px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+            .header { background-color: #000000; padding: 28px 20px; text-align: center; }
+            .logo { color: #FFFFFF; font-size: 22px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; text-decoration: none; }
+            .content { padding: 36px 30px; line-height: 1.6; }
+            .title { color: #111111; margin: 0 0 10px 0; font-size: 22px; font-weight: 800; text-align: center; letter-spacing: -0.02em; }
+            .subtitle { color: #666666; font-size: 14px; text-align: center; margin-bottom: 26px; font-weight: 400; }
+            .details-box { background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 12px; padding: 18px 22px; margin: 24px 0; }
+            .detail-row { border-bottom: 1px solid #EEEEEE; padding: 12px 0; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+            .detail-row:last-child { border-bottom: none; }
+            .detail-label { color: #888888; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+            .detail-value { color: #111111; font-weight: 700; font-size: 14px; text-align: right; }
+            .btn { display: block; width: 210px; margin: 30px auto 10px auto; background-color: #000000; color: #FFFFFF; padding: 14px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; text-align: center; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; }
+            .location-note { font-size: 12px; color: #777777; text-align: center; margin-top: 24px; border-top: 1px solid #F0F0F0; padding-top: 18px; }
+            .footer { text-align: center; padding: 22px; font-size: 11px; color: #999999; background: #FAFAFA; border-top: 1px solid #EEEEEE; text-transform: uppercase; letter-spacing: 1px; }
         </style>
     </head>
     <body>
@@ -120,20 +118,20 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
                 <span class='logo'>KORTZEN</span>
             </div>
             <div class='content'>
-                <h2 class='h2-title'>¡Tu Cita está Confirmada! 💈</h2>
-                <p style='color: #E0E0E0; font-size: 15px; text-align: center;'>Hola <strong>$clienteNombre</strong>, te esperamos para brindarte la mejor atención de barbería de autor.</p>
+                <h2 class='title'>Cita Confirmada</h2>
+                <p class='subtitle'>Hola <strong>$nombreCliente</strong>, tu reserva ha sido registrada correctamente.</p>
                 
-                <div class='box'>
-                    <div class='row'><span class='label'>💈 Servicio:</span><span class='value'>$servicio</span></div>
-                    <div class='row'><span class='label'>✂️ Barbero:</span><span class='value'>$barbero</span></div>
-                    <div class='row'><span class='label'>📅 Fecha:</span><span class='value'>$fecha</span></div>
-                    <div class='row'><span class='label'>🕒 Hora:</span><span class='value'>$hora</span></div>
-                    <div class='row'><span class='label'>💰 Total:</span><span class='value'>$$precio</span></div>
+                <div class='details-box'>
+                    <div class='detail-row'><span class='detail-label'>Servicio</span><span class='detail-value'>$servicio</span></div>
+                    <div class='detail-row'><span class='detail-label'>Barbero</span><span class='detail-value'>$barbero</span></div>
+                    <div class='detail-row'><span class='detail-label'>Fecha</span><span class='detail-value'>$fecha</span></div>
+                    <div class='detail-row'><span class='detail-label'>Hora</span><span class='detail-value'>$hora</span></div>
+                    <div class='detail-row'><span class='detail-label'>Total</span><span class='detail-value'>$$precio</span></div>
                 </div>
                 
-                <p style='font-size: 13px; color: #999999; text-align: center;'>
-                    📍 <strong>Ubicación:</strong> KORTZEN Llano Chico • Por favor llega 5 minutos antes de tu cita.
-                </p>
+                <div class='location-note'>
+                    Ubicación: <strong>KORTZEN Llano Chico</strong><br>Por favor llega 5 minutos antes de la hora agendada.
+                </div>
                 
                 <a href='https://kortzen.com/mis-citas.php' class='btn'>Ver mis Citas</a>
             </div>
@@ -145,8 +143,6 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
     </html>
     ";
 
-    // Intentar envío vía SMTP si está configurado
-    // Intentar envío vía SMTP (Hostinger info@kortzen.com)
     try {
         $cfgs = [];
         try {
@@ -167,7 +163,6 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
         if ($smtpOk) return true;
     } catch (Exception $exSmtp) {}
 
-    // Fallback Mail Nativo
     $fromEmail = "info@kortzen.com";
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
@@ -188,11 +183,12 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
 {
     if (empty($toEmail)) return false;
 
-    $subject = "⏰ Recordatorio: ¡Hoy es tu Cita en KORTZEN Barbería!";
+    $subject = "Recordatorio de Cita - KORTZEN Barbería";
 
     $servicio = htmlspecialchars($datosCita['servicio'] ?? 'Corte / Servicio');
     $barbero = htmlspecialchars($datosCita['barbero'] ?? 'Barbero Profesional');
     $hora = htmlspecialchars($datosCita['hora'] ?? '');
+    $nombreCliente = htmlspecialchars($clienteNombre ?? 'Cliente');
 
     $message = "
     <!DOCTYPE html>
@@ -201,19 +197,21 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
         <meta charset='UTF-8'>
         <title>Recordatorio de Cita - KORTZEN</title>
         <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0A0A0A; color: #FFFFFF; margin: 0; padding: 20px; }
-            .container { max-width: 580px; margin: 0 auto; background-color: #161616; border: 1px solid #C0A062; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-            .header { background-color: #111111; padding: 25px; text-align: center; border-bottom: 2px solid #C0A062; }
-            .logo { color: #C0A062; font-size: 26px; font-weight: 800; letter-spacing: 2px; text-decoration: none; }
-            .content { padding: 30px 25px; line-height: 1.6; }
-            .h2-title { color: #C0A062; margin-top: 0; font-size: 20px; font-weight: 700; text-align: center; }
-            .box { background: #222222; border-left: 4px solid #C0A062; padding: 18px; border-radius: 8px; margin: 20px 0; }
-            .row { border-bottom: 1px solid #333333; padding: 10px 0; font-size: 14px; display: flex; justify-content: space-between; }
-            .row:last-child { border-bottom: none; }
-            .label { color: #AAAAAA; font-weight: 600; }
-            .value { color: #FFFFFF; font-weight: 800; float: right; }
-            .btn { display: block; width: 220px; margin: 25px auto 10px auto; background-color: #C0A062; color: #111111; padding: 14px 20px; text-decoration: none; border-radius: 8px; font-weight: 800; text-align: center; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
-            .footer { text-align: center; padding: 20px; font-size: 12px; color: #777777; background: #0E0E0E; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F8F9FA; color: #111111; margin: 0; padding: 30px 15px; }
+            .container { max-width: 540px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+            .header { background-color: #000000; padding: 28px 20px; text-align: center; }
+            .logo { color: #FFFFFF; font-size: 22px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; text-decoration: none; }
+            .content { padding: 36px 30px; line-height: 1.6; }
+            .title { color: #111111; margin: 0 0 10px 0; font-size: 22px; font-weight: 800; text-align: center; letter-spacing: -0.02em; }
+            .subtitle { color: #666666; font-size: 14px; text-align: center; margin-bottom: 26px; font-weight: 400; }
+            .details-box { background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 12px; padding: 18px 22px; margin: 24px 0; }
+            .detail-row { border-bottom: 1px solid #EEEEEE; padding: 12px 0; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+            .detail-row:last-child { border-bottom: none; }
+            .detail-label { color: #888888; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+            .detail-value { color: #111111; font-weight: 700; font-size: 14px; text-align: right; }
+            .btn { display: block; width: 210px; margin: 30px auto 10px auto; background-color: #000000; color: #FFFFFF; padding: 14px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; text-align: center; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; }
+            .location-note { font-size: 12px; color: #777777; text-align: center; margin-top: 24px; border-top: 1px solid #F0F0F0; padding-top: 18px; }
+            .footer { text-align: center; padding: 22px; font-size: 11px; color: #999999; background: #FAFAFA; border-top: 1px solid #EEEEEE; text-transform: uppercase; letter-spacing: 1px; }
         </style>
     </head>
     <body>
@@ -222,19 +220,19 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
                 <span class='logo'>KORTZEN</span>
             </div>
             <div class='content'>
-                <h2 class='h2-title'>⏰ ¡Hoy es tu Cita!</h2>
-                <p style='color: #E0E0E0; font-size: 15px; text-align: center;'>Hola <strong>$clienteNombre</strong>, te recordamos que tienes tu cita agendada para el día de <strong>HOY</strong>.</p>
+                <h2 class='title'>Recordatorio de Cita</h2>
+                <p class='subtitle'>Hola <strong>$nombreCliente</strong>, te recordamos que tu cita está agendada para el día de <strong>HOY</strong>.</p>
                 
-                <div class='box'>
-                    <div class='row'><span class='label'>🕒 Hora de atención:</span><span class='value'>$hora</span></div>
-                    <div class='row'><span class='label'>💈 Servicio:</span><span class='value'>$servicio</span></div>
-                    <div class='row'><span class='label'>✂️ Barbero:</span><span class='value'>$barbero</span></div>
-                    <div class='row'><span class='label'>📍 Sucursal:</span><span class='value'>KORTZEN Llano Chico</span></div>
+                <div class='details-box'>
+                    <div class='detail-row'><span class='detail-label'>Hora de atención</span><span class='detail-value'>$hora</span></div>
+                    <div class='detail-row'><span class='detail-label'>Servicio</span><span class='detail-value'>$servicio</span></div>
+                    <div class='detail-row'><span class='detail-label'>Barbero</span><span class='detail-value'>$barbero</span></div>
+                    <div class='detail-row'><span class='detail-label'>Sucursal</span><span class='detail-value'>KORTZEN Llano Chico</span></div>
                 </div>
                 
-                <p style='font-size: 13px; color: #999999; text-align: center;'>
-                    Recuerda llegar 5 minutos antes para brindarte la mejor experiencia.
-                </p>
+                <div class='location-note'>
+                    Recuerda llegar 5 minutos antes para brindarte la mejor atención.
+                </div>
                 
                 <a href='https://kortzen.com/mis-citas.php' class='btn'>Ver Detalles</a>
             </div>

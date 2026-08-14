@@ -163,20 +163,20 @@ if ($cliente_id) {
 
         <!-- Banner Card Código de Referido -->
         <?php
-        $wa_share_dash = urlencode("¡Hola! Te regalo $" . $descuento_referido_amigo_cfg . " de descuento en tu corte de pelo en KORTZEN Barbería 💈. Usa mi código " . $codigo_referido . " al reservar aquí: https://kortzen.com/reservar.php");
+        $wa_share_dash = urlencode("¡Hola! Te regalo $" . $descuento_referido_amigo_cfg . " de descuento en tu corte de pelo en KORTZEN Barbería. Usa mi código " . $codigo_referido . " al reservar aquí: https://kortzen.com/reservar.php");
         ?>
-        <div class="pwa-banner-card" style="background: #111111; border: 1px solid #C0A062;">
+        <div class="pwa-banner-card" style="background: #FFFFFF; border: 1px solid #EAEAEA; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
             <div class="pwa-banner-card__left">
-                <div class="pwa-banner-card__icon-box" style="background: rgba(192,160,98,0.2); color: #C0A062; font-size: 1.2rem;">
-                    🎁
+                <div class="pwa-banner-card__icon-box" style="background: #F4F4F4; color: #111111;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
                 </div>
                 <div>
-                    <div class="pwa-banner-card__title" style="color: #C0A062; font-weight: 800;">Invita y Gana: <strong><?php echo htmlspecialchars($codigo_referido); ?></strong></div>
-                    <div class="pwa-banner-card__desc" style="color: #CCCCCC;">Gana +<?php echo $puntos_por_referido_cfg; ?> pts y regala $<?php echo $descuento_referido_amigo_cfg; ?> dcto.</div>
+                    <div class="pwa-banner-card__title" style="color: #111111; font-weight: 800;">Invita y Gana: <strong><?php echo htmlspecialchars($codigo_referido); ?></strong></div>
+                    <div class="pwa-banner-card__desc" style="color: #666666;">Gana +<?php echo $puntos_por_referido_cfg; ?> pts y regala $<?php echo $descuento_referido_amigo_cfg; ?> dcto.</div>
                 </div>
             </div>
-            <a href="https://wa.me/?text=<?php echo $wa_share_dash; ?>" target="_blank" class="pwa-banner-card__link" style="background: #25D366; color: #FFFFFF; padding: 8px 14px; border-radius: 8px; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 4px;">
-                Compartir 💬
+            <a href="https://wa.me/?text=<?php echo $wa_share_dash; ?>" target="_blank" class="pwa-banner-card__link" style="background: #111111; color: #FFFFFF; padding: 8px 14px; border-radius: 8px; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                <span>Compartir</span>
             </a>
         </div>
 

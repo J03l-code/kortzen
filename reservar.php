@@ -393,9 +393,10 @@ $pageTitle = 'Reservar Cita';
                 </div>
                 <p style="font-size: 0.8rem; color: #999;">* Obligatorio para notificaciones de la cita.</p>
 
-                <!-- Campo Código de Referido -->
-                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #444444; width: 100%; box-sizing: border-box;">
-                    <label style="display:block; margin-bottom:8px; color:var(--color-gold, #C0A062); font-weight:800; font-size: 0.9rem;">🎁 ¿Tienes un Código de Referido?</label>
+                    <label style="display:flex; align-items:center; gap:6px; margin-bottom:8px; color:#111111; font-weight:800; font-size: 0.9rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        <span>¿Tienes un Código de Referido?</span>
+                    </label>
                     <div style="display:flex; gap:8px; width:100%; box-sizing: border-box;">
                         <input type="text" id="referralCodeInput" placeholder="Ej: KORTZEN-AMIGO" 
                                style="flex:1; min-width:0; padding:12px; background:#FFFFFF; border:1px solid #CCCCCC; border-radius:8px; text-transform:uppercase; font-weight:800; font-size:0.95rem; color:#111111; box-sizing: border-box;">
@@ -846,8 +847,9 @@ $pageTitle = 'Reservar Cita';
                         <p style="color:var(--text-muted); margin-bottom:30px;">Tu cita ha sido ${reagendarId ? 'reagendada' : 'agendada'} correctamente.</p>
                         <a href="cliente-dashboard.php" class="btn btn-next" style="text-decoration:none;">Volver a mi Cuenta</a>
                         <br><br>
-                        <a href="https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu" target="_blank" style="color:var(--gold); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
-                            <span style="font-size:1.2rem;">⭐</span> Califícanos en Google
+                        <a href="https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu" target="_blank" style="color:var(--text-primary); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                            <span>Califícanos en Google</span>
                         </a>
                     </div>
                 `;

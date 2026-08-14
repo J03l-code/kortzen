@@ -154,41 +154,44 @@ $porcentaje_progreso = min(100, round(($puntos_actuales / max(1, $siguiente_nive
 
         <!-- Tarjeta de Programa de Referidos & Recompensas -->
         <?php
-        $wa_share_msg = urlencode("¡Hola! Te regalo $" . $descuento_referido_amigo_cfg . " de descuento en tu corte de pelo en KORTZEN Barbería 💈. Usa mi código " . $codigo_referido . " al reservar aquí: https://kortzen.com/reservar.php");
+        $wa_share_msg = urlencode("¡Hola! Te regalo $" . $descuento_referido_amigo_cfg . " de descuento en tu corte de pelo en KORTZEN Barbería. Usa mi código " . $codigo_referido . " al reservar aquí: https://kortzen.com/reservar.php");
         ?>
-        <div style="background: #111111; border: 1px solid #C0A062; border-radius: 16px; padding: 20px; color: #FFFFFF; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+        <div style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 16px; padding: 22px; color: #111111; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 1.1rem; font-weight: 800; color: #C0A062; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    <span>🎁</span> Invita un Amigo y Gana
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #111111; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                    <span>Invita un Amigo y Gana</span>
                 </h3>
-                <span style="background: rgba(192, 160, 98, 0.2); color: #C0A062; border: 1px solid #C0A062; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem;">
+                <span style="background: #F4F4F4; color: #111111; border: 1px solid #D1D1D1; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem;">
                     +<?php echo $puntos_por_referido_cfg; ?> pts / amigo
                 </span>
             </div>
             
-            <p style="font-size: 0.85rem; color: #CCCCCC; margin-bottom: 14px; line-height: 1.4;">
+            <p style="font-size: 0.85rem; color: #555555; margin-bottom: 14px; line-height: 1.4;">
                 Comparte tu código con tus amigos. Ellos reciben <strong>$<?php echo $descuento_referido_amigo_cfg; ?> de descuento</strong> en su primera reserva y tú ganas <strong>+<?php echo $puntos_por_referido_cfg; ?> Puntos KORTZEN</strong> por cada visita.
             </p>
 
-            <div style="background: #222222; border: 1px dashed #C0A062; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div style="background: #FAFAFA; border: 1px dashed #B0B0B0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                 <div>
-                    <span style="font-size: 0.75rem; color: #888888; display: block; font-weight: 600;">TU CÓDIGO PERSONAL:</span>
-                    <strong id="referral-code-text" style="font-size: 1.25rem; font-weight: 900; color: #FFFFFF; letter-spacing: 0.05em;"><?php echo htmlspecialchars($codigo_referido); ?></strong>
+                    <span style="font-size: 0.75rem; color: #777777; display: block; font-weight: 600;">TU CÓDIGO PERSONAL:</span>
+                    <strong id="referral-code-text" style="font-size: 1.25rem; font-weight: 900; color: #111111; letter-spacing: 0.05em;"><?php echo htmlspecialchars($codigo_referido); ?></strong>
                 </div>
-                <button onclick="copiarCodigoReferido()" style="background: #333333; color: #FFFFFF; border: 1px solid #555; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
-                    📋 Copiar
+                <button onclick="copiarCodigoReferido()" style="background: #111111; color: #FFFFFF; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copiar</span>
                 </button>
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <a href="https://wa.me/?text=<?php echo $wa_share_msg; ?>" target="_blank" style="flex: 1; background: #25D366; color: #FFFFFF; text-decoration: none; padding: 11px; border-radius: 10px; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);">
-                    💬 Compartir por WhatsApp
+                <a href="https://wa.me/?text=<?php echo $wa_share_msg; ?>" target="_blank" style="flex: 1; background: #111111; color: #FFFFFF; text-decoration: none; padding: 11px; border-radius: 10px; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    <span>Compartir en WhatsApp</span>
                 </a>
             </div>
 
-            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #222222; display: flex; justify-content: space-between; font-size: 0.82rem; color: #AAAAAA;">
-                <span>Amigos invitados: <strong style="color: #FFFFFF;"><?php echo $total_referidos; ?></strong></span>
-                <span>Puntos por referidos: <strong style="color: #C0A062;"><?php echo number_format($total_referidos * $puntos_por_referido_cfg); ?> pts</strong></span>
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #EEEEEE; display: flex; justify-content: space-between; font-size: 0.82rem; color: #666666;">
+                <span>Amigos invitados: <strong style="color: #111111;"><?php echo $total_referidos; ?></strong></span>
+                <span>Puntos por referidos: <strong style="color: #111111;"><?php echo number_format($total_referidos * $puntos_por_referido_cfg); ?> pts</strong></span>
             </div>
         </div>
 
