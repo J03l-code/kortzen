@@ -77,7 +77,9 @@ try {
             puntos_otorgados INT DEFAULT 0,
             estado ENUM('pendiente', 'completado', 'cancelado') DEFAULT 'pendiente',
             fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (referente_id) REFERENCES clientes(id) ON DELETE CASCADE
+            KEY idx_referente (referente_id),
+            KEY idx_referido (referido_id),
+            KEY idx_codigo (codigo_usado)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
     echo "✅ Tabla 'referidos' creada con éxito.<br>";

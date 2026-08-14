@@ -123,7 +123,10 @@ try {
                     descuento_aplicado DECIMAL(10,2) DEFAULT 0.00,
                     puntos_otorgados INT DEFAULT 0,
                     estado ENUM('pendiente', 'completado', 'cancelado') DEFAULT 'pendiente',
-                    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+                    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    KEY idx_referente (referente_id),
+                    KEY idx_referido (referido_id),
+                    KEY idx_codigo (codigo_usado)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
             $stmtInsertRef = $pdo->prepare("INSERT INTO referidos (referente_id, referido_id, codigo_usado, cita_id, descuento_aplicado, puntos_otorgados, estado) VALUES (?, ?, ?, ?, ?, ?, 'pendiente')");
