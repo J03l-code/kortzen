@@ -12,71 +12,52 @@
     right: 0;
     z-index: var(--z-fixed);
     padding: var(--space-3) 0;
-    background-color: transparent;
+    background-color: #111111 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     transition: all var(--transition-base);
 }
 
 .header--scrolled {
     top: 42px !important;
+    background-color: #111111 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .header__container {
     padding-inline: var(--space-4);
-    /* Default container padding */
 }
 
 @media (max-width: 767px) {
     .header__logo {
         padding-left: var(--space-4);
-        /* Restore padding for logo */
     }
 
     .menu-toggle {
         padding-right: var(--space-4);
-        /* Restore padding for menu toggle visual */
-        /* Removed extraneous margin to ensure it sits cleanly */
     }
 }
 
-.header--scrolled {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: var(--space-3) 0;
+/* Header Text & Links - High Contrast White & Gold */
+.header .header__logo-text,
+.header .nav__link {
+    color: #FFFFFF !important;
 }
 
-/* Transparent header (over hero): force white text for readability on dark photo */
-.header:not(.header--scrolled) .header__logo-text,
-.header:not(.header--scrolled) .nav__link {
-    color: #FFFFFF;
+.header .header__logo-text span {
+    color: var(--color-gold, #C0A062) !important;
 }
 
-.header:not(.header--scrolled) .header__logo-text span {
-    color: rgba(255, 255, 255, 0.8);
+.header .nav__link:hover,
+.header .nav__link--active {
+    color: var(--color-gold, #C0A062) !important;
 }
 
-.header:not(.header--scrolled) .nav__link:hover,
-.header:not(.header--scrolled) .nav__link--active {
-    color: rgba(255, 255, 255, 0.75);
+.header .nav__link::after {
+    background-color: var(--color-gold, #C0A062) !important;
 }
 
-.header:not(.header--scrolled) .nav__link::after {
-    background-color: #FFFFFF;
-}
-
-.header:not(.header--scrolled) .menu-toggle__line {
-    background-color: #FFFFFF;
-}
-
-/* Scrolled header: use dark colors for readability on white background */
-.header--scrolled .header__logo-text,
-.header--scrolled .nav__link {
-    color: var(--color-white-off);
-}
-
-.header--scrolled .nav__link:hover,
-.header--scrolled .nav__link--active {
-    color: var(--color-gold);
+.header .menu-toggle__line {
+    background-color: #FFFFFF !important;
 }
 
 .header__container {
