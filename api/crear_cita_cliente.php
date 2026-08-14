@@ -158,7 +158,7 @@ try {
         'barbero' => $nombreBarbero,
         'fecha' => $fechaLegible,
         'hora' => $hora,
-        'precio' => $precio
+        'precio' => number_format($precioFinal, 2)
     ]);
 
     echo json_encode(['success' => true]);
