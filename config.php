@@ -42,15 +42,22 @@ define('SITE_NAME', getenv('SITE_NAME') ?: 'KORTZEN Barbería');
 define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop');
 define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '6Ldm9oUtAAAAAItTxMMq49FFc2Gl76ppbDsJfBIU');
 
-// Configuración de sesión
+// Configuración de sesión persistente (PWA 365 Días)
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_lifetime', 31536000); // 1 año en segundos
 ini_set('session.gc_maxlifetime', 31536000);  // 1 año en segundos
-ini_set('session.cookie_secure', (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 1 : 0);
 
-// Iniciar sesión si no está iniciada
+// Iniciar sesión con parámetros persistentes de 1 año
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 31536000,
+        'path' => '/',
+        'domain' => '',
+        'secure' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
 }
 
@@ -144,7 +151,32 @@ function execute($sql, $params = [])
  */
 function isLoggedIn()
 {
-    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+    if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+        return true;
+    }
+
+    // Auto-restaurar sesión de Barbero/Staff desde cookie persistente (365 días)
+    if (!empty($_COOKIE['kortzen_pwa_user_id'])) {
+        $userId = intval($_COOKIE['kortzen_pwa_user_id']);
+        if ($userId > 0) {
+            try {
+                $pdo = getConnection();
+                $stmt = $pdo->prepare("SELECT id, nombre, email, rol, sucursal_id FROM usuarios WHERE id = ?");
+                $stmt->execute([$userId]);
+                $u = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($u) {
+                    $_SESSION['user_id'] = $u['id'];
+                    $_SESSION['user_nombre'] = $u['nombre'];
+                    $_SESSION['user_email'] = $u['email'];
+                    $_SESSION['user_rol'] = $u['rol'];
+                    $_SESSION['sucursal_id'] = $u['sucursal_id'];
+                    return true;
+                }
+            } catch (Exception $e) {}
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -249,7 +281,33 @@ function registrarLog($accion, $tabla, $registro_id, $descripcion)
  */
 function isClienteLoggedIn()
 {
-    return isset($_SESSION['cliente_logged_in']) && $_SESSION['cliente_logged_in'] === true;
+    if (isset($_SESSION['cliente_logged_in']) && $_SESSION['cliente_logged_in'] === true) {
+        return true;
+    }
+
+    // Auto-restaurar sesión persistente de Cliente PWA (365 días)
+    if (!empty($_COOKIE['kortzen_pwa_client_id'])) {
+        $clientId = intval($_COOKIE['kortzen_pwa_client_id']);
+        if ($clientId > 0) {
+            try {
+                $pdo = getConnection();
+                $stmt = $pdo->prepare("SELECT id, nombre, email, foto_perfil, google_id FROM clientes WHERE id = ?");
+                $stmt->execute([$clientId]);
+                $c = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($c) {
+                    $_SESSION['cliente_logged_in'] = true;
+                    $_SESSION['cliente_id'] = $c['id'];
+                    $_SESSION['cliente_nombre'] = $c['nombre'];
+                    $_SESSION['cliente_email'] = $c['email'];
+                    $_SESSION['cliente_foto'] = $c['foto_perfil'] ?? null;
+                    $_SESSION['cliente_google_id'] = $c['google_id'] ?? null;
+                    return true;
+                }
+            } catch (Exception $e) {}
+        }
+    }
+
+    return false;
 }
 
 /**

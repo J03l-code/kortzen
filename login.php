@@ -35,6 +35,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_email'] = $user['email'];
                     $_SESSION['user_rol'] = $user['rol'];
 
+                    // Guardar cookie persistente PWA (365 días)
+                    setcookie('kortzen_pwa_user_id', (string)$user['id'], [
+                        'expires' => time() + 31536000,
+                        'path' => '/',
+                        'secure' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
+                        'httponly' => true,
+                        'samesite' => 'Lax'
+                    ]);
+
                     session_regenerate_id(true);
 
                     if ($user['rol'] === 'barbero') {

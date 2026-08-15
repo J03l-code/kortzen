@@ -4,10 +4,12 @@ require_once 'config.php';
 // Destruir todas las variables de sesión
 $_SESSION = array();
 
-// Destruir la cookie de sesión
+// Destruir la cookie de sesión y cookies PWA persistentes
 if (isset($_COOKIE[session_name()])) {
     setcookie(session_name(), '', time() - 3600, '/');
 }
+setcookie('kortzen_pwa_client_id', '', time() - 3600, '/');
+setcookie('kortzen_pwa_user_id', '', time() - 3600, '/');
 
 // Destruir la sesión
 session_destroy();
