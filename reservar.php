@@ -50,9 +50,9 @@ $pageTitle = 'Reservar Cita';
 
         /* Container & Header */
         .booking-container {
-            max-width: 800px;
+            max-width: 540px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 16px;
             min-height: auto;
             padding-bottom: 40px;
         }
@@ -412,43 +412,43 @@ $pageTitle = 'Reservar Cita';
 
         <!-- Step 5: Confirm -->
         <div class="wizard-step" id="step5">
-            <h2 style="margin-bottom: 20px; font-weight: 900; color: #FFFFFF;">Confirma tu Reserva</h2>
-            <div style="background:#FFFFFF; color:#111111; padding:30px; border-radius:16px; border:1px solid #EAEAEA; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+            <h2 style="margin-bottom: 20px; font-size: 1.4rem; font-weight: 900; color: #FFFFFF; text-align: center; letter-spacing: 1px;">Confirma tu Reserva</h2>
+            <div style="background:#FFFFFF; color:#111111; padding:24px; border-radius:16px; border:1px solid #EAEAEA; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
                 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:24px; background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 12px; padding: 20px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px; background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 12px; padding: 18px;">
                     <div>
-                        <span style="color:#777777; font-size:0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">SERVICIO</span>
-                        <div id="confirmService" style="font-size:1.15rem; font-weight: 800; color: #111111; margin-top:4px;">-</div>
+                        <span style="color:#777777; font-size:0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">SERVICIO</span>
+                        <div id="confirmService" style="font-size:1.05rem; font-weight: 800; color: #111111; margin-top:3px;">-</div>
                     </div>
                     <div>
-                        <span style="color:#777777; font-size:0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">BARBERO</span>
-                        <div id="confirmBarber" style="font-size:1.15rem; font-weight: 800; color: #111111; margin-top:4px;">-</div>
+                        <span style="color:#777777; font-size:0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">BARBERO</span>
+                        <div id="confirmBarber" style="font-size:1.05rem; font-weight: 800; color: #111111; margin-top:3px;">-</div>
                     </div>
                     <div>
-                        <span style="color:#777777; font-size:0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">FECHA Y HORA</span>
-                        <div id="confirmDateTime" style="font-size:1.15rem; font-weight: 900; color: #111111; margin-top:4px;">-</div>
+                        <span style="color:#777777; font-size:0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">FECHA Y HORA</span>
+                        <div id="confirmDateTime" style="font-size:1.05rem; font-weight: 900; color: #111111; margin-top:3px;">-</div>
                     </div>
                     <div>
-                        <span style="color:#777777; font-size:0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">PRECIO ESTIMADO</span>
-                        <div id="confirmPrice" style="font-size:1.15rem; font-weight: 900; color: #111111; margin-top:4px;">-</div>
+                        <span style="color:#777777; font-size:0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">PRECIO ESTIMADO</span>
+                        <div id="confirmPrice" style="font-size:1.05rem; font-weight: 900; color: #111111; margin-top:3px;">-</div>
                     </div>
                 </div>
 
-                <div class="policy-section" style="margin-bottom: 24px; padding: 18px; background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 12px;">
-                    <h4 style="margin: 0 0 10px 0; color: #111111; font-size: 0.9rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">POLÍTICA DE RESERVAS</h4>
-                    <ul style="font-size: 0.85rem; color: #555555; padding-left: 20px; margin: 0 0 14px 0; line-height: 1.4;">
-                        <li style="margin-bottom: 6px;">Si no puede llegar a su cita, informar con 1 hora de anticipación.</li>
+                <div class="policy-section" style="margin-bottom: 20px; padding: 16px; background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 12px;">
+                    <h4 style="margin: 0 0 8px 0; color: #111111; font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">POLÍTICA DE RESERVAS</h4>
+                    <ul style="font-size: 0.82rem; color: #555555; padding-left: 18px; margin: 0 0 12px 0; line-height: 1.4;">
+                        <li style="margin-bottom: 5px;">Si no puede llegar a su cita, informar con 1 hora de anticipación.</li>
                         <li>Si llega 10 minutos tarde, pierde el servicio de toalla caliente y limpieza facial.</li>
                     </ul>
-                    <div style="display: flex; align-items: center; gap: 10px; border-top: 1px dashed #DDD; padding-top: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px; border-top: 1px dashed #DDD; padding-top: 10px;">
                         <input type="checkbox" id="policyCheckbox" style="width: 18px; height: 18px; accent-color: #111111; cursor: pointer;">
-                        <label for="policyCheckbox" style="color: #111111; font-size: 0.88rem; font-weight: 700; cursor: pointer; user-select: none;">
+                        <label for="policyCheckbox" style="color: #111111; font-size: 0.85rem; font-weight: 700; cursor: pointer; user-select: none;">
                             He leído y acepto los términos y condiciones.
                         </label>
                     </div>
                 </div>
 
-                <button id="btnConfirmBooking" class="btn btn-next" style="width:100%; background:#111111; color:#FFFFFF; font-size:0.95rem; font-weight: 800; padding: 16px; border:none; border-radius:10px; opacity: 0.4; cursor: not-allowed; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s;" disabled>
+                <button id="btnConfirmBooking" class="btn btn-next" style="width:100%; background:#111111; color:#FFFFFF; font-size:0.92rem; font-weight: 800; padding: 15px; border:none; border-radius:10px; opacity: 0.4; cursor: not-allowed; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s;" disabled>
                     CONFIRMAR RESERVA
                 </button>
             </div>
