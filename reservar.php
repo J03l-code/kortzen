@@ -53,13 +53,14 @@ $pageTitle = 'Reservar Cita';
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            min-height: 100vh;
+            min-height: auto;
+            padding-bottom: 40px;
         }
 
         .booking-header {
             text-align: center;
-            margin-bottom: 40px;
-            margin-top: 20px;
+            margin-bottom: 20px;
+            margin-top: 10px;
         }
 
         .booking-title {
@@ -74,7 +75,7 @@ $pageTitle = 'Reservar Cita';
         .steps-progress {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 40px;
+            margin-bottom: 24px;
             position: relative;
         }
 
@@ -918,6 +919,14 @@ $pageTitle = 'Reservar Cita';
 
             if (step === 5) {
                 updateSummary();
+            }
+
+            // Scroll suavemente al inicio del contenedor
+            const container = document.querySelector('.booking-container');
+            if (container) {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
