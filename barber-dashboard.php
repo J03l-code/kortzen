@@ -264,19 +264,20 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
 <body class="pwa-app-mode">
 
     <div class="pwa-container">
-        <?php include_once 'includes/pwa_desktop_header.php'; ?>
-
-        <!-- Native Header Bar -->
-        <header class="pwa-header">
-            <div class="pwa-header__logo">KORTZEN</div>
-            <div class="pwa-header__title" style="font-size: 0.9rem; font-weight: 800; letter-spacing: 1px;">PANEL BARBERO</div>
-            <a href="logout.php" class="pwa-header__btn" title="Cerrar sesión" style="color: #111111;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-            </a>
+        <!-- Header Exclusivo de Barbero -->
+        <header style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+            <div style="font-size: 1.3rem; font-weight: 900; letter-spacing: 3px; color: #111111;">KORTZEN</div>
+            
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <a href="mi-perfil.php" style="background: #FAFAFA; color: #111111; border: 1px solid #D1D1D1; padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: background 0.15s;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span>Mi Perfil</span>
+                </a>
+                <a href="logout.php" style="background: #111111; color: #FFFFFF; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: background 0.15s;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
         </header>
 
         <!-- Saludo & Avatar Barbero -->
