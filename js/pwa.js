@@ -19,8 +19,28 @@ if ('serviceWorker' in navigator) {
 // Global PWA State
 let deferredPrompt;
 
-// Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
+  // PWA Persistent Login Sync (LocalStorage Backup for iOS/Android Standalone WebViews)
+  const pathname = window.location.pathname;
+  
+  if (pathname.includes('cliente-login.php') || pathname.includes('pwa-entry.php')) {
+    const savedClientId = localStorage.getItem('kortzen_pwa_client_id');
+    if (savedClientId && parseInt(savedClientId) > 0) {
+      fetch('/api/auto_login_pwa.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'client_id=' + encodeURIComponent(savedClientId)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.redirect) {
+          window.location.href = data.redirect;
+        }
+      })
+      .catch(e => {});
+    }
+  }
+
   // Inject CSS for PWA banners
   const style = document.createElement('style');
   style.textContent = `

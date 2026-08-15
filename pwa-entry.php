@@ -3,7 +3,6 @@
  * KORTZEN - PWA Router Entry Point
  * Redirects the user to their appropriate dashboard depending on session state
  */
-session_start();
 require_once 'config.php';
 
 if (isClienteLoggedIn()) {

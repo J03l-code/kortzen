@@ -3,7 +3,6 @@
  * Mi Perfil - Native App UI (Screen 4)
  */
 
-session_start();
 require_once 'config.php';
 
 if (!isClienteLoggedIn()) {

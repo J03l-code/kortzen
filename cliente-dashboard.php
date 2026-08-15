@@ -4,11 +4,10 @@
  * Interfaz nativa para PWA y clientes autenticados
  */
 
-session_start();
 require_once 'config.php';
 
-// Verificar si el cliente está logueado
-if (!isset($_SESSION['cliente_logged_in']) || !$_SESSION['cliente_logged_in']) {
+// Verificar si el cliente está logueado (con auto-restauración persistente 365 días)
+if (!isClienteLoggedIn()) {
     header('Location: cliente-login.php');
     exit;
 }
@@ -399,5 +398,10 @@ if ($cliente_id) {
         </a>
     </nav>
 
+    <script>
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('kortzen_pwa_client_id', '<?php echo $cliente_id; ?>');
+        }
+    </script>
 </body>
 </html>

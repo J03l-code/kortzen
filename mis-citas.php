@@ -3,7 +3,6 @@
  * Mis Citas - Native App UI (Screen Citas)
  */
 
-session_start();
 require_once 'config.php';
 
 if (!isClienteLoggedIn()) {
