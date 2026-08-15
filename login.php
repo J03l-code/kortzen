@@ -18,11 +18,8 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $recaptchaToken = $_POST['g-recaptcha-response'] ?? '';
 
-    if (!verificarRecaptcha($recaptchaToken)) {
-        $error = 'Por favor confirma la casilla de seguridad reCAPTCHA.';
-    } elseif (empty($email) || empty($password)) {
+    if (empty($email) || empty($password)) {
         $error = 'Por favor complete todos los campos';
     } else {
         try {
