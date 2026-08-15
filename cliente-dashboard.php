@@ -94,12 +94,11 @@ if ($cliente_id) {
     <link rel="stylesheet" href="/css/reset.css?v=23">
     <link rel="stylesheet" href="/css/pwa-native.css?v=50">
 
-    <!-- PWA Manifest & Meta Tags -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="KORTZEN">
-    <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon.png?v=5">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon.png?v=5">
+    <link rel="shortcut icon" href="/assets/icons/favicon.png?v=5">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/favicon.png?v=5">
     <script src="/js/pwa.js" defer></script>
     <script src="/js/calendar-helper.js?v=1"></script>
 </head>

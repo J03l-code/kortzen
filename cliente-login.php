@@ -34,12 +34,11 @@ if (file_exists($googleConfigPath)) {
     <link rel="stylesheet" href="/css/reset.css">
     <link rel="stylesheet" href="/css/base.css">
 
-    <!-- PWA Manifest & Meta Tags -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="KORTZEN">
-    <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon.png?v=5">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon.png?v=5">
+    <link rel="shortcut icon" href="/assets/icons/favicon.png?v=5">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/favicon.png?v=5">
     <script src="/js/pwa.js" defer></script>
     <!-- Google reCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>

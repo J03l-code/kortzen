@@ -72,6 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KORTZEN - Acceso Barberos</title>
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon.png?v=5">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon.png?v=5">
+    <link rel="shortcut icon" href="/assets/icons/favicon.png?v=5">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/favicon.png?v=5">
     <link rel="stylesheet" href="css/style.css">
     <!-- Google reCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
