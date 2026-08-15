@@ -49,7 +49,7 @@ if ($cliente_id) {
         if (empty($codigo_referido)) {
             $nombreLimpio = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $primer_nombre));
             if (empty($nombreLimpio)) $nombreLimpio = 'CLIENTE';
-            $codigo_referido = 'KORTZEN-' . $nombreLimpio . rand(100, 999);
+            $codigo_referido = $nombreLimpio . rand(100, 999);
             
             try {
                 $pdo->exec("ALTER TABLE clientes ADD COLUMN codigo_referido VARCHAR(30) UNIQUE NULL AFTER puntos");

@@ -39,7 +39,12 @@ try {
         echo "✅ Columna 'codigo_referido' agregada a la tabla clientes.<br>";
     }
 
-    // 3. Generar código de referido único para todos los clientes existentes que no tengan uno
+    // 3. Limpiar prefijo 'KORTZEN-' en códigos existentes
+    try {
+        $pdo->exec("UPDATE clientes SET codigo_referido = REPLACE(codigo_referido, 'KORTZEN-', '') WHERE codigo_referido LIKE 'KORTZEN-%'");
+    } catch (Exception $exClean) {}
+
+    // 4. Generar código de referido único para todos los clientes existentes que no tengan uno
     $stmtClients = $pdo->query("SELECT id, nombre, email FROM clientes WHERE codigo_referido IS NULL OR codigo_referido = ''");
     $clientesSinCodigo = $stmtClients->fetchAll(PDO::FETCH_ASSOC);
 
@@ -49,7 +54,7 @@ try {
         $nombreLimpio = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', explode(' ', trim($c['nombre']))[0]));
         if (empty($nombreLimpio)) $nombreLimpio = 'CLIENTE';
         
-        $codigoBase = 'KORTZEN-' . $nombreLimpio . rand(100, 999);
+        $codigoBase = $nombreLimpio . rand(100, 999);
         
         // Garantizar unicidad
         $counter = 1;
@@ -58,12 +63,12 @@ try {
             $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM clientes WHERE codigo_referido = ?");
             $stmtCheck->execute([$codigoFinal]);
             if ($stmtCheck->fetchColumn() == 0) break;
-            $codigoFinal = $codigoBase . '-' . $counter++;
+            $codigoFinal = $nombreLimpio . rand(100, 999);
         }
 
         $stmtUpdCode->execute([$codigoFinal, $c['id']]);
     }
-    echo "✅ Códigos de referidos únicos generados para " . count($clientesSinCodigo) . " clientes.<br>";
+    echo "✅ Códigos de referidos cortos generados.<br>";
 
     // 4. Crear tabla `referidos`
     $pdo->exec("

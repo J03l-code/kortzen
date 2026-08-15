@@ -398,7 +398,7 @@ $pageTitle = 'Reservar Cita';
                         <span>¿Tienes un Código de Referido?</span>
                     </label>
                     <div style="display:flex; gap:8px; width:100%; box-sizing: border-box;">
-                        <input type="text" id="referralCodeInput" placeholder="Ej: KORTZEN-AMIGO" 
+                        <input type="text" id="referralCodeInput" placeholder="Ej: JOEL888" 
                                style="flex:1; min-width:0; padding:12px; background:#FFFFFF; border:1px solid #CCCCCC; border-radius:8px; text-transform:uppercase; font-weight:800; font-size:0.95rem; color:#111111; box-sizing: border-box;">
                         <button type="button" onclick="aplicarCodigoReferidoReserva()" 
                                 style="padding:12px 18px; background:var(--color-gold, #C0A062); color:#111111; border:none; border-radius:8px; font-weight:900; font-size:0.85rem; cursor:pointer; text-transform:uppercase; white-space:nowrap; flex-shrink:0;">
