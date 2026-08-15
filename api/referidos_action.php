@@ -13,8 +13,9 @@ try {
     // 1. Validar Código de Referido
     if ($action === 'validar') {
         $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
+        $codigoLimpio = str_replace('KORTZEN-', '', $codigo);
 
-        if (empty($codigo)) {
+        if (empty($codigoLimpio)) {
             echo json_encode(['success' => false, 'message' => 'Por favor ingresa un código.']);
             exit;
         }
@@ -25,8 +26,8 @@ try {
         $montoDescuento = floatval($configs['descuento_referido_amigo'] ?? 2.00);
 
         // Buscar cliente dueño del código
-        $stmtRef = $pdo->prepare("SELECT id, nombre FROM clientes WHERE codigo_referido = ?");
-        $stmtRef->execute([$codigo]);
+        $stmtRef = $pdo->prepare("SELECT id, nombre FROM clientes WHERE codigo_referido = ? OR codigo_referido = ?");
+        $stmtRef->execute([$codigoLimpio, $codigo]);
         $referente = $stmtRef->fetch(PDO::FETCH_ASSOC);
 
         if (!$referente) {

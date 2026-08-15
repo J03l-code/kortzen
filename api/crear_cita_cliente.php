@@ -61,11 +61,12 @@ try {
 
     // 3.5. Procesar Código de Referido y Descuentos
     $codigoReferido = strtoupper(trim($_POST['codigo_referido'] ?? ''));
+    $codigoReferidoLimpio = str_replace('KORTZEN-', '', $codigoReferido);
     $montoDescuento = 0.00;
     $referenteId = null;
     $puntosPorReferido = 200;
 
-    if (!empty($codigoReferido)) {
+    if (!empty($codigoReferidoLimpio)) {
         // Cargar configuraciones
         $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
         $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
@@ -73,8 +74,8 @@ try {
         $puntosPorReferido = intval($cfgs['puntos_por_referido'] ?? 200);
 
         // Buscar referente
-        $stmtRefCheck = $pdo->prepare("SELECT id FROM clientes WHERE codigo_referido = ?");
-        $stmtRefCheck->execute([$codigoReferido]);
+        $stmtRefCheck = $pdo->prepare("SELECT id FROM clientes WHERE codigo_referido = ? OR codigo_referido = ?");
+        $stmtRefCheck->execute([$codigoReferidoLimpio, $codigoReferido]);
         $refRow = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
 
         if ($refRow && $refRow['id'] != $clienteId) {

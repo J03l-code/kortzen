@@ -65,11 +65,23 @@ $puntos_nivel_vip = 3000;
 
 try {
     $pdo = getConnection();
-    $stmtCfgsN = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave IN ('puntos_nivel_plata', 'puntos_nivel_oro', 'puntos_nivel_vip')");
+    $stmtCfgsN = $pdo->query("SELECT clave, valor FROM configuracion WHERE clave IN ('puntos_nivel_plata', 'puntos_nivel_oro', 'puntos_nivel_vip', 'puntos_por_referido', 'descuento_referido_amigo')");
     $cfgsN = $stmtCfgsN->fetchAll(PDO::FETCH_KEY_PAIR);
     if (!empty($cfgsN['puntos_nivel_plata'])) $puntos_nivel_plata = intval($cfgsN['puntos_nivel_plata']);
     if (!empty($cfgsN['puntos_nivel_oro'])) $puntos_nivel_oro = intval($cfgsN['puntos_nivel_oro']);
     if (!empty($cfgsN['puntos_nivel_vip'])) $puntos_nivel_vip = intval($cfgsN['puntos_nivel_vip']);
+    $puntos_por_referido_cfg = intval($cfgsN['puntos_por_referido'] ?? 200);
+    $descuento_referido_amigo_cfg = number_format(floatval($cfgsN['descuento_referido_amigo'] ?? 2.00), 2);
+
+    $stmtCod = $pdo->prepare("SELECT codigo_referido FROM clientes WHERE id = ?");
+    $stmtCod->execute([$cliente_id]);
+    $codigo_referido = $stmtCod->fetchColumn() ?: '';
+
+    if (!empty($codigo_referido) && (strpos($codigo_referido, 'KORTZEN-') !== false || strpos($codigo_referido, 'KORTZEN') !== false)) {
+        $codigo_referido = str_replace(['KORTZEN-', 'KORTZEN'], '', $codigo_referido);
+        $stmtUpdC = $pdo->prepare("UPDATE clientes SET codigo_referido = ? WHERE id = ?");
+        $stmtUpdC->execute([$codigo_referido, $cliente_id]);
+    }
 } catch (Exception $exN) {}
 
 // Calcular Nivel y Progreso Dinámicamente

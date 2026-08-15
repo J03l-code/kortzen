@@ -46,6 +46,13 @@ if ($cliente_id) {
         $stmtCod->execute([$cliente_id]);
         $codigo_referido = $stmtCod->fetchColumn();
 
+        // Auto-limpiar prefijo KORTZEN de la BD
+        if (!empty($codigo_referido) && (strpos($codigo_referido, 'KORTZEN-') !== false || strpos($codigo_referido, 'KORTZEN') !== false)) {
+            $codigo_referido = str_replace(['KORTZEN-', 'KORTZEN'], '', $codigo_referido);
+            $stmtUpdCod = $pdo->prepare("UPDATE clientes SET codigo_referido = ? WHERE id = ?");
+            $stmtUpdCod->execute([$codigo_referido, $cliente_id]);
+        }
+
         if (empty($codigo_referido)) {
             $nombreLimpio = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $primer_nombre));
             if (empty($nombreLimpio)) $nombreLimpio = 'CLIENTE';
