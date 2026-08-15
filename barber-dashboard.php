@@ -1,7 +1,7 @@
 <?php
 /**
  * KORTZEN - Dashboard Exclusivo para Barberos
- * Interfaz nativa blanca y elegante para barberos (mismo sistema de diseño que la PWA del cliente)
+ * Interfaz nativa blanca y elegante para barberos (sistema de diseño idéntico al cliente, sin emojis)
  */
 
 require_once 'config.php';
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $pdo = getConnection();
                 $stmt = $pdo->prepare("UPDATE citas SET estado = 'completada' WHERE id = ? AND barbero_id = ?");
                 $stmt->execute([$citaId, $barbero_id]);
-                $mensaje = '¡Cita marcada como COMPLETADA! Se han acreditado tus ganancias.';
+                $mensaje = 'Cita marcada como COMPLETADA. Se han acreditado tus ganancias.';
                 $tipoMensaje = 'success';
             } catch (Exception $e) {
                 $mensaje = 'Error al actualizar cita.';
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// 1. Ganancias por Servicios + Comisión por Ventas de Productos (Separadas)
+// 1. Ganancias por Servicios + Comisión por Ventas de Productos
 $com_diaria = floatval($currentUser['comision_porcentaje'] ?? 50);
 $com_finde = floatval($currentUser['comision_fin_semana'] ?? 50);
 $com_productos = floatval($currentUser['comision_productos'] ?? 10.00);
@@ -52,7 +52,7 @@ $gananciaHoyServicios = query("
     WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
 ", [$barbero_id])[0]['total'] ?? 0;
 
-// Ganancia Ventas Productos Hoy (Comisión de productos asignada)
+// Ganancia Ventas Productos Hoy
 $gananciaHoyVentas = query("
     SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
     FROM ventas_productos 
@@ -126,68 +126,152 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Panel de Barbero - KORTZEN</title>
 
-    <link rel="stylesheet" href="/css/variables.css?v=23">
-    <link rel="stylesheet" href="/css/reset.css?v=23">
-    <link rel="stylesheet" href="/css/pwa-native.css?v=3">
+    <link rel="stylesheet" href="/css/variables.css?v=24">
+    <link rel="stylesheet" href="/css/reset.css?v=24">
+    <link rel="stylesheet" href="/css/pwa-native.css?v=52">
 
     <link rel="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="KORTZEN">
     <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
+    <script src="/js/pwa.js" defer></script>
 
     <style>
-        .pwa-barber-card {
-            background: var(--pwa-card-bg);
-            border: 1px solid var(--pwa-border);
-            border-radius: var(--pwa-radius-card);
-            padding: 1.25rem;
-            margin-bottom: 1.25rem;
-            box-shadow: var(--pwa-shadow);
-        }
-
-        .pwa-form-control {
-            width: 100%;
-            padding: 0.85rem;
-            border: 1px solid var(--pwa-border);
-            border-radius: 12px;
-            background: #FAFAFA;
-            color: var(--pwa-text-main);
-            font-family: inherit;
-            font-size: 0.85rem;
-            margin-bottom: 0.75rem;
-            box-sizing: border-box;
-        }
-
-        .pwa-form-control:focus {
-            outline: none;
-            border-color: #111111;
+        .barber-stat-card {
             background: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-
-        .badge-turno {
-            font-size: 0.7rem;
+        .barber-stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .barber-stat-icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: #F4F4F4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #111111;
+        }
+        .barber-stat-label {
+            font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
-            padding: 0.35rem 0.65rem;
-            border-radius: 20px;
+            letter-spacing: 0.05em;
+            color: #777777;
         }
-
-        .badge-pendiente { background: #FFF8E7; color: #B78103; border: 1px solid #F3E0B5; }
-        .badge-completada { background: #E8F8F0; color: #1E824C; border: 1px solid #A3E4D7; }
-        .badge-cancelada { background: #FADBD8; color: #78281F; border: 1px solid #F5B7B1; }
+        .barber-stat-val {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #111111;
+            letter-spacing: -0.02em;
+        }
+        .barber-stat-sub {
+            font-size: 0.78rem;
+            color: #666666;
+            margin-top: 4px;
+        }
+        .barber-section-card {
+            background: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            margin-bottom: 24px;
+        }
+        .barber-section-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #111111;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .barber-icon-stroke {
+            width: 20px;
+            height: 20px;
+            stroke: #111111;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .barber-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #D1D1D1;
+            border-radius: 10px;
+            background: #FAFAFA;
+            color: #111111;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        .barber-input:focus {
+            outline: none;
+            border-color: #000000;
+            background: #FFFFFF;
+        }
+        .btn-action-black {
+            width: 100%;
+            background: #000000;
+            color: #FFFFFF;
+            border: none;
+            padding: 13px 20px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+        .btn-action-black:hover {
+            background: #222222;
+        }
+        .badge-turno-clean {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+        .badge-pendiente-clean { background: #F4F4F4; color: #111111; border: 1px solid #D1D1D1; }
+        .badge-completada-clean { background: #111111; color: #FFFFFF; }
+        .badge-cancelada-clean { background: #FAFAFA; color: #888888; border: 1px solid #EAEAEA; }
     </style>
 </head>
 
 <body class="pwa-app-mode">
 
     <div class="pwa-container">
-        <!-- Header Blanco Nativo -->
+        <?php include_once 'includes/pwa_desktop_header.php'; ?>
+
+        <!-- Native Header Bar -->
         <header class="pwa-header">
             <div class="pwa-header__logo">KORTZEN</div>
-            <div class="pwa-header__title" style="font-size: 0.95rem; font-weight: 700;">PANEL BARBERO</div>
-            <a href="logout.php" class="pwa-header__btn" title="Cerrar sesión" style="color: #dc3545;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="pwa-header__title" style="font-size: 0.9rem; font-weight: 800; letter-spacing: 1px;">PANEL BARBERO</div>
+            <a href="logout.php" class="pwa-header__btn" title="Cerrar sesión" style="color: #111111;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -195,169 +279,229 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
             </a>
         </header>
 
-        <!-- Saludo e Información del Barbero -->
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; margin-top: 0.5rem;">
+        <!-- Saludo & Avatar Barbero -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; margin-top: 10px;">
             <div>
-                <h1 class="pwa-greeting">Hola, <?php echo htmlspecialchars($nombreBarbero); ?> 👋</h1>
-                <p class="pwa-subtitle" style="margin-bottom: 0;">Barbero Profesional • KORTZEN</p>
+                <h1 class="pwa-greeting" style="font-size: 1.6rem; font-weight: 900; color: #111111; margin: 0;">Hola, <?php echo htmlspecialchars($nombreBarbero); ?></h1>
+                <p style="color: #666666; margin-top: 4px; font-size: 0.9rem;">Barbero Profesional • KORTZEN</p>
             </div>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: #111111; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; flex-shrink: 0;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #111111; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                 <?php echo $inicial_barbero; ?>
             </div>
         </div>
 
         <?php if ($mensaje): ?>
-            <div style="background: #E8F8F0; border: 1px solid #A3E4D7; color: #1E824C; padding: 0.85rem 1rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1.25rem; font-weight: 600;">
-                ✓ <?php echo htmlspecialchars($mensaje); ?>
+            <div style="background: #111111; color: #FFFFFF; padding: 14px 18px; border-radius: 12px; font-size: 0.88rem; margin-bottom: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                <svg class="barber-icon-stroke" style="stroke: #FFFFFF;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><?php echo htmlspecialchars($mensaje); ?></span>
             </div>
         <?php endif; ?>
 
-        <!-- Tarjetas de Métricas de Ganancias -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; margin-bottom: 1.25rem;">
-            <div class="pwa-card" style="margin-bottom: 0; padding: 1.1rem;">
-                <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pwa-text-muted); margin-bottom: 0.3rem;">Ganancias Hoy</div>
-                <div style="font-size: 1.5rem; font-weight: 800; color: var(--pwa-text-main);">$<?php echo number_format($miGananciaDia, 2); ?></div>
-                <div style="font-size: 0.75rem; color: var(--pwa-text-muted); margin-top: 0.2rem;"><?php echo $totalCitasHoy; ?> cortes + ventas</div>
+        <!-- Tarjetas de Métricas de Ganancias (Grid Minimalista de 3 columnas) -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+            
+            <div class="barber-stat-card">
+                <div class="barber-stat-header">
+                    <span class="barber-stat-label">Ganancias Hoy</span>
+                    <div class="barber-stat-icon-box">
+                        <svg class="barber-icon-stroke" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                </div>
+                <div class="barber-stat-val">$<?php echo number_format($miGananciaDia, 2); ?></div>
+                <div class="barber-stat-sub"><?php echo $totalCitasHoy; ?> cortes + ventas</div>
             </div>
-            <div class="pwa-card" style="margin-bottom: 0; padding: 1.1rem;">
-                <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pwa-text-muted); margin-bottom: 0.3rem;">Ganancias Mes</div>
-                <div style="font-size: 1.5rem; font-weight: 800; color: var(--pwa-text-main);">$<?php echo number_format($miGananciaMes, 2); ?></div>
-                <div style="font-size: 0.75rem; color: var(--pwa-text-muted); margin-top: 0.2rem;">Comisiones acumuladas</div>
+
+            <div class="barber-stat-card">
+                <div class="barber-stat-header">
+                    <span class="barber-stat-label">Ganancias Mes</span>
+                    <div class="barber-stat-icon-box">
+                        <svg class="barber-icon-stroke" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    </div>
+                </div>
+                <div class="barber-stat-val">$<?php echo number_format($miGananciaMes, 2); ?></div>
+                <div class="barber-stat-sub">Comisiones acumuladas</div>
             </div>
+
+            <div class="barber-stat-card">
+                <div class="barber-stat-header">
+                    <span class="barber-stat-label">Cortes de Hoy</span>
+                    <div class="barber-stat-icon-box">
+                        <svg class="barber-icon-stroke" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.47" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                    </div>
+                </div>
+                <div class="barber-stat-val"><?php echo $totalCitasHoy; ?></div>
+                <div class="barber-stat-sub">Servicios completados</div>
+            </div>
+
         </div>
 
         <!-- Próximo Cliente Widget -->
-        <div class="pwa-section-title">Próximo Cliente</div>
-        <?php if ($proximo): 
-            $horaProxima = date('H:i', strtotime($proximo['fecha_hora']));
-        ?>
-        <div class="pwa-upcoming-card">
-            <div class="pwa-upcoming-body">
-                <div class="pwa-date-box" style="background: #111111; color: #FFFFFF;">
-                    <div class="pwa-date-box__day" style="color: #CCCCCC;">⏰</div>
-                    <div class="pwa-date-box__num" style="font-size: 1rem; color: #FFFFFF;"><?php echo $horaProxima; ?></div>
+        <div class="barber-section-card">
+            <h3 class="barber-section-title">
+                <svg class="barber-icon-stroke" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>Próximo Cliente</span>
+            </h3>
+
+            <?php if ($proximo): 
+                $horaProxima = date('H:i', strtotime($proximo['fecha_hora']));
+            ?>
+            <div style="background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 14px; padding: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #777777; text-transform: uppercase; letter-spacing: 1px;">HORA DE ATENCIÓN</span>
+                        <div style="font-size: 1.5rem; font-weight: 900; color: #111111; margin-top: 2px;"><?php echo $horaProxima; ?></div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #777777; text-transform: uppercase; letter-spacing: 1px;">SERVICIO</span>
+                        <div style="font-size: 1.1rem; font-weight: 800; color: #111111; margin-top: 2px;"><?php echo htmlspecialchars($proximo['servicio'] ?? 'Corte de Autor'); ?></div>
+                    </div>
                 </div>
-                <div class="pwa-upcoming-info">
-                    <div class="pwa-upcoming-service"><?php echo htmlspecialchars($proximo['servicio'] ?? 'Corte de Autor'); ?></div>
-                    <div class="pwa-upcoming-detail">Cliente: <strong><?php echo htmlspecialchars($proximo['cliente'] ?? 'Cliente'); ?></strong></div>
+
+                <div style="border-top: 1px solid #EAEAEA; padding-top: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 0.8rem; color: #666666;">Cliente:</span>
+                        <strong style="color: #111111; font-size: 0.95rem; margin-left: 4px;"><?php echo htmlspecialchars($proximo['cliente'] ?? 'Cliente'); ?></strong>
+                    </div>
                     <?php if (!empty($proximo['cliente_telefono'])): ?>
-                        <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $proximo['cliente_telefono']); ?>" target="_blank" class="pwa-upcoming-detail" style="color: #25D366; text-decoration: none; font-weight: 600;">
-                            📞 Contactar por WhatsApp (<?php echo htmlspecialchars($proximo['cliente_telefono']); ?>)
+                        <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $proximo['cliente_telefono']); ?>" target="_blank" style="color: #111111; text-decoration: none; font-weight: 700; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; border: 1px solid #D1D1D1; padding: 6px 12px; border-radius: 8px; background: #FFFFFF;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                            <span>WhatsApp</span>
                         </a>
                     <?php endif; ?>
                 </div>
+
+                <form method="POST">
+                    <input type="hidden" name="action" value="completar_cita">
+                    <input type="hidden" name="cita_id" value="<?php echo $proximo['id']; ?>">
+                    <button type="submit" class="btn-action-black">
+                        <svg class="barber-icon-stroke" style="stroke: #FFFFFF; width: 18px; height: 18px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Marcar Servicio como Completado</span>
+                    </button>
+                </form>
             </div>
-            
-            <form method="POST" style="margin-top: 0.85rem;">
-                <input type="hidden" name="action" value="completar_cita">
-                <input type="hidden" name="cita_id" value="<?php echo $proximo['id']; ?>">
-                <button type="submit" class="pwa-btn-black" style="background: #10B981; border: none; padding: 0.85rem;">
-                    ✓ MARCAR SERVICIO COMO COMPLETADO
-                </button>
-            </form>
-        </div>
-        <?php else: ?>
-        <div class="pwa-card" style="text-align: center; padding: 1.5rem;">
-            <div style="font-size: 0.95rem; font-weight: 700; color: var(--pwa-text-main);">No tienes más turnos pendientes por hoy 🎉</div>
-            <div style="font-size: 0.8rem; color: var(--pwa-text-muted); margin-top: 0.3rem;">¡Excelente trabajo! Tus ganancias se encuentran actualizadas en las tarjetas de arriba.</div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Registrar Venta de Producto (Comisión) -->
-        <div class="pwa-section-title" style="margin-top: 1.5rem;">🛍️ Registrar Venta de Producto</div>
-        <div class="pwa-barber-card">
-            <p style="font-size: 0.8rem; color: var(--pwa-text-muted); margin-bottom: 0.85rem;">
-                Suma comisiones instantáneas a tus ganancias al vender productos de barbería a tus clientes.
-            </p>
-            <form id="formVentaProducto" onsubmit="registrarVentaProductoBarbero(event)">
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--pwa-text-main); display: block; margin-bottom: 0.35rem;">Producto Vendido:</label>
-                <select name="producto_id" class="pwa-form-control" required>
-                    <option value="">-- Seleccionar producto del inventario --</option>
-                    <?php foreach ($inventarioItems as $item): ?>
-                        <option value="<?php echo $item['id']; ?>">
-                            <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <div style="display: flex; gap: 0.75rem;">
-                    <div style="flex: 1;">
-                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--pwa-text-main); display: block; margin-bottom: 0.35rem;">Cantidad:</label>
-                        <input type="number" name="cantidad" value="1" min="1" class="pwa-form-control" required>
-                    </div>
-                    <div style="flex: 2; display: flex; align-items: flex-end;">
-                        <button type="submit" class="pwa-btn-black" style="padding: 0.85rem; font-size: 0.8rem;">
-                            REGISTRAR VENTA
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Debitar Insumos de Inventario -->
-        <div class="pwa-section-title" style="margin-top: 1.5rem;">📦 Consumo de Insumos del Turno</div>
-        <div class="pwa-barber-card">
-            <p style="font-size: 0.8rem; color: var(--pwa-text-muted); margin-bottom: 0.85rem;">
-                Registra los materiales gastados al final del turno para mantener actualizado el inventario.
-            </p>
-            <form id="formConsumoInsumo" onsubmit="descontarInsumoBarbero(event)">
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--pwa-text-main); display: block; margin-bottom: 0.35rem;">Insumo / Material Gastado:</label>
-                <select name="producto_id" class="pwa-form-control" required>
-                    <option value="">-- Seleccionar insumo a debitar --</option>
-                    <?php foreach ($inventarioItems as $item): ?>
-                        <option value="<?php echo $item['id']; ?>">
-                            <?php echo htmlspecialchars($item['producto']); ?> (Quedan: <?php echo $item['cantidad']; ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <div style="display: flex; gap: 0.75rem;">
-                    <div style="flex: 1;">
-                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--pwa-text-main); display: block; margin-bottom: 0.35rem;">Cantidad Gastada:</label>
-                        <input type="number" name="cantidad" value="1" min="1" class="pwa-form-control" required>
-                    </div>
-                    <div style="flex: 2; display: flex; align-items: flex-end;">
-                        <button type="submit" class="pwa-btn-secondary" style="padding: 0.85rem; font-size: 0.8rem; border-color: #111111; color: #111111;">
-                            DEBITAR INSUMO
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Turnos de Hoy List -->
-        <div class="pwa-section-title" style="margin-top: 1.5rem;">Mis Turnos de Hoy (<?php echo date('d/m/Y'); ?>)</div>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <?php if (!empty($turnosHoy)): ?>
-                <?php foreach ($turnosHoy as $t): 
-                    $horaT = date('H:i', strtotime($t['fecha_hora']));
-                    $est = strtolower($t['estado']);
-                    $badgeClass = 'badge-pendiente';
-                    if ($est === 'completada') $badgeClass = 'badge-completada';
-                    if ($est === 'cancelada') $badgeClass = 'badge-cancelada';
-                ?>
-                <div class="pwa-card" style="margin-bottom: 0; padding: 1rem 1.15rem; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="font-weight: 800; font-size: 1.1rem; color: var(--pwa-text-main); width: 60px;">
-                        <?php echo $horaT; ?>
-                    </div>
-                    <div style="flex: 1; padding: 0 0.75rem;">
-                        <div style="font-weight: 700; font-size: 0.95rem; color: var(--pwa-text-main); margin-bottom: 0.15rem;">
-                            <?php echo htmlspecialchars($t['servicio'] ?? 'Corte'); ?>
-                        </div>
-                        <div style="font-size: 0.8rem; color: var(--pwa-text-muted);">
-                            Cliente: <?php echo htmlspecialchars($t['cliente'] ?? 'Cliente'); ?>
-                        </div>
-                    </div>
-                    <div>
-                        <span class="badge-turno <?php echo $badgeClass; ?>"><?php echo strtoupper($est); ?></span>
-                    </div>
-                </div>
-                <?php endforeach; ?>
             <?php else: ?>
-                <div class="pwa-card" style="text-align: center; padding: 2rem; color: var(--pwa-text-muted); font-size: 0.85rem;">
-                    No tienes agendamientos para el día de hoy.
-                </div>
+            <div style="text-align: center; padding: 24px; background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 14px;">
+                <svg class="barber-icon-stroke" style="width: 32px; height: 32px; margin-bottom: 8px;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <div style="font-size: 1rem; font-weight: 800; color: #111111;">No tienes turnos pendientes por hoy</div>
+                <div style="font-size: 0.85rem; color: #666666; margin-top: 4px;">Tus ganancias se encuentran actualizadas en los paneles superiores.</div>
+            </div>
             <?php endif; ?>
+        </div>
+
+        <!-- Forms Grid (Registrar Venta & Debitar Insumos) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+            
+            <!-- Registrar Venta de Producto -->
+            <div class="barber-section-card" style="margin-bottom: 0;">
+                <h3 class="barber-section-title">
+                    <svg class="barber-icon-stroke" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    <span>Registrar Venta de Producto</span>
+                </h3>
+                <p style="font-size: 0.85rem; color: #666666; margin-bottom: 16px; line-height: 1.4;">
+                    Suma comisiones instantáneas al vender productos de barbería a tus clientes.
+                </p>
+
+                <form id="formVentaProducto" onsubmit="registrarVentaProductoBarbero(event)">
+                    <label class="config-label" style="font-size: 0.78rem;">Producto Vendido</label>
+                    <select name="producto_id" class="barber-input" required>
+                        <option value="">-- Seleccionar producto del inventario --</option>
+                        <?php foreach ($inventarioItems as $item): ?>
+                            <option value="<?php echo $item['id']; ?>">
+                                <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <div style="display: flex; gap: 12px;">
+                        <div style="flex: 1;">
+                            <label class="config-label" style="font-size: 0.78rem;">Cantidad</label>
+                            <input type="number" name="cantidad" value="1" min="1" class="barber-input" required>
+                        </div>
+                        <div style="flex: 2; display: flex; align-items: flex-end; margin-bottom: 12px;">
+                            <button type="submit" class="btn-action-black">
+                                <span>Registrar Venta</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Debitar Insumos de Inventario -->
+            <div class="barber-section-card" style="margin-bottom: 0;">
+                <h3 class="barber-section-title">
+                    <svg class="barber-icon-stroke" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    <span>Consumo de Insumos del Turno</span>
+                </h3>
+                <p style="font-size: 0.85rem; color: #666666; margin-bottom: 16px; line-height: 1.4;">
+                    Registra los materiales gastados al final del turno para mantener actualizado el inventario.
+                </p>
+
+                <form id="formConsumoInsumo" onsubmit="descontarInsumoBarbero(event)">
+                    <label class="config-label" style="font-size: 0.78rem;">Insumo / Material Gastado</label>
+                    <select name="producto_id" class="barber-input" required>
+                        <option value="">-- Seleccionar insumo a debitar --</option>
+                        <?php foreach ($inventarioItems as $item): ?>
+                            <option value="<?php echo $item['id']; ?>">
+                                <?php echo htmlspecialchars($item['producto']); ?> (Quedan: <?php echo $item['cantidad']; ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <div style="display: flex; gap: 12px;">
+                        <div style="flex: 1;">
+                            <label class="config-label" style="font-size: 0.78rem;">Cantidad Gastada</label>
+                            <input type="number" name="cantidad" value="1" min="1" class="barber-input" required>
+                        </div>
+                        <div style="flex: 2; display: flex; align-items: flex-end; margin-bottom: 12px;">
+                            <button type="submit" class="btn-action-black" style="background: #FFFFFF; color: #111111; border: 1px solid #111111;">
+                                <span>Debitar Insumo</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- Mis Turnos de Hoy List -->
+        <div class="barber-section-card">
+            <h3 class="barber-section-title">
+                <svg class="barber-icon-stroke" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Mis Turnos de Hoy (<?php echo date('d/m/Y'); ?>)</span>
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <?php if (!empty($turnosHoy)): ?>
+                    <?php foreach ($turnosHoy as $t): 
+                        $horaT = date('H:i', strtotime($t['fecha_hora']));
+                        $est = strtolower($t['estado']);
+                        $badgeClass = 'badge-pendiente-clean';
+                        if ($est === 'completada') $badgeClass = 'badge-completada-clean';
+                        if ($est === 'cancelada') $badgeClass = 'badge-cancelada-clean';
+                    ?>
+                    <div style="background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="font-weight: 900; font-size: 1.15rem; color: #111111; width: 65px;">
+                            <?php echo $horaT; ?>
+                        </div>
+                        <div style="flex: 1; padding: 0 12px;">
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #111111; margin-bottom: 2px;">
+                                <?php echo htmlspecialchars($t['servicio'] ?? 'Corte'); ?>
+                            </div>
+                            <div style="font-size: 0.82rem; color: #666666;">
+                                Cliente: <strong style="color: #111111;"><?php echo htmlspecialchars($t['cliente'] ?? 'Cliente'); ?></strong>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge-turno-clean <?php echo $badgeClass; ?>"><?php echo strtoupper($est); ?></span>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div style="text-align: center; padding: 24px; color: #777777; font-size: 0.88rem; background: #FAFAFA; border-radius: 12px;">
+                        No tienes agendamientos registrados para el día de hoy.
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
 
     </div>
