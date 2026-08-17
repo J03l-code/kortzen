@@ -822,6 +822,10 @@ $pageTitle = 'Reservar Cita';
                 formData.append('fecha', bookingData.date);
                 formData.append('hora', bookingData.time);
                 formData.append('telefono', bookingData.phone);
+                
+                if (referralCodeApplied && referralCodeApplied.trim() !== '') {
+                    formData.append('codigo_referido', referralCodeApplied.trim());
+                }
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const reagendarId = urlParams.get('reagendar_id');
@@ -834,23 +838,47 @@ $pageTitle = 'Reservar Cita';
                     body: formData
                 });
 
-                const res = await req.json();
+                const responseText = await req.text();
+                let res;
+                try {
+                    res = JSON.parse(responseText);
+                } catch (jsonErr) {
+                    console.error("Server output error:", responseText);
+                    throw new Error("Respuesta inesperada del servidor.");
+                }
 
                 if (res.success) {
                     // Success UI
                     document.querySelector('.booking-container').innerHTML = `
-                    <div style="text-align:center; padding-top:50px;">
-                        <div style="font-size:4rem; color:var(--gold); margin-bottom:20px;">✓</div>
-                        <h1 style="color:var(--text-primary); margin-bottom:10px;">¡Reserva Exitosa!</h1>
-                        <p style="color:var(--text-muted); margin-bottom:30px;">Tu cita ha sido ${reagendarId ? 'reagendada' : 'agendada'} correctamente.</p>
-                        <a href="cliente-dashboard.php" class="btn btn-next" style="text-decoration:none;">Volver a mi Cuenta</a>
+                    <div style="text-align:center; padding-top:40px; padding-bottom:60px;">
+                        <div style="width:70px; height:70px; border-radius:50%; background:#111111; color:#FFFFFF; font-size:2.5rem; display:flex; align-items:center; justify-content:center; margin:0 auto 20px auto; font-weight:900;">✓</div>
+                        <h1 style="color:#FFFFFF; font-size:1.6rem; font-weight:900; margin-bottom:10px;">¡Reserva Exitosa!</h1>
+                        <p style="color:#AAAAAA; font-size:0.95rem; margin-bottom:30px;">Tu cita ha sido ${reagendarId ? 'reagendada' : 'agendada'} correctamente.</p>
+                        
+                        <div style="max-width:380px; margin:0 auto 30px auto; background:#FFFFFF; color:#111111; padding:20px; border-radius:16px; border:1px solid #EAEAEA; text-align:left;">
+                            <div style="margin-bottom:12px;">
+                                <span style="font-size:0.72rem; color:#777; font-weight:800; text-transform:uppercase;">SERVICIO</span>
+                                <div style="font-size:1.05rem; font-weight:800;">${bookingData.serviceName}</div>
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <span style="font-size:0.72rem; color:#777; font-weight:800; text-transform:uppercase;">BARBERO</span>
+                                <div style="font-size:1.05rem; font-weight:800;">${bookingData.barberName}</div>
+                            </div>
+                            <div>
+                                <span style="font-size:0.72rem; color:#777; font-weight:800; text-transform:uppercase;">FECHA Y HORA</span>
+                                <div style="font-size:1.05rem; font-weight:900; color:#111111;">${bookingData.date} a las ${bookingData.time}</div>
+                            </div>
+                        </div>
+
+                        <a href="cliente-dashboard.php" class="btn btn-next" style="display:inline-block; max-width:380px; width:100%; text-decoration:none; background:#FFFFFF; color:#111111; font-weight:800; padding:15px; border-radius:12px; text-transform:uppercase; letter-spacing:1px; box-sizing:border-box;">Volver a mi Cuenta</a>
                         <br><br>
-                        <a href="https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu" target="_blank" style="color:var(--text-primary); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                        <a href="https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu" target="_blank" style="color:#FFFFFF; text-decoration:none; display:inline-flex; align-items:center; gap:8px; font-size:0.9rem; font-weight:600;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                             <span>Califícanos en Google</span>
                         </a>
                     </div>
                 `;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
                     alert('Error: ' + res.message);
                     btn.disabled = false;
@@ -858,7 +886,8 @@ $pageTitle = 'Reservar Cita';
                 }
 
             } catch (e) {
-                alert('Error de conexión');
+                console.error(e);
+                alert('No se pudo procesar la reserva. Por favor intenta de nuevo.');
                 btn.disabled = false;
                 btn.textContent = "CONFIRMAR RESERVA";
             }

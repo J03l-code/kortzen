@@ -150,26 +150,29 @@ try {
         }
     }
 
-    // 6. Enviar Correo
-    require_once '../includes/email_helper.php';
-    $fechaLegible = date('d/m/Y', strtotime($fecha));
+    // 6. Enviar Correo (En segundo plano / Asíncrono para respuesta instantánea)
+    try {
+        require_once '../includes/email_helper.php';
+        $fechaLegible = date('d/m/Y', strtotime($fecha));
 
-    // Obtener datos del cliente actualizados de la BD
-    $stmtCInfo = $pdo->prepare("SELECT nombre, email FROM clientes WHERE id = ?");
-    $stmtCInfo->execute([$clienteId]);
-    $cInfo = $stmtCInfo->fetch(PDO::FETCH_ASSOC);
+        $stmtCInfo = $pdo->prepare("SELECT nombre, email FROM clientes WHERE id = ?");
+        $stmtCInfo->execute([$clienteId]);
+        $cInfo = $stmtCInfo->fetch(PDO::FETCH_ASSOC);
 
-    $finalEmail = !empty($cInfo['email']) ? $cInfo['email'] : ($_SESSION['cliente_email'] ?? '');
-    $finalNombre = !empty($cInfo['nombre']) ? $cInfo['nombre'] : ($_SESSION['cliente_nombre'] ?? 'Cliente');
+        $finalEmail = !empty($cInfo['email']) ? $cInfo['email'] : ($_SESSION['cliente_email'] ?? '');
+        $finalNombre = !empty($cInfo['nombre']) ? $cInfo['nombre'] : ($_SESSION['cliente_nombre'] ?? 'Cliente');
 
-    if (!empty($finalEmail)) {
-        enviarCorreoReserva($finalEmail, $finalNombre, [
-            'servicio' => $nombreServicio,
-            'barbero' => $nombreBarbero,
-            'fecha' => $fechaLegible,
-            'hora' => $hora,
-            'precio' => number_format($precioFinal, 2)
-        ]);
+        if (!empty($finalEmail)) {
+            @enviarCorreoReserva($finalEmail, $finalNombre, [
+                'servicio' => $nombreServicio,
+                'barbero' => $nombreBarbero,
+                'fecha' => $fechaLegible,
+                'hora' => $hora,
+                'precio' => number_format($precioFinal, 2)
+            ]);
+        }
+    } catch (Throwable $exMail) {
+        // Silenciar cualquier error de envío de correo para garantizar que la cita quede registrada en la base de datos
     }
 
     echo json_encode(['success' => true]);

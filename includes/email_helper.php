@@ -16,11 +16,12 @@ function enviarCorreoSMTPDirecto($toEmail, $subject, $htmlMessage, $smtpConfig) 
     $fromName = "KORTZEN Barbería";
 
     $socketHost = ($port == 465) ? "ssl://{$host}" : $host;
-    $socket = @fsockopen($socketHost, $port, $errno, $errstr, 10);
+    $socket = @fsockopen($socketHost, $port, $errno, $errstr, 3);
 
     if (!$socket) {
         return false;
     }
+    stream_set_timeout($socket, 3);
 
     $read = function($socket) {
         $response = '';
