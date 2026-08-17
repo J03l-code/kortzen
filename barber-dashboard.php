@@ -17,6 +17,27 @@ if ($currentUser['rol'] !== 'barbero' && $currentUser['rol'] !== 'admin_local' &
 $barbero_id = $currentUser['id'];
 $sucursal_id = $currentUser['sucursal_id'] ?? 1;
 
+// Asegurar columnas y tablas requeridas en la BD live
+try {
+    $pdo = getConnection();
+    $pdo->exec("ALTER TABLE clientes ADD COLUMN notas_barbero TEXT NULL AFTER notas");
+} catch (Exception $exSchema) {}
+
+try {
+    $pdo = getConnection();
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS bloqueos_horas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            barbero_id INT NOT NULL,
+            fecha DATE NOT NULL,
+            hora_inicio TIME NOT NULL,
+            hora_fin TIME NOT NULL,
+            motivo VARCHAR(255) NULL,
+            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+} catch (Exception $exB) {}
+
 // Mensajes de estado
 $mensaje = '';
 $tipoMensaje = '';
@@ -150,17 +171,36 @@ $countHoy = query("
 $totalCitasHoy = intval($countHoy[0]['total'] ?? 0);
 
 // 2. Próximo Cliente (Garantiza incluir cualquier cita pendiente de HOY)
-$nextClient = query("
-    SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.id as cliente_id_bd, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.foto_perfil, cli.notas_barbero
-    FROM citas c
-    LEFT JOIN servicios s ON c.servicio_id = s.id
-    LEFT JOIN clientes cli ON c.cliente_id = cli.id
-    WHERE c.barbero_id = ? 
-    AND c.estado IN ('pendiente', 'confirmada')
-    AND (DATE(c.fecha_hora) = CURDATE() OR c.fecha_hora >= NOW())
-    ORDER BY c.fecha_hora ASC 
-    LIMIT 1
-", [$barbero_id]);
+$nextClient = [];
+try {
+    $nextClient = query("
+        SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.id as cliente_id_bd, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.foto_perfil, cli.notas_barbero
+        FROM citas c
+        LEFT JOIN servicios s ON c.servicio_id = s.id
+        LEFT JOIN clientes cli ON c.cliente_id = cli.id
+        WHERE c.barbero_id = ? 
+        AND c.estado IN ('pendiente', 'confirmada')
+        AND (DATE(c.fecha_hora) = CURDATE() OR c.fecha_hora >= NOW())
+        ORDER BY c.fecha_hora ASC 
+        LIMIT 1
+    ", [$barbero_id]);
+} catch (Exception $exNext) {
+    try {
+        $nextClient = query("
+            SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.id as cliente_id_bd, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.foto_perfil
+            FROM citas c
+            LEFT JOIN servicios s ON c.servicio_id = s.id
+            LEFT JOIN clientes cli ON c.cliente_id = cli.id
+            WHERE c.barbero_id = ? 
+            AND c.estado IN ('pendiente', 'confirmada')
+            AND (DATE(c.fecha_hora) = CURDATE() OR c.fecha_hora >= NOW())
+            ORDER BY c.fecha_hora ASC 
+            LIMIT 1
+        ", [$barbero_id]);
+    } catch (Exception $exNext2) {
+        $nextClient = [];
+    }
+}
 
 $proximo = $nextClient ? $nextClient[0] : null;
 
