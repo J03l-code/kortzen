@@ -558,13 +558,16 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
             </h3>
 
             <?php if ($proximo): 
-                $horaProxima = date('H:i', strtotime($proximo['fecha_hora']));
+                $tsProximo = strtotime($proximo['fecha_hora']);
+                $esHoy = (date('Y-m-d', $tsProximo) === date('Y-m-d'));
+                $fechaLegible = $esHoy ? 'Hoy (' . date('d/m/Y', $tsProximo) . ')' : date('d/m/Y', $tsProximo);
+                $horaProxima = date('H:i', $tsProximo);
             ?>
             <div style="background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 14px; padding: 20px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                     <div>
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #777777; text-transform: uppercase; letter-spacing: 1px;">HORA DE ATENCIÓN</span>
-                        <div style="font-size: 1.5rem; font-weight: 900; color: #111111; margin-top: 2px;"><?php echo $horaProxima; ?></div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #777777; text-transform: uppercase; letter-spacing: 1px;">FECHA Y HORA DE ATENCIÓN</span>
+                        <div style="font-size: 1.3rem; font-weight: 900; color: #111111; margin-top: 2px;"><?php echo $fechaLegible; ?> • <?php echo $horaProxima; ?></div>
                     </div>
                     <div style="text-align: right;">
                         <span style="font-size: 0.75rem; font-weight: 700; color: #777777; text-transform: uppercase; letter-spacing: 1px;">SERVICIO</span>
