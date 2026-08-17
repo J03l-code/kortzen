@@ -67,21 +67,32 @@ try {
     $puntosPorReferido = 200;
 
     if (!empty($codigoReferidoLimpio)) {
-        // Cargar configuraciones
-        $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
-        $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
-        $montoDescuento = floatval($cfgs['descuento_referido_amigo'] ?? 2.00);
-        $puntosPorReferido = intval($cfgs['puntos_por_referido'] ?? 200);
+        // Validar que el cliente NO haya usado un código antes ni tenga citas previas (solo 1ra visita)
+        $stmtCheckUsed = $pdo->prepare("SELECT COUNT(*) FROM referidos WHERE referido_id = ?");
+        $stmtCheckUsed->execute([$clienteId]);
+        $alreadyUsedCode = ($stmtCheckUsed->fetchColumn() > 0);
 
-        // Buscar referente
-        $stmtRefCheck = $pdo->prepare("SELECT id FROM clientes WHERE codigo_referido = ? OR codigo_referido = ?");
-        $stmtRefCheck->execute([$codigoReferidoLimpio, $codigoReferido]);
-        $refRow = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
+        $stmtCheckCitasPrev = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE cliente_id = ? AND estado != 'cancelada'");
+        $stmtCheckCitasPrev->execute([$clienteId]);
+        $hasPreviousCitas = ($stmtCheckCitasPrev->fetchColumn() > 0);
 
-        if ($refRow && $refRow['id'] != $clienteId) {
-            $referenteId = $refRow['id'];
-        } else {
-            $montoDescuento = 0.00;
+        if (!$alreadyUsedCode && !$hasPreviousCitas) {
+            // Cargar configuraciones
+            $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
+            $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+            $montoDescuento = floatval($cfgs['descuento_referido_amigo'] ?? 2.00);
+            $puntosPorReferido = intval($cfgs['puntos_por_referido'] ?? 200);
+
+            // Buscar referente
+            $stmtRefCheck = $pdo->prepare("SELECT id FROM clientes WHERE codigo_referido = ? OR codigo_referido = ?");
+            $stmtRefCheck->execute([$codigoReferidoLimpio, $codigoReferido]);
+            $refRow = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
+
+            if ($refRow && $refRow['id'] != $clienteId) {
+                $referenteId = $refRow['id'];
+            } else {
+                $montoDescuento = 0.00;
+            }
         }
     }
 

@@ -35,10 +35,31 @@ try {
             exit;
         }
 
-        // Si el usuario actual inició sesión y es el mismo dueño del código, no puede referirse a sí mismo
-        if (isset($_SESSION['cliente_id']) && $_SESSION['cliente_id'] == $referente['id']) {
-            echo json_encode(['success' => false, 'message' => 'No puedes usar tu propio código de referido.']);
-            exit;
+        // Validaciones del cliente que intenta aplicar el código
+        if (isset($_SESSION['cliente_id']) && $_SESSION['cliente_id'] > 0) {
+            $clienteIdActual = intval($_SESSION['cliente_id']);
+
+            // 1. No puede usar su propio código de referido
+            if ($clienteIdActual == $referente['id']) {
+                echo json_encode(['success' => false, 'message' => 'No puedes usar tu propio código de referido.']);
+                exit;
+            }
+
+            // 2. Verificar si ya ha usado un código de referido anteriormente
+            $stmtCheckUsed = $pdo->prepare("SELECT COUNT(*) FROM referidos WHERE referido_id = ?");
+            $stmtCheckUsed->execute([$clienteIdActual]);
+            if ($stmtCheckUsed->fetchColumn() > 0) {
+                echo json_encode(['success' => false, 'message' => 'El código de referido solo es válido para tu primera reserva. Ya has utilizado uno anteriormente.']);
+                exit;
+            }
+
+            // 3. Verificar si el cliente ya tiene citas previas registradas (solo válido para la primera visita)
+            $stmtCheckCitas = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE cliente_id = ? AND estado != 'cancelada'");
+            $stmtCheckCitas->execute([$clienteIdActual]);
+            if ($stmtCheckCitas->fetchColumn() > 0) {
+                echo json_encode(['success' => false, 'message' => 'El descuento por referido es exclusivo para nuevos clientes en su primera visita.']);
+                exit;
+            }
         }
 
         echo json_encode([
