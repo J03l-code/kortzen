@@ -258,6 +258,114 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
         .badge-pendiente-clean { background: #F4F4F4; color: #111111; border: 1px solid #D1D1D1; }
         .badge-completada-clean { background: #111111; color: #FFFFFF; }
         .badge-cancelada-clean { background: #FAFAFA; color: #888888; border: 1px solid #EAEAEA; }
+
+        /* Responsive Barber Header & Grids */
+        .barber-header-bar {
+            background: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            border-radius: 16px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            gap: 12px;
+        }
+        .barber-header-logo {
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #111111;
+            white-space: nowrap;
+        }
+        .barber-logout-btn {
+            background: #111111;
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background 0.15s;
+        }
+        .barber-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .barber-forms-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .barber-header-bar {
+                padding: 12px 14px;
+                border-radius: 14px;
+                margin-bottom: 16px;
+            }
+            .barber-header-logo {
+                font-size: 1.05rem;
+                letter-spacing: 1px;
+            }
+            .barber-logout-btn {
+                padding: 7px 11px;
+                font-size: 0.76rem;
+            }
+            .barber-stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+            .barber-stat-card {
+                padding: 10px 8px;
+                border-radius: 12px;
+            }
+            .barber-stat-label {
+                font-size: 0.62rem;
+                letter-spacing: 0;
+            }
+            .barber-stat-icon-box {
+                width: 28px;
+                height: 28px;
+            }
+            .barber-stat-val {
+                font-size: 1.15rem;
+            }
+            .barber-stat-sub {
+                font-size: 0.65rem;
+            }
+            .barber-forms-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                margin-bottom: 16px;
+            }
+            .barber-forms-grid .barber-section-card {
+                margin-bottom: 0 !important;
+            }
+        }
+        @media (max-width: 480px) {
+            .barber-stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .barber-stat-card {
+                padding: 14px 16px;
+            }
+            .barber-stat-val {
+                font-size: 1.4rem;
+            }
+        }
     </style>
 </head>
 
@@ -265,12 +373,11 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
 
     <div class="pwa-container">
         <!-- Header Exclusivo de Barbero -->
-        <header style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-            <div style="font-size: 1.3rem; font-weight: 900; letter-spacing: 3px; color: #111111;">KORTZEN</div>
-            
+        <header class="barber-header-bar">
+            <div class="barber-header-logo">KORTZEN</div>
             <div>
-                <a href="logout.php" style="background: #111111; color: #FFFFFF; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: background 0.15s;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                <a href="logout.php" class="barber-logout-btn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                     <span>Cerrar Sesión</span>
                 </a>
             </div>
@@ -295,7 +402,7 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
         <?php endif; ?>
 
         <!-- Tarjetas de Métricas de Ganancias (Grid Minimalista de 3 columnas) -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+        <div class="barber-stats-grid">
             
             <div class="barber-stat-card">
                 <div class="barber-stat-header">
@@ -386,7 +493,7 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
         </div>
 
         <!-- Forms Grid (Registrar Venta & Debitar Insumos) -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <div class="barber-forms-grid">
             
             <!-- Registrar Venta de Producto -->
             <div class="barber-section-card" style="margin-bottom: 0;">
