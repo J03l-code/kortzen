@@ -21,19 +21,81 @@ $sucursal_id = $currentUser['sucursal_id'] ?? 1;
 $mensaje = '';
 $tipoMensaje = '';
 
-// Marcar cita como completada
+// Marcar cita como completada y acreditar puntos automáticamente
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'completar_cita') {
         $citaId = intval($_POST['cita_id'] ?? 0);
         if ($citaId > 0) {
             try {
                 $pdo = getConnection();
-                $stmt = $pdo->prepare("UPDATE citas SET estado = 'completada' WHERE id = ? AND barbero_id = ?");
+                
+                // 1. Actualizar estado de la cita
+                $stmt = $pdo->prepare("UPDATE citas SET estado = 'completada' WHERE id = ? AND barbero_id = ? AND estado != 'completada'");
                 $stmt->execute([$citaId, $barbero_id]);
-                $mensaje = 'Cita marcada como COMPLETADA. Se han acreditado tus ganancias.';
+
+                if ($stmt->rowCount() > 0) {
+                    // 2. Obtener cliente_id de la cita
+                    $stmtCitaInfo = $pdo->prepare("SELECT cliente_id FROM citas WHERE id = ?");
+                    $stmtCitaInfo->execute([$citaId]);
+                    $citaRow = $stmtCitaInfo->fetch(PDO::FETCH_ASSOC);
+                    $clienteId = intval($citaRow['cliente_id'] ?? 0);
+
+                    if ($clienteId > 0) {
+                        // Cargar valores de configuración de puntos
+                        $puntosPorCorte = 100;
+                        $puntosPorReferido = 200;
+                        try {
+                            $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
+                            $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+                            $puntosPorCorte = intval($cfgs['puntos_por_corte'] ?? 100);
+                            $puntosPorReferido = intval($cfgs['puntos_por_referido'] ?? 200);
+                        } catch (Exception $exCfg) {}
+
+                        // Acreditar puntos al cliente por su corte
+                        $stmtPtsCliente = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
+                        $stmtPtsCliente->execute([$puntosPorCorte, $clienteId]);
+
+                        // Acreditar puntos por referido (tanto al referente como al cliente referido)
+                        $stmtRefCheck = $pdo->prepare("
+                            SELECT id, referente_id, referido_id, estado 
+                            FROM referidos 
+                            WHERE (cita_id = ? OR referido_id = ?) AND estado = 'pendiente'
+                            LIMIT 1
+                        ");
+                        $stmtRefCheck->execute([$citaId, $clienteId]);
+                        $refData = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
+
+                        if ($refData) {
+                            $referidosTableId = $refData['id'];
+                            $referenteId = intval($refData['referente_id']);
+
+                            // Actualizar registro de referido a completado
+                            $stmtUpdRef = $pdo->prepare("UPDATE referidos SET estado = 'completado', cita_id = ? WHERE id = ?");
+                            $stmtUpdRef->execute([$citaId, $referidosTableId]);
+
+                            // Acreditar al dueño del código (referente)
+                            if ($referenteId > 0) {
+                                $stmtPtsRef = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
+                                $stmtPtsRef->execute([$puntosPorReferido, $referenteId]);
+                            }
+
+                            // Acreditar también al cliente referido
+                            $stmtPtsReferido = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
+                            $stmtPtsReferido->execute([$puntosPorReferido, $clienteId]);
+
+                            $mensaje = "¡Corte completado! +$puntosPorCorte pts al cliente y +$puntosPorReferido pts acreditados por referido al dueño del código y al cliente.";
+                        } else {
+                            $mensaje = "¡Corte completado! +$puntosPorCorte pts acreditados a la cuenta del cliente.";
+                        }
+                    } else {
+                        $mensaje = 'Cita marcada como COMPLETADA. Ganancias actualizadas.';
+                    }
+                } else {
+                    $mensaje = 'La cita ya fue marcada como completada anteriormente.';
+                }
                 $tipoMensaje = 'success';
             } catch (Exception $e) {
-                $mensaje = 'Error al actualizar cita.';
+                $mensaje = 'Error al actualizar cita: ' . $e->getMessage();
                 $tipoMensaje = 'error';
             }
         }
@@ -87,15 +149,15 @@ $countHoy = query("
 ", [$barbero_id]);
 $totalCitasHoy = intval($countHoy[0]['total'] ?? 0);
 
-// 2. Próximo Cliente
+// 2. Próximo Cliente (Garantiza incluir cualquier cita pendiente de HOY)
 $nextClient = query("
     SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.foto_perfil
     FROM citas c
     LEFT JOIN servicios s ON c.servicio_id = s.id
     LEFT JOIN clientes cli ON c.cliente_id = cli.id
     WHERE c.barbero_id = ? 
-    AND c.fecha_hora >= NOW()
     AND c.estado IN ('pendiente', 'confirmada')
+    AND (DATE(c.fecha_hora) = CURDATE() OR c.fecha_hora >= NOW())
     ORDER BY c.fecha_hora ASC 
     LIMIT 1
 ", [$barbero_id]);
@@ -605,7 +667,17 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                             </div>
                         </div>
                         <div>
-                            <span class="badge-turno-clean <?php echo $badgeClass; ?>"><?php echo strtoupper($est); ?></span>
+                            <?php if ($est === 'pendiente' || $est === 'confirmada'): ?>
+                                <form method="POST" style="margin: 0;">
+                                    <input type="hidden" name="action" value="completar_cita">
+                                    <input type="hidden" name="cita_id" value="<?php echo $t['id']; ?>">
+                                    <button type="submit" style="background: #111111; color: #FFFFFF; border: none; padding: 7px 12px; border-radius: 8px; font-weight: 800; font-size: 0.72rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Finalizar Corte
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <span class="badge-turno-clean <?php echo $badgeClass; ?>"><?php echo strtoupper($est); ?></span>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
