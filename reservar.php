@@ -258,10 +258,13 @@ $pageTitle = 'Reservar Cita';
             display: flex;
             justify-content: space-between;
             gap: 1rem;
-            margin-top: 30px;
-            padding-top: 20px;
+            margin: 20px auto 0 auto;
+            max-width: 440px;
+            width: 100%;
+            padding-top: 16px;
             padding-bottom: 90px; /* Space above bottom nav bar */
             border-top: 1px solid rgba(255, 255, 255, 0.15);
+            box-sizing: border-box;
         }
 
         .btn {
@@ -963,8 +966,12 @@ $pageTitle = 'Reservar Cita';
             if (priceContainer) {
                 if (appliedDiscountAmount > 0) {
                     priceContainer.innerHTML = `
-                        <div style="font-size: 0.9rem; color: #888888; text-decoration: line-through;">$${rawPrice.toFixed(2)}</div>
-                        <div style="font-size: 1.4rem; font-weight: 900; color: #28a745;">$${finalPrice.toFixed(2)} <span style="font-size: 0.8rem; font-weight: 800; color: #28a745; border: 1px solid #28a745; padding: 2px 8px; border-radius: 12px; margin-left: 6px;">-$${appliedDiscountAmount.toFixed(2)} DESCUENTO REFERIDO</span></div>
+                        <div style="font-size: 0.85rem; color: #888888; text-decoration: line-through;">$${rawPrice.toFixed(2)}</div>
+                        <div style="font-size: 1.3rem; font-weight: 900; color: #28a745; margin-bottom: 4px;">$${finalPrice.toFixed(2)}</div>
+                        <div style="font-size: 0.8rem; font-weight: 800; color: #28a745; line-height: 1.3;">
+                            <div>-$${appliedDiscountAmount.toFixed(2)}</div>
+                            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #28a745;">Descuento Referido</div>
+                        </div>
                     `;
                 } else {
                     priceContainer.textContent = `$${rawPrice.toFixed(2)}`;
