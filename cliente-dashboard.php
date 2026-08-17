@@ -253,12 +253,23 @@ if ($cliente_id) {
                 <button type="button" class="pwa-btn-secondary" style="flex: 1; text-align: center; font-size: 0.75rem;" onclick="KortzenCalendar.downloadIcs('Cita en KORTZEN: <?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte'); ?>', 'Cita agendada con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Barbero'); ?>', 'KORTZEN Llano Chico, Quito', '<?php echo $proxima_cita['fecha_hora']; ?>')">🍏 APPLE / ICS</button>
             </div>
 
-            <div style="display: flex; gap: 0.6rem; margin-top: 0.5rem;">
-                <a href="mis-citas.php" class="pwa-btn-secondary" style="flex: 1; text-align: center;">VER CITAS</a>
-                <form action="/api/cancelar_cita.php" method="POST" style="flex: 1;" onsubmit="return confirm('¿Estás seguro de que deseas cancelar esta cita?');">
-                    <input type="hidden" name="cita_id" value="<?php echo $proxima_cita['id']; ?>">
-                    <button type="submit" class="pwa-btn-secondary" style="width: 100%; color: #dc3545; border-color: #dc3545; background: #fff; cursor: pointer;">CANCELAR</button>
-                </form>
+            <?php 
+                $horasFaltantes = ($ts_cita - time()) / 3600;
+            ?>
+            <div style="display: flex; gap: 0.6rem; margin-top: 0.8rem; align-items: center;">
+                <?php if ($horasFaltantes >= 2): ?>
+                    <a href="reservar.php?reagendar_id=<?php echo $proxima_cita['id']; ?>" class="pwa-btn-secondary" style="flex: 1; text-align: center; text-decoration: none; font-size: 0.8rem; font-weight: 800; padding: 10px;">REAGENDAR</a>
+                    
+                    <form action="api/citas_action.php" method="POST" style="flex: 1; margin: 0;" onsubmit="return confirm('¿Estás seguro de que deseas cancelar esta cita?');">
+                        <input type="hidden" name="action" value="cancelar_cita_cliente">
+                        <input type="hidden" name="id" value="<?php echo $proxima_cita['id']; ?>">
+                        <button type="submit" class="pwa-btn-secondary" style="width: 100%; color: #dc3545; border-color: #dc3545; background: #fff; cursor: pointer; font-size: 0.8rem; font-weight: 800; padding: 10px;">CANCELAR</button>
+                    </form>
+                <?php else: ?>
+                    <div style="width: 100%; text-align: center; font-size: 0.75rem; color: #777777; font-weight: 700; background: #f5f5f5; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                        🔒 No se puede cancelar ni reagendar (faltan menos de 2 horas). Por favor contacta a la barbería.
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
         <?php endif; ?>

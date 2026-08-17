@@ -124,7 +124,35 @@ try {
         $current += $intervalo;
     }
 
-    echo json_encode($slots);
+    if (empty($slots)) {
+        // Buscar próximo día disponible en los siguientes 7 días
+        $proximaFecha = null;
+        for ($i = 1; $i <= 7; $i++) {
+            $fechaTest = date('Y-m-d', strtotime("$fecha +$i days"));
+            $diaSemanaTest = date('w', strtotime($fechaTest));
+
+            $stmtHTest = $pdo->prepare("SELECT * FROM horarios_barberos WHERE barbero_id = ? AND dia_semana = ? AND activo = 1");
+            $stmtHTest->execute([$barberoId, $diaSemanaTest]);
+            if (!$stmtHTest->fetch()) continue;
+
+            $stmtBTest = $pdo->prepare("SELECT * FROM dias_bloqueados WHERE barbero_id = ? AND fecha = ?");
+            $stmtBTest->execute([$barberoId, $fechaTest]);
+            $bTest = $stmtBTest->fetch();
+            if ($bTest && $bTest['todo_el_dia']) continue;
+
+            $proximaFecha = $fechaTest;
+            break;
+        }
+
+        echo json_encode([
+            'slots' => [],
+            'sugerencia_proxima_fecha' => $proximaFecha,
+            'sugerencia_legible' => $proximaFecha ? date('d/m/Y', strtotime($proximaFecha)) : null
+        ]);
+        exit;
+    }
+
+    echo json_encode(['slots' => $slots]);
 
 } catch (PDOException $e) {
     http_response_code(500);

@@ -151,7 +151,7 @@ $totalCitasHoy = intval($countHoy[0]['total'] ?? 0);
 
 // 2. Próximo Cliente (Garantiza incluir cualquier cita pendiente de HOY)
 $nextClient = query("
-    SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.foto_perfil
+    SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.id as cliente_id_bd, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.foto_perfil, cli.notas_barbero
     FROM citas c
     LEFT JOIN servicios s ON c.servicio_id = s.id
     LEFT JOIN clientes cli ON c.cliente_id = cli.id
@@ -532,10 +532,35 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                     </div>
                 </div>
 
-                <div style="border-top: 1px solid #EAEAEA; padding-top: 14px; margin-bottom: 16px;">
-                    <span style="font-size: 0.8rem; color: #666666;">Cliente:</span>
-                    <strong style="color: #111111; font-size: 0.95rem; margin-left: 4px;"><?php echo htmlspecialchars($proximo['cliente'] ?? 'Cliente'); ?></strong>
+                <div style="border-top: 1px solid #EAEAEA; padding-top: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <span style="font-size: 0.8rem; color: #666666;">Cliente:</span>
+                        <strong style="color: #111111; font-size: 0.95rem; margin-left: 4px;"><?php echo htmlspecialchars($proximo['cliente'] ?? 'Cliente'); ?></strong>
+                    </div>
+
+                    <?php if (!empty($proximo['cliente_telefono'])): 
+                        $telClean = preg_replace('/[^0-9]/', '', $proximo['cliente_telefono']);
+                        $msgWa = urlencode("Hola " . ($proximo['cliente'] ?? '') . ", te recordamos tu cita hoy a las " . $horaProxima . " en KORTZEN con el barbero " . ($currentUser['nombre'] ?? 'Kortzen') . ". ¡Te esperamos!");
+                    ?>
+                        <a href="https://wa.me/<?php echo $telClean; ?>?text=<?php echo $msgWa; ?>" target="_blank" style="color:#25D366; text-decoration:none; font-weight:800; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; border:1px solid #25D366; padding:6px 12px; border-radius:8px; background:#FFFFFF;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                            <span>Recordatorio WhatsApp</span>
+                        </a>
+                    <?php endif; ?>
                 </div>
+
+                <!-- Formulario de Notas Privadas del Cliente -->
+                <form action="api/clientes_action.php" method="POST" style="margin-bottom: 16px; background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 10px; padding: 12px;">
+                    <input type="hidden" name="action" value="guardar_notas_barbero">
+                    <input type="hidden" name="cliente_id" value="<?php echo $proximo['cliente_id_bd'] ?? $proximo['cliente_id']; ?>">
+                    <label style="font-size: 0.72rem; font-weight: 800; color: #555555; text-transform: uppercase; display: block; margin-bottom: 6px;">
+                        📝 Notas de Preferencias del Cliente (Privado)
+                    </label>
+                    <textarea name="notas_barbero" placeholder="Ej: Degradado bajo #1.5, tijera arriba, raya al lado izquierdo..." style="width: 100%; height: 50px; border: 1px solid #DDD; border-radius: 8px; padding: 8px; font-size: 0.82rem; font-family: inherit; resize: none; box-sizing: border-box; background: #FAFAFA;"><?php echo htmlspecialchars($proximo['notas_barbero'] ?? ''); ?></textarea>
+                    <button type="submit" style="margin-top: 6px; background: #111111; color: #FFFFFF; border: none; padding: 6px 14px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; text-transform: uppercase;">
+                        Guardar Notas
+                    </button>
+                </form>
 
                 <form method="POST">
                     <input type="hidden" name="action" value="completar_cita">
@@ -622,6 +647,43 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                         <div style="flex: 2; display: flex; align-items: flex-end; margin-bottom: 12px;">
                             <button type="submit" class="btn-action-black" style="background: #FFFFFF; color: #111111; border: 1px solid #111111;">
                                 <span>Debitar Insumo</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            <!-- Bloqueo Rápido de Descanso / Almuerzo -->
+            <div class="barber-section-card" style="margin-bottom: 0;">
+                <h3 class="barber-section-title">
+                    <svg class="barber-icon-stroke" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>Bloqueo Rápido de Descanso</span>
+                </h3>
+                <p style="font-size: 0.85rem; color: #666666; margin-bottom: 16px; line-height: 1.4;">
+                    Bloquea tu horario de almuerzo o pausa personal para evitar reservas en esa hora.
+                </p>
+
+                <form method="POST" action="api/block_time_action.php">
+                    <input type="hidden" name="action" value="bloquear_descanso_barbero">
+                    <label class="config-label" style="font-size: 0.78rem;">Hora de Inicio del Descanso</label>
+                    <select name="hora_inicio" class="barber-input" required>
+                        <option value="">-- Seleccionar hora --</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="13:00">01:00 PM</option>
+                        <option value="14:00">02:00 PM</option>
+                        <option value="15:00">03:00 PM</option>
+                        <option value="16:00">04:00 PM</option>
+                    </select>
+
+                    <div style="display: flex; gap: 12px;">
+                        <div style="flex: 1;">
+                            <label class="config-label" style="font-size: 0.78rem;">Duración</label>
+                            <select name="duracion_minutos" class="barber-input">
+                                <option value="30">30 Minutos</option>
+                                <option value="60" selected>1 Hora</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; display: flex; align-items: flex-end; margin-bottom: 12px;">
+                            <button type="submit" class="btn-action-black">
+                                <span>Bloquear Horario</span>
                             </button>
                         </div>
                     </div>

@@ -111,6 +111,24 @@ try {
             header('Location: ' . $redirect . (strpos($redirect, '?') !== false ? '&' : '?') . 'success=' . urlencode('Puntos KORTZEN actualizados a ' . number_format($puntos) . ' pts'));
             exit;
 
+        case 'guardar_notas_barbero':
+            $clienteId = intval($_POST['cliente_id'] ?? 0);
+            $notasBarbero = trim($_POST['notas_barbero'] ?? '');
+
+            if ($clienteId <= 0) {
+                throw new Exception('ID de cliente inválido.');
+            }
+
+            try {
+                $pdo->exec("ALTER TABLE clientes ADD COLUMN notas_barbero TEXT NULL AFTER notas");
+            } catch (Exception $exN) {}
+
+            $stmtN = $pdo->prepare("UPDATE clientes SET notas_barbero = ? WHERE id = ?");
+            $stmtN->execute([$notasBarbero, $clienteId]);
+
+            header('Location: ../barber-dashboard.php?success=' . urlencode('Notas del cliente guardadas con éxito.'));
+            exit;
+
         case 'delete':
             $id = intval($_POST['id'] ?? 0);
 

@@ -17,6 +17,43 @@ try {
     }
 
     switch ($action) {
+        case 'cancelar_cita_cliente':
+            if (!isClienteLoggedIn()) {
+                throw new Exception('Debes iniciar sesión.');
+            }
+            $clienteId = $_SESSION['cliente_id'];
+            $citaId = intval($_POST['id'] ?? 0);
+
+            if ($citaId <= 0) {
+                throw new Exception('Cita inválida.');
+            }
+
+            // Verificar propiedad de la cita y tiempo límite (> 2 horas)
+            $stmtCita = $pdo->prepare("SELECT id, fecha_hora, estado FROM citas WHERE id = ? AND cliente_id = ?");
+            $stmtCita->execute([$citaId, $clienteId]);
+            $cita = $stmtCita->fetch(PDO::FETCH_ASSOC);
+
+            if (!$cita) {
+                throw new Exception('La cita no fue encontrada.');
+            }
+
+            if ($cita['estado'] === 'cancelada') {
+                throw new Exception('Esta cita ya se encuentra cancelada.');
+            }
+
+            $timestampCita = strtotime($cita['fecha_hora']);
+            $diferenciaHoras = ($timestampCita - time()) / 3600;
+
+            if ($diferenciaHoras < 2) {
+                throw new Exception('Las citas solo se pueden cancelar con al menos 2 horas de anticipación. Por favor contacta directamente a la barbería.');
+            }
+
+            $stmtCancel = $pdo->prepare("UPDATE citas SET estado = 'cancelada' WHERE id = ?");
+            $stmtCancel->execute([$citaId]);
+
+            header('Location: ../cliente-dashboard.php?success=' . urlencode('Tu cita ha sido cancelada exitosamente.'));
+            exit;
+
         case 'create':
             $cliente_id = intval($_POST['cliente_id'] ?? 0);
             $servicio_id = intval($_POST['servicio_id'] ?? 0);

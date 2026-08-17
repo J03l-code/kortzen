@@ -357,8 +357,20 @@ $pageTitle = 'Reservar Cita';
                         style="width: 100%; padding: 15px; background: #1A1A1A; border: 1px solid #333; color: white; border-radius: 8px;">
                 </div>
                 <div>
-                    <label style="display:block; margin-bottom:10px; color:var(--text-secondary);">Horarios
-                        Disponibles</label>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <label style="color:var(--text-secondary); margin:0;">Horarios Disponibles</label>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="slot-filter-btn active" onclick="filtrarHorarios('all', this)" style="padding:5px 12px; border-radius:20px; border:1px solid #111; background:#111; color:#fff; font-size:0.72rem; font-weight:800; cursor:pointer;">
+                                TODOS
+                            </button>
+                            <button type="button" class="slot-filter-btn" onclick="filtrarHorarios('manana', this)" style="padding:5px 12px; border-radius:20px; border:1px solid #ddd; background:#fff; color:#111; font-size:0.72rem; font-weight:800; cursor:pointer;">
+                                MAÑANA (9-13h)
+                            </button>
+                            <button type="button" class="slot-filter-btn" onclick="filtrarHorarios('tarde', this)" style="padding:5px 12px; border-radius:20px; border:1px solid #ddd; background:#fff; color:#111; font-size:0.72rem; font-weight:800; cursor:pointer;">
+                                TARDE (14-20h)
+                            </button>
+                        </div>
+                    </div>
                     <div id="slotsGrid" class="slots-grid">
                         <p style="color:#666; grid-column: 1/-1;">Selecciona una fecha primero</p>
                     </div>
@@ -630,34 +642,99 @@ $pageTitle = 'Reservar Cita';
             }
         }
 
+        let currentLoadedSlots = [];
+
         async function loadSlots(date) {
             if (!bookingData.barberId) return;
 
             const grid = document.getElementById('slotsGrid');
-            grid.innerHTML = '<p style="color:#888">Cargando...</p>';
+            grid.innerHTML = '<p style="color:#888; grid-column:1/-1; text-align:center;">Cargando horarios...</p>';
 
             try {
                 const url = `api/get_disponibilidad.php?fecha=${date}&barbero_id=${bookingData.barberId}&servicio_id=${bookingData.serviceId}`;
                 const response = await fetch(url);
-                const slots = await response.json();
+                const resData = await response.json();
+
+                let slots = Array.isArray(resData) ? resData : (resData.slots || []);
+                currentLoadedSlots = slots;
 
                 grid.innerHTML = '';
 
                 if (slots.length === 0) {
-                    grid.innerHTML = '<p style="grid-column:1/-1; color:#ff5555; text-align:center;">No hay horarios disponibles para este día.</p>';
+                    let sugerenciaHtml = '';
+                    if (resData.sugerencia_proxima_fecha && resData.sugerencia_legible) {
+                        sugerenciaHtml = `
+                            <div style="margin-top:10px; font-size:0.85rem; color:#111; font-weight:700;">
+                                💡 Próxima fecha disponible recomendada: <strong>${resData.sugerencia_legible}</strong>
+                                <br>
+                                <button type="button" onclick="seleccionarFechaSugerida('${resData.sugerencia_proxima_fecha}')" style="margin-top:8px; padding:6px 14px; background:#111; color:#fff; border:none; border-radius:8px; font-size:0.8rem; font-weight:800; cursor:pointer;">
+                                    Ver ${resData.sugerencia_legible}
+                                </button>
+                            </div>
+                        `;
+                    }
+                    grid.innerHTML = `<div style="grid-column:1/-1; color:#777; text-align:center; padding:15px; background:#fafafa; border-radius:10px; border:1px solid #eee;">
+                        No hay horarios disponibles para este día.${sugerenciaHtml}
+                    </div>`;
                     return;
                 }
 
-                slots.forEach(time => {
-                    const el = document.createElement('div');
-                    el.className = 'time-slot';
-                    el.textContent = time;
-                    el.onclick = () => selectTime(time, el);
-                    grid.appendChild(el);
-                });
+                renderSlotsGrid(slots);
 
             } catch (e) {
-                grid.innerHTML = '<p style="color:red">Error al cargar horarios</p>';
+                grid.innerHTML = '<p style="color:red; grid-column:1/-1; text-align:center;">Error al cargar horarios</p>';
+            }
+        }
+
+        function renderSlotsGrid(slots) {
+            const grid = document.getElementById('slotsGrid');
+            grid.innerHTML = '';
+            if (slots.length === 0) {
+                grid.innerHTML = '<p style="grid-column:1/-1; color:#777; text-align:center;">No hay horarios en este filtro.</p>';
+                return;
+            }
+            slots.forEach(time => {
+                const el = document.createElement('div');
+                el.className = 'time-slot';
+                el.textContent = time;
+                el.onclick = () => selectTime(time, el);
+                grid.appendChild(el);
+            });
+        }
+
+        function filtrarHorarios(filtro, btnEl) {
+            document.querySelectorAll('.slot-filter-btn').forEach(b => {
+                b.style.background = '#fff';
+                b.style.color = '#111';
+                b.style.borderColor = '#ddd';
+            });
+            if (btnEl) {
+                btnEl.style.background = '#111';
+                btnEl.style.color = '#fff';
+                btnEl.style.borderColor = '#111';
+            }
+
+            if (!currentLoadedSlots || currentLoadedSlots.length === 0) return;
+
+            let filtrados = currentLoadedSlots;
+            if (filtro === 'manana') {
+                filtrados = currentLoadedSlots.filter(t => {
+                    const hour = parseInt(t.split(':')[0]);
+                    return hour < 14;
+                });
+            } else if (filtro === 'tarde') {
+                filtrados = currentLoadedSlots.filter(t => {
+                    const hour = parseInt(t.split(':')[0]);
+                    return hour >= 14;
+                });
+            }
+            renderSlotsGrid(filtrados);
+        }
+
+        function seleccionarFechaSugerida(fechaStr) {
+            const picker = document.getElementById('datePicker')._flatpickr;
+            if (picker) {
+                picker.setDate(fechaStr, true);
             }
         }
 
@@ -849,13 +926,20 @@ $pageTitle = 'Reservar Cita';
 
                 if (res.success) {
                     // Success UI
+                    const gCalTitle = encodeURIComponent(`Cita en KORTZEN - ${bookingData.serviceName}`);
+                    const gCalLoc = encodeURIComponent(`KORTZEN Barbería, Quito`);
+                    const gCalDetails = encodeURIComponent(`Cita con ${bookingData.barberName} el ${bookingData.date} a las ${bookingData.time}`);
+                    const dateClean = bookingData.date.replace(/-/g, '');
+                    const timeClean = bookingData.time.replace(':', '');
+                    const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${gCalTitle}&dates=${dateClean}T${timeClean}00/${dateClean}T${timeClean}00&details=${gCalDetails}&location=${gCalLoc}`;
+
                     document.querySelector('.booking-container').innerHTML = `
                     <div style="text-align:center; padding-top:40px; padding-bottom:60px;">
                         <div style="width:70px; height:70px; border-radius:50%; background:#111111; color:#FFFFFF; font-size:2.5rem; display:flex; align-items:center; justify-content:center; margin:0 auto 20px auto; font-weight:900;">✓</div>
                         <h1 style="color:#FFFFFF; font-size:1.6rem; font-weight:900; margin-bottom:10px;">¡Reserva Exitosa!</h1>
-                        <p style="color:#AAAAAA; font-size:0.95rem; margin-bottom:30px;">Tu cita ha sido ${reagendarId ? 'reagendada' : 'agendada'} correctamente.</p>
+                        <p style="color:#AAAAAA; font-size:0.95rem; margin-bottom:25px;">Tu cita ha sido ${reagendarId ? 'reagendada' : 'agendada'} correctamente.</p>
                         
-                        <div style="max-width:380px; margin:0 auto 30px auto; background:#FFFFFF; color:#111111; padding:20px; border-radius:16px; border:1px solid #EAEAEA; text-align:left;">
+                        <div style="max-width:380px; margin:0 auto 25px auto; background:#FFFFFF; color:#111111; padding:20px; border-radius:16px; border:1px solid #EAEAEA; text-align:left;">
                             <div style="margin-bottom:12px;">
                                 <span style="font-size:0.72rem; color:#777; font-weight:800; text-transform:uppercase;">SERVICIO</span>
                                 <div style="font-size:1.05rem; font-weight:800;">${bookingData.serviceName}</div>
@@ -868,6 +952,14 @@ $pageTitle = 'Reservar Cita';
                                 <span style="font-size:0.72rem; color:#777; font-weight:800; text-transform:uppercase;">FECHA Y HORA</span>
                                 <div style="font-size:1.05rem; font-weight:900; color:#111111;">${bookingData.date} a las ${bookingData.time}</div>
                             </div>
+                        </div>
+
+                        <!-- Botón Añadir a Google Calendar -->
+                        <div style="max-width:380px; margin:0 auto 20px auto;">
+                            <a href="${gCalUrl}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#4285F4; color:#FFFFFF; font-weight:800; font-size:0.88rem; padding:14px; border-radius:12px; text-decoration:none; text-transform:uppercase; letter-spacing:0.5px; box-sizing:border-box;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                <span>Añadir a mi Google Calendar</span>
+                            </a>
                         </div>
 
                         <a href="cliente-dashboard.php" class="btn btn-next" style="display:inline-block; max-width:380px; width:100%; text-decoration:none; background:#FFFFFF; color:#111111; font-weight:800; padding:15px; border-radius:12px; text-transform:uppercase; letter-spacing:1px; box-sizing:border-box;">Volver a mi Cuenta</a>
