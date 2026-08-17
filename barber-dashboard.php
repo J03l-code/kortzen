@@ -259,6 +259,10 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
         .badge-completada-clean { background: #111111; color: #FFFFFF; }
         .badge-cancelada-clean { background: #FAFAFA; color: #888888; border: 1px solid #EAEAEA; }
 
+        .pwa-container {
+            padding-top: calc(env(safe-area-inset-top, 24px) + 16px) !important;
+        }
+
         /* Responsive Barber Header & Grids */
         .barber-header-bar {
             background: #FFFFFF;
@@ -268,6 +272,7 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-top: 10px;
             margin-bottom: 24px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             gap: 12px;
@@ -309,13 +314,17 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
         }
 
         @media (max-width: 768px) {
+            .pwa-container {
+                padding-top: calc(env(safe-area-inset-top, 28px) + 24px) !important;
+            }
             .barber-header-bar {
+                margin-top: 14px;
                 padding: 12px 14px;
                 border-radius: 14px;
                 margin-bottom: 16px;
             }
             .barber-header-logo {
-                font-size: 1.05rem;
+                font-size: 1rem;
                 letter-spacing: 1px;
             }
             .barber-logout-btn {

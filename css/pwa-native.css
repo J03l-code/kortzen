@@ -33,7 +33,7 @@ body.pwa-app-mode {
 .pwa-container {
     max-width: 500px;
     margin: 0 auto;
-    padding: 0 1rem 2rem 1rem;
+    padding: calc(env(safe-area-inset-top, 24px) + 16px) 1rem 2rem 1rem;
 }
 
 /* --- Native Top Bar --- */
