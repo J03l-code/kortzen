@@ -620,10 +620,10 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
             <?php endif; ?>
         </div>
 
-        <!-- Forms Grid (Registrar Venta & Debitar Insumos) -->
+        <!-- Grid de 4 Cajas en 2x2 -->
         <div class="barber-forms-grid">
             
-            <!-- Registrar Venta de Producto -->
+            <!-- Caja 1: Registrar Venta de Producto (Fila 1, Izquierda) -->
             <div class="barber-section-card" style="margin-bottom: 0;">
                 <h3 class="barber-section-title">
                     <svg class="barber-icon-stroke" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
@@ -658,7 +658,7 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                 </form>
             </div>
 
-            <!-- Debitar Insumos de Inventario -->
+            <!-- Caja 2: Consumo de Insumos del Turno (Fila 1, Derecha) -->
             <div class="barber-section-card" style="margin-bottom: 0;">
                 <h3 class="barber-section-title">
                     <svg class="barber-icon-stroke" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
@@ -691,7 +691,9 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                         </div>
                     </div>
                 </form>
-            <!-- Bloqueo Rápido de Descanso / Almuerzo -->
+            </div>
+
+            <!-- Caja 3: Bloqueo Rápido de Descanso (Fila 2, Izquierda) -->
             <div class="barber-section-card" style="margin-bottom: 0;">
                 <h3 class="barber-section-title">
                     <svg class="barber-icon-stroke" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -730,57 +732,57 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                 </form>
             </div>
 
-        </div>
+            <!-- Caja 4: Mis Turnos de Hoy (Fila 2, Derecha) -->
+            <div class="barber-section-card" style="margin-bottom: 0;">
+                <h3 class="barber-section-title">
+                    <svg class="barber-icon-stroke" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span>Mis Turnos de Hoy (<?php echo date('d/m/Y'); ?>)</span>
+                </h3>
 
-        <!-- Mis Turnos de Hoy List -->
-        <div class="barber-section-card">
-            <h3 class="barber-section-title">
-                <svg class="barber-icon-stroke" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span>Mis Turnos de Hoy (<?php echo date('d/m/Y'); ?>)</span>
-            </h3>
-
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <?php if (!empty($turnosHoy)): ?>
-                    <?php foreach ($turnosHoy as $t): 
-                        $horaT = date('H:i', strtotime($t['fecha_hora']));
-                        $est = strtolower($t['estado']);
-                        $badgeClass = 'badge-pendiente-clean';
-                        if ($est === 'completada') $badgeClass = 'badge-completada-clean';
-                        if ($est === 'cancelada') $badgeClass = 'badge-cancelada-clean';
-                    ?>
-                    <div style="background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
-                        <div style="font-weight: 900; font-size: 1.15rem; color: #111111; width: 65px;">
-                            <?php echo $horaT; ?>
-                        </div>
-                        <div style="flex: 1; padding: 0 12px;">
-                            <div style="font-weight: 800; font-size: 0.95rem; color: #111111; margin-bottom: 2px;">
-                                <?php echo htmlspecialchars($t['servicio'] ?? 'Corte'); ?>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <?php if (!empty($turnosHoy)): ?>
+                        <?php foreach ($turnosHoy as $t): 
+                            $horaT = date('H:i', strtotime($t['fecha_hora']));
+                            $est = strtolower($t['estado']);
+                            $badgeClass = 'badge-pendiente-clean';
+                            if ($est === 'completada') $badgeClass = 'badge-completada-clean';
+                            if ($est === 'cancelada') $badgeClass = 'badge-cancelada-clean';
+                        ?>
+                        <div style="background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;">
+                            <div style="font-weight: 900; font-size: 1.1rem; color: #111111; width: 55px;">
+                                <?php echo $horaT; ?>
                             </div>
-                            <div style="font-size: 0.82rem; color: #666666;">
-                                Cliente: <strong style="color: #111111;"><?php echo htmlspecialchars($t['cliente'] ?? 'Cliente'); ?></strong>
+                            <div style="flex: 1; padding: 0 10px;">
+                                <div style="font-weight: 800; font-size: 0.9rem; color: #111111; margin-bottom: 2px;">
+                                    <?php echo htmlspecialchars($t['servicio'] ?? 'Corte'); ?>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #666666;">
+                                    Cliente: <strong style="color: #111111;"><?php echo htmlspecialchars($t['cliente'] ?? 'Cliente'); ?></strong>
+                                </div>
+                            </div>
+                            <div>
+                                <?php if ($est === 'pendiente' || $est === 'confirmada'): ?>
+                                    <form method="POST" style="margin: 0;">
+                                        <input type="hidden" name="action" value="completar_cita">
+                                        <input type="hidden" name="cita_id" value="<?php echo $t['id']; ?>">
+                                        <button type="submit" style="background: #111111; color: #FFFFFF; border: none; padding: 7px 12px; border-radius: 8px; font-weight: 800; font-size: 0.72rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Finalizar Corte
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="badge-turno-clean <?php echo $badgeClass; ?>"><?php echo strtoupper($est); ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
-                        <div>
-                            <?php if ($est === 'pendiente' || $est === 'confirmada'): ?>
-                                <form method="POST" style="margin: 0;">
-                                    <input type="hidden" name="action" value="completar_cita">
-                                    <input type="hidden" name="cita_id" value="<?php echo $t['id']; ?>">
-                                    <button type="submit" style="background: #111111; color: #FFFFFF; border: none; padding: 7px 12px; border-radius: 8px; font-weight: 800; font-size: 0.72rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        Finalizar Corte
-                                    </button>
-                                </form>
-                            <?php else: ?>
-                                <span class="badge-turno-clean <?php echo $badgeClass; ?>"><?php echo strtoupper($est); ?></span>
-                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 24px; color: #777777; font-size: 0.88rem; background: #FAFAFA; border-radius: 12px;">
+                            No tienes agendamientos registrados para el día de hoy.
                         </div>
-                    </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div style="text-align: center; padding: 24px; color: #777777; font-size: 0.88rem; background: #FAFAFA; border-radius: 12px;">
-                        No tienes agendamientos registrados para el día de hoy.
-                    </div>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
             </div>
+
         </div>
 
     </div>
