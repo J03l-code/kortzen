@@ -58,5 +58,69 @@ if ($action === 'save_configs') {
     }
 }
 
+// Crear Código Promocional
+if ($action === 'crear_codigo_promocional') {
+    try {
+        $pdo = getConnection();
+        $codigo = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', trim($_POST['codigo'] ?? '')));
+        $porcentaje = floatval($_POST['descuento_porcentaje'] ?? 10);
+        $descripcion = trim($_POST['descripcion'] ?? '');
+        $activo = isset($_POST['activo']) ? 1 : 0;
+
+        if (empty($codigo)) {
+            header('Location: ../configuracion.php?error=' . urlencode('El código no puede estar vacío.'));
+            exit;
+        }
+
+        if ($porcentaje <= 0 || $porcentaje > 100) {
+            header('Location: ../configuracion.php?error=' . urlencode('El porcentaje de descuento debe estar entre 1% y 100%.'));
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO codigos_promocionales (codigo, descuento_porcentaje, uso_maximo_por_usuario, activo, descripcion) VALUES (?, ?, 1, ?, ?)");
+        $stmt->execute([$codigo, $porcentaje, $activo, $descripcion]);
+
+        header('Location: ../configuracion.php?success=' . urlencode("Código promocional '$codigo' creado exitosamente ($porcentaje% de descuento)."));
+        exit;
+    } catch (Exception $e) {
+        header('Location: ../configuracion.php?error=' . urlencode('Error: El código ya existe o es inválido.'));
+        exit;
+    }
+}
+
+// Toggle Estado (Activo / Inactivo)
+if ($action === 'toggle_codigo_promocional') {
+    try {
+        $pdo = getConnection();
+        $id = intval($_POST['id'] ?? 0);
+        $activo = intval($_POST['activo'] ?? 0);
+        $stmt = $pdo->prepare("UPDATE codigos_promocionales SET activo = ? WHERE id = ?");
+        $stmt->execute([$activo, $id]);
+
+        $estadoTexto = $activo ? 'activado' : 'desactivado';
+        header('Location: ../configuracion.php?success=' . urlencode("Código promocional $estadoTexto correctamente."));
+        exit;
+    } catch (Exception $e) {
+        header('Location: ../configuracion.php?error=' . urlencode($e->getMessage()));
+        exit;
+    }
+}
+
+// Eliminar Código Promocional
+if ($action === 'eliminar_codigo_promocional') {
+    try {
+        $pdo = getConnection();
+        $id = intval($_POST['id'] ?? 0);
+        $stmt = $pdo->prepare("DELETE FROM codigos_promocionales WHERE id = ?");
+        $stmt->execute([$id]);
+
+        header('Location: ../configuracion.php?success=' . urlencode("Código promocional eliminado exitosamente."));
+        exit;
+    } catch (Exception $e) {
+        header('Location: ../configuracion.php?error=' . urlencode($e->getMessage()));
+        exit;
+    }
+}
+
 header('Location: ../configuracion.php');
 exit;

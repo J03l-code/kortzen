@@ -20,6 +20,42 @@ try {
             exit;
         }
 
+        // A) PRIMERO: Comprobar si es un Código Promocional / Cupón
+        try {
+            $stmtPromo = $pdo->prepare("SELECT * FROM codigos_promocionales WHERE UPPER(codigo) = ?");
+            $stmtPromo->execute([$codigoLimpio]);
+            $promo = $stmtPromo->fetch(PDO::FETCH_ASSOC);
+
+            if ($promo) {
+                if (!$promo['activo']) {
+                    echo json_encode(['success' => false, 'message' => 'Este código promocional se encuentra inactivo.']);
+                    exit;
+                }
+
+                // Verificar límite de 1 uso por cliente
+                if (isset($_SESSION['cliente_id']) && $_SESSION['cliente_id'] > 0) {
+                    $clienteIdActual = intval($_SESSION['cliente_id']);
+                    $stmtCheckUso = $pdo->prepare("SELECT COUNT(*) FROM usos_codigos_promocionales WHERE codigo_id = ? AND cliente_id = ?");
+                    $stmtCheckUso->execute([$promo['id'], $clienteIdActual]);
+                    if ($stmtCheckUso->fetchColumn() > 0) {
+                        echo json_encode(['success' => false, 'message' => 'Ya has utilizado este código promocional en una reserva anterior. Es válido solo 1 vez por cliente.']);
+                        exit;
+                    }
+                }
+
+                $porcentajeDesc = floatval($promo['descuento_porcentaje']);
+                echo json_encode([
+                    'success' => true,
+                    'tipo' => 'promocional',
+                    'promo_id' => $promo['id'],
+                    'descuento_porcentaje' => $porcentajeDesc,
+                    'codigo' => $promo['codigo'],
+                    'message' => '¡Código Promocional ' . $promo['codigo'] . ' aplicado! Descuento del ' . number_format($porcentajeDesc, 1) . '% activado.'
+                ]);
+                exit;
+            }
+        } catch (Exception $exPromo) {}
+
         // Cargar configuraciones de la base de datos
         $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
         $configs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);

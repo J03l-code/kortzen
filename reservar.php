@@ -895,6 +895,8 @@ $pageTitle = 'Reservar Cita';
 
         let referralCodeApplied = '';
         let appliedDiscountAmount = 0.0;
+        let appliedDiscountType = 'fixed';
+        let appliedDiscountPercentage = 0.0;
 
         async function aplicarCodigoReferidoReserva() {
             const input = document.getElementById('referralCodeInput');
@@ -919,7 +921,17 @@ $pageTitle = 'Reservar Cita';
 
                 if (data.success) {
                     referralCodeApplied = data.codigo;
-                    appliedDiscountAmount = parseFloat(data.descuento || 0);
+                    appliedDiscountType = data.tipo || 'fixed';
+
+                    if (appliedDiscountType === 'promocional') {
+                        appliedDiscountPercentage = parseFloat(data.descuento_porcentaje || 0);
+                        const rawPrice = parseFloat(bookingData.servicePrice || 0);
+                        appliedDiscountAmount = (rawPrice * appliedDiscountPercentage) / 100;
+                    } else {
+                        appliedDiscountAmount = parseFloat(data.descuento || 0);
+                        appliedDiscountPercentage = 0;
+                    }
+
                     msgDiv.style.color = '#28a745';
                     msgDiv.innerHTML = `<strong>✅ ${data.message}</strong>`;
                     input.disabled = true;
@@ -989,17 +1001,26 @@ $pageTitle = 'Reservar Cita';
             document.getElementById('confirmDateTime').textContent = `${bookingData.date} a las ${bookingData.time}`;
 
             const rawPrice = parseFloat(bookingData.servicePrice || 0);
+
+            if (appliedDiscountType === 'promocional' && appliedDiscountPercentage > 0) {
+                appliedDiscountAmount = (rawPrice * appliedDiscountPercentage) / 100;
+            }
+
             const finalPrice = Math.max(0, rawPrice - appliedDiscountAmount);
 
             const priceContainer = document.getElementById('confirmPrice');
             if (priceContainer) {
                 if (appliedDiscountAmount > 0) {
+                    const labelDesc = (appliedDiscountType === 'promocional')
+                        ? `Descuento Promo (${appliedDiscountPercentage}% OFF)`
+                        : `Descuento Referido`;
+
                     priceContainer.innerHTML = `
                         <div style="font-size: 0.85rem; color: #888888; text-decoration: line-through;">$${rawPrice.toFixed(2)}</div>
                         <div style="font-size: 1.3rem; font-weight: 900; color: #28a745; margin-bottom: 4px;">$${finalPrice.toFixed(2)}</div>
                         <div style="font-size: 0.8rem; font-weight: 800; color: #28a745; line-height: 1.3;">
                             <div>-$${appliedDiscountAmount.toFixed(2)}</div>
-                            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #28a745;">Descuento Referido</div>
+                            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #28a745;">${labelDesc}</div>
                         </div>
                     `;
                 } else {

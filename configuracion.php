@@ -40,6 +40,30 @@ try {
     foreach ($defaultConfigs as $cfg) {
         $stmtCfg->execute($cfg);
     }
+    // Asegurar tablas de códigos promocionales
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS codigos_promocionales (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            codigo VARCHAR(50) NOT NULL UNIQUE,
+            descuento_porcentaje DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+            uso_maximo_por_usuario INT DEFAULT 1,
+            activo TINYINT(1) DEFAULT 1,
+            descripcion VARCHAR(255) NULL,
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+        CREATE TABLE IF NOT EXISTS usos_codigos_promocionales (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            codigo_id INT NOT NULL,
+            cliente_id INT NOT NULL,
+            cita_id INT NULL,
+            descuento_monto DECIMAL(10,2) NOT NULL,
+            fecha_uso DATETIME DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_codigo (codigo_id),
+            KEY idx_cliente (cliente_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+
 } catch (Exception $e) {}
 
 // Obtener todas las configuraciones actuales
@@ -49,6 +73,17 @@ $configs = [];
 foreach ($rows as $r) {
     $configs[$r['clave']] = $r['valor'];
 }
+
+// Obtener códigos promocionales
+$codigosPromocionales = [];
+try {
+    $stmtPromo = $pdo->query("
+        SELECT cp.*, (SELECT COUNT(*) FROM usos_codigos_promocionales u WHERE u.codigo_id = cp.id) as usos_totales 
+        FROM codigos_promocionales cp 
+        ORDER BY cp.id DESC
+    ");
+    $codigosPromocionales = $stmtPromo->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $exP) {}
 
 $pageTitle = 'Configuración del Sistema y Referidos';
 include 'includes/header.php';
@@ -286,13 +321,127 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <!-- Botón Guardar Cambios -->
-    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+    <!-- Botón Guardar Cambios Principales -->
+    <div style="display: flex; justify-content: flex-end; margin-top: 10px; margin-bottom: 30px;">
         <button type="submit" class="btn-save-main">
             <svg class="config-icon" style="stroke: #FFFFFF; width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-            <span>Guardar Configuración</span>
+            <span>Guardar Configuración General</span>
         </button>
     </div>
 </form>
+
+<!-- Seccion Códigos Promocionales & Cupones -->
+<div class="config-card" style="margin-top: 20px;">
+    <h3 class="config-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <svg class="config-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+            <span>Códigos Promocionales & Cupones (Uso Único por Cliente)</span>
+        </div>
+        <span style="font-size: 0.78rem; background: #111111; color: #FFFFFF; padding: 5px 14px; border-radius: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">1 Uso Por Usuario</span>
+    </h3>
+    <p style="color: #666666; font-size: 0.88rem; margin-bottom: 22px; line-height: 1.5;">
+        Crea códigos de descuento basados en porcentaje (%). Cada cliente solo podrá utilizar el código 1 sola vez en sus reservas. Puedes activar o desactivar cualquier código en tiempo real.
+    </p>
+
+    <!-- Formulario Crear Código -->
+    <form method="POST" action="api/configuracion_action.php" style="background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 14px; padding: 22px; margin-bottom: 28px;">
+        <input type="hidden" name="action" value="crear_codigo_promocional">
+        
+        <div style="display: grid; grid-template-columns: 2fr 1.2fr 2fr 1fr; gap: 16px; align-items: flex-end;">
+            <div>
+                <label class="config-label" style="font-size: 0.78rem;">Código Promocional *</label>
+                <input type="text" name="codigo" placeholder="Ej: PROMO20" required class="config-input" style="text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">
+            </div>
+            <div>
+                <label class="config-label" style="font-size: 0.78rem;">Descuento % *</label>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <input type="number" name="descuento_porcentaje" placeholder="15" min="1" max="100" step="0.5" required class="config-input">
+                    <span style="font-weight: 900; font-size: 1.1rem; color: #111111;">%</span>
+                </div>
+            </div>
+            <div>
+                <label class="config-label" style="font-size: 0.78rem;">Descripción (Opcional)</label>
+                <input type="text" name="descripcion" placeholder="Ej: 15% desc. por inauguración" class="config-input" style="font-size: 0.9rem; font-weight: 500;">
+            </div>
+            <div>
+                <button type="submit" style="width: 100%; background: #111111; color: #FFFFFF; border: none; padding: 14px; border-radius: 10px; font-weight: 800; font-size: 0.82rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
+                    + Crear Código
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tabla de Códigos Existentes -->
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 2px solid #EAEAEA; font-size: 0.78rem; text-transform: uppercase; color: #777777;">
+                    <th style="padding: 12px;">Código</th>
+                    <th style="padding: 12px;">Descuento</th>
+                    <th style="padding: 12px;">Límite por Cliente</th>
+                    <th style="padding: 12px;">Usos Totales</th>
+                    <th style="padding: 12px;">Estado</th>
+                    <th style="padding: 12px; text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($codigosPromocionales)): ?>
+                    <?php foreach ($codigosPromocionales as $cp): ?>
+                        <tr style="border-bottom: 1px solid #F0F0F0; font-size: 0.9rem;">
+                            <td style="padding: 14px 12px; font-weight: 900; color: #111111; letter-spacing: 1px;">
+                                <?php echo htmlspecialchars($cp['codigo']); ?>
+                                <?php if (!empty($cp['descripcion'])): ?>
+                                    <div style="font-size: 0.78rem; color: #777777; font-weight: 500; text-transform: none; margin-top: 2px;"><?php echo htmlspecialchars($cp['descripcion']); ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 14px 12px; font-weight: 900; color: #28a745; font-size: 1.05rem;">
+                                <?php echo number_format($cp['descuento_porcentaje'], 1); ?>% OFF
+                            </td>
+                            <td style="padding: 14px 12px; color: #555555; font-size: 0.85rem; font-weight: 600;">
+                                1 uso por usuario
+                            </td>
+                            <td style="padding: 14px 12px; font-weight: 800; color: #111111;">
+                                <?php echo $cp['usos_totales']; ?> uso<?php echo $cp['usos_totales'] == 1 ? '' : 's'; ?>
+                            </td>
+                            <td style="padding: 14px 12px;">
+                                <?php if ($cp['activo']): ?>
+                                    <span style="background: #e8f5e9; color: #2e7d32; font-weight: 800; font-size: 0.75rem; padding: 5px 12px; border-radius: 20px; border: 1px solid #a5d6a7;">ACTIVO</span>
+                                <?php else: ?>
+                                    <span style="background: #fafafa; color: #888888; font-weight: 800; font-size: 0.75rem; padding: 5px 12px; border-radius: 20px; border: 1px solid #e0e0e0;">INACTIVO</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right;">
+                                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                    <form method="POST" action="api/configuracion_action.php" style="display: inline;">
+                                        <input type="hidden" name="action" value="toggle_codigo_promocional">
+                                        <input type="hidden" name="id" value="<?php echo $cp['id']; ?>">
+                                        <input type="hidden" name="activo" value="<?php echo $cp['activo'] ? 0 : 1; ?>">
+                                        <button type="submit" style="background: #FFFFFF; border: 1px solid #D1D1D1; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; cursor: pointer; color: #111111;">
+                                            <?php echo $cp['activo'] ? 'Desactivar' : 'Activar'; ?>
+                                        </button>
+                                    </form>
+
+                                    <form method="POST" action="api/configuracion_action.php" style="display: inline;" onsubmit="return confirm('¿Seguro que deseas eliminar este código promocional?');">
+                                        <input type="hidden" name="action" value="eliminar_codigo_promocional">
+                                        <input type="hidden" name="id" value="<?php echo $cp['id']; ?>">
+                                        <button type="submit" style="background: #fff0f0; border: 1px solid #ffcdd2; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; cursor: pointer; color: #d32f2f;">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" style="padding: 24px; text-align: center; color: #888888; font-size: 0.9rem;">
+                            No hay códigos promocionales creados. ¡Crea el primero utilizando el formulario superior!
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <?php include 'includes/footer.php'; ?>

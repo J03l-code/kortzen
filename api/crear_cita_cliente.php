@@ -64,34 +64,52 @@ try {
     $codigoReferidoLimpio = str_replace('KORTZEN-', '', $codigoReferido);
     $montoDescuento = 0.00;
     $referenteId = null;
+    $promoIdToRecord = null;
     $puntosPorReferido = 200;
 
     if (!empty($codigoReferidoLimpio)) {
-        // Validar que el cliente NO haya usado un código antes ni tenga citas previas (solo 1ra visita)
-        $stmtCheckUsed = $pdo->prepare("SELECT COUNT(*) FROM referidos WHERE referido_id = ?");
-        $stmtCheckUsed->execute([$clienteId]);
-        $alreadyUsedCode = ($stmtCheckUsed->fetchColumn() > 0);
+        // A) Verificar si es un Código Promocional
+        try {
+            $stmtPromo = $pdo->prepare("SELECT * FROM codigos_promocionales WHERE UPPER(codigo) = ? AND activo = 1");
+            $stmtPromo->execute([$codigoReferidoLimpio]);
+            $promoRow = $stmtPromo->fetch(PDO::FETCH_ASSOC);
 
-        $stmtCheckCitasPrev = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE cliente_id = ? AND estado != 'cancelada'");
-        $stmtCheckCitasPrev->execute([$clienteId]);
-        $hasPreviousCitas = ($stmtCheckCitasPrev->fetchColumn() > 0);
+            if ($promoRow) {
+                $stmtCheckUso = $pdo->prepare("SELECT COUNT(*) FROM usos_codigos_promocionales WHERE codigo_id = ? AND cliente_id = ?");
+                $stmtCheckUso->execute([$promoRow['id'], $clienteId]);
+                if ($stmtCheckUso->fetchColumn() == 0) {
+                    $promoIdToRecord = $promoRow['id'];
+                    $descuentoPct = floatval($promoRow['descuento_porcentaje']);
+                    $montoDescuento = (floatval($precio) * $descuentoPct) / 100;
+                }
+            }
+        } catch (Exception $exPromo) {}
 
-        if (!$alreadyUsedCode && !$hasPreviousCitas) {
-            // Cargar configuraciones
-            $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
-            $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
-            $montoDescuento = floatval($cfgs['descuento_referido_amigo'] ?? 2.00);
-            $puntosPorReferido = intval($cfgs['puntos_por_referido'] ?? 200);
+        // B) Si no es promocional, validar si es Código de Referido de un Amigo (Solo 1ra visita)
+        if (!$promoIdToRecord) {
+            $stmtCheckUsed = $pdo->prepare("SELECT COUNT(*) FROM referidos WHERE referido_id = ?");
+            $stmtCheckUsed->execute([$clienteId]);
+            $alreadyUsedCode = ($stmtCheckUsed->fetchColumn() > 0);
 
-            // Buscar referente
-            $stmtRefCheck = $pdo->prepare("SELECT id FROM clientes WHERE codigo_referido = ? OR codigo_referido = ?");
-            $stmtRefCheck->execute([$codigoReferidoLimpio, $codigoReferido]);
-            $refRow = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
+            $stmtCheckCitasPrev = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE cliente_id = ? AND estado != 'cancelada'");
+            $stmtCheckCitasPrev->execute([$clienteId]);
+            $hasPreviousCitas = ($stmtCheckCitasPrev->fetchColumn() > 0);
 
-            if ($refRow && $refRow['id'] != $clienteId) {
-                $referenteId = $refRow['id'];
-            } else {
-                $montoDescuento = 0.00;
+            if (!$alreadyUsedCode && !$hasPreviousCitas) {
+                $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
+                $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+                $montoDescuento = floatval($cfgs['descuento_referido_amigo'] ?? 2.00);
+                $puntosPorReferido = intval($cfgs['puntos_por_referido'] ?? 200);
+
+                $stmtRefCheck = $pdo->prepare("SELECT id FROM clientes WHERE codigo_referido = ? OR codigo_referido = ?");
+                $stmtRefCheck->execute([$codigoReferidoLimpio, $codigoReferido]);
+                $refRow = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
+
+                if ($refRow && $refRow['id'] != $clienteId) {
+                    $referenteId = $refRow['id'];
+                } else {
+                    $montoDescuento = 0.00;
+                }
             }
         }
     }
@@ -122,25 +140,17 @@ try {
         $citaId = $pdo->lastInsertId();
     }
 
+    // Registrar uso de Código Promocional si aplica
+    if ($promoIdToRecord && $citaId > 0) {
+        try {
+            $stmtUpromo = $pdo->prepare("INSERT INTO usos_codigos_promocionales (codigo_id, cliente_id, cita_id, descuento_monto) VALUES (?, ?, ?, ?)");
+            $stmtUpromo->execute([$promoIdToRecord, $clienteId, $citaId, $montoDescuento]);
+        } catch (Exception $exUp) {}
+    }
+
     // Registrar seguimiento de referido si aplica
     if ($referenteId && $citaId > 0) {
         try {
-            $pdo->exec("
-                CREATE TABLE IF NOT EXISTS referidos (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    referente_id INT NOT NULL,
-                    referido_id INT NULL,
-                    codigo_usado VARCHAR(30) NOT NULL,
-                    cita_id INT NULL,
-                    descuento_aplicado DECIMAL(10,2) DEFAULT 0.00,
-                    puntos_otorgados INT DEFAULT 0,
-                    estado ENUM('pendiente', 'completado', 'cancelado') DEFAULT 'pendiente',
-                    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    KEY idx_referente (referente_id),
-                    KEY idx_referido (referido_id),
-                    KEY idx_codigo (codigo_usado)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-            ");
             $stmtInsertRef = $pdo->prepare("INSERT INTO referidos (referente_id, referido_id, codigo_usado, cita_id, descuento_aplicado, puntos_otorgados, estado) VALUES (?, ?, ?, ?, ?, ?, 'pendiente')");
             $stmtInsertRef->execute([$referenteId, $clienteId, $codigoReferido, $citaId, $montoDescuento, $puntosPorReferido]);
         } catch (Exception $exRef) {}
