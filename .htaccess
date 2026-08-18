@@ -1,0 +1,14 @@
+# KORTZEN - Clean Extensionless URLs & SEO 301 Redirects
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# 1. Redirect external requests with .html extension to clean extensionless URLs (301 Permanent Redirect)
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L]
+
+# 2. Internally map extensionless URLs to corresponding .html file
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.*)$ $1.html [L]
+</IfModule>

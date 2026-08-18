@@ -2,31 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://kortzen.com/</loc>
-    <lastmod>2026-08-13</lastmod>
+    <lastmod>2026-08-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://kortzen.com/servicios.html</loc>
-    <lastmod>2026-08-13</lastmod>
+    <loc>https://kortzen.com/servicios</loc>
+    <lastmod>2026-08-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://kortzen.com/nosotros.html</loc>
-    <lastmod>2026-08-13</lastmod>
+    <loc>https://kortzen.com/nosotros</loc>
+    <lastmod>2026-08-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://kortzen.com/galeria.html</loc>
-    <lastmod>2026-08-13</lastmod>
+    <loc>https://kortzen.com/galeria</loc>
+    <lastmod>2026-08-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://kortzen.com/contacto.html</loc>
-    <lastmod>2026-08-13</lastmod>
+    <loc>https://kortzen.com/contacto</loc>
+    <lastmod>2026-08-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
