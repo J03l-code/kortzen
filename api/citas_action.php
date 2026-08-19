@@ -1,12 +1,12 @@
 <?php
 require_once '../config.php';
 
-if (!isLoggedIn()) {
+$action = $_POST['action'] ?? '';
+
+if ($action !== 'cancelar_cita_cliente' && !isLoggedIn()) {
     header('Location: ../login.php');
     exit;
 }
-
-$action = $_POST['action'] ?? '';
 
 try {
     $pdo = getConnection();

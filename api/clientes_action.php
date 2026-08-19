@@ -108,6 +108,9 @@ try {
             $stmt->execute([$puntos, $id]);
 
             $redirect = !empty($_POST['redirect_to']) ? $_POST['redirect_to'] : '../clientes.php';
+            if (preg_match('/^(https?:|\/\/)/i', $redirect)) {
+                $redirect = '../clientes.php';
+            }
             header('Location: ' . $redirect . (strpos($redirect, '?') !== false ? '&' : '?') . 'success=' . urlencode('Puntos KORTZEN actualizados a ' . number_format($puntos) . ' pts'));
             exit;
 
