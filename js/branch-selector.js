@@ -233,18 +233,18 @@ function updateBranchInfoBar() {
     if (existingBar) existingBar.remove();
 
     const barHTML = `
-        <div class="branch-info-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: #FFFFFF; color: #111111; border-bottom: 1px solid rgba(0, 0, 0, 0.08); height: 42px; display: flex; align-items: center; backdrop-filter: blur(10px); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;">
-            <div class="branch-info-bar__content" style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
+        <div class="branch-info-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: #FFFFFF; color: #111111; border-bottom: 1px solid rgba(0, 0, 0, 0.08); height: 42px; min-height: 42px; max-height: 42px; display: flex; align-items: center; backdrop-filter: blur(10px); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden;">
+            <div class="branch-info-bar__content" style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; white-space: nowrap; height: 100%;">
                 
                 <!-- SUCURSAL SELECTOR (BOTÓN ULTRA LUXURY Y MINIMALISTA) -->
                 <div onclick="window.KortzenBranches.showSelector()" 
-                     style="display: flex; align-items: center; gap: 0.4rem; color: #111111; cursor: pointer; user-select: none;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                     style="display: flex; align-items: center; gap: 0.4rem; color: #111111; cursor: pointer; user-select: none; white-space: nowrap; flex-shrink: 0;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                         <circle cx="12" cy="10" r="3"></circle>
                     </svg>
-                    <span style="font-weight: 700; letter-spacing: -0.2px;">${branch.name}</span>
-                    <span style="border: 1px solid rgba(0, 0, 0, 0.22); background: transparent; color: #111111; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; padding: 2px 8px; border-radius: 4px; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px; transition: all 0.25s ease;"
+                    <span class="branch-info-bar__name" style="font-weight: 700; letter-spacing: -0.2px; white-space: nowrap;">${branch.name}</span>
+                    <span class="branch-info-bar__btn" style="border: 1px solid rgba(0, 0, 0, 0.22); background: transparent; color: #111111; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; padding: 2px 8px; border-radius: 4px; margin-left: 4px; display: inline-flex; align-items: center; gap: 3px; transition: all 0.25s ease; white-space: nowrap; flex-shrink: 0;"
                           onmouseover="this.style.background='#111111'; this.style.color='#FFFFFF'; this.style.borderColor='#111111';"
                           onmouseout="this.style.background='transparent'; this.style.color='#111111'; this.style.borderColor='rgba(0, 0, 0, 0.22)';">
                         <span>CAMBIAR</span>
@@ -253,21 +253,21 @@ function updateBranchInfoBar() {
                 </div>
 
                 <!-- DETALLES: HORARIO, TELÉFONO Y USUARIO -->
-                <div class="branch-info-bar__details" style="display: flex; align-items: center; gap: 1.5rem; color: #555555;">
-                    <span style="display: flex; align-items: center; gap: 0.4rem;">
+                <div class="branch-info-bar__details" style="display: flex; align-items: center; gap: 1.2rem; color: #555555; white-space: nowrap; flex-shrink: 0;">
+                    <span class="branch-info-bar__item branch-info-bar__item--hours" style="display: flex; align-items: center; gap: 0.4rem;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                         ${branch.openTime} - ${branch.closeTime}
                     </span>
-                    <span style="display: flex; align-items: center; gap: 0.4rem;">
+                    <span class="branch-info-bar__item branch-info-bar__item--phone" style="display: flex; align-items: center; gap: 0.4rem;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                         </svg>
                         ${branch.phone}
                     </span>
-                    <div id="header-user-profile-badge" style="display: inline-flex; align-items: center; gap: 6px;"></div>
+                    <div id="header-user-profile-badge" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"></div>
                 </div>
             </div>
         </div>
