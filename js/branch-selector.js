@@ -151,7 +151,7 @@ function createBranchSelectorModal() {
                                     </div>
                                 </div>
                                 <button style="background: ${isSelected ? '#FFFFFF' : 'transparent'}; color: ${isSelected ? '#000000' : '#FFFFFF'}; border: 1px solid #FFFFFF; border-radius: 10px; padding: 10px 18px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; margin-top: 4px;">
-                                    ${isSelected ? 'SELECCIONADO ✓' : 'INGRESAR'}
+                                    ${isSelected ? 'SELECCIONADO' : 'INGRESAR'}
                                 </button>
                             </div>
                         </div>
