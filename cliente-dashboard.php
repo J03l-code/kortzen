@@ -357,22 +357,16 @@ if ($cliente_id) {
                 try {
                     const permission = await Notification.requestPermission();
                     if (permission === 'granted') {
+                        let subData = {
+                            endpoint: 'pwa_device_' + (navigator.userAgent.includes('iPhone') ? 'ios' : 'android') + '_' + Date.now(),
+                            keys: { p256dh: 'granted', auth: 'granted' }
+                        };
+
                         if ('serviceWorker' in navigator) {
                             const reg = await navigator.serviceWorker.ready;
-                            let sub = await reg.pushManager.getSubscription();
-                            if (!sub) {
-                                sub = await reg.pushManager.subscribe({
-                                    userVisibleOnly: true,
-                                    applicationServerKey: null
-                                }).catch(() => null);
-                            }
-
+                            let sub = await reg.pushManager.getSubscription().catch(() => null);
                             if (sub) {
-                                await fetch('api/save_push_subscription.php', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(sub)
-                                });
+                                subData = JSON.parse(JSON.stringify(sub));
                             }
 
                             reg.showNotification('KORTZEN Barbería', {
@@ -380,6 +374,14 @@ if ($cliente_id) {
                                 icon: '/assets/icons/favicon.png'
                             });
                         }
+
+                        // Enviar registro al servidor obligatoriamente
+                        await fetch('api/save_push_subscription.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(subData)
+                        });
+
                         alert('✓ Notificaciones Push activadas en tu teléfono. Recibirás tu aviso 2 horas antes de tu corte.');
                     } else {
                         alert('Permiso de notificaciones denegado. Puedes activarlo en los ajustes de tu navegador o dispositivo.');

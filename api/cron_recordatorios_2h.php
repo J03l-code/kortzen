@@ -122,9 +122,19 @@ try {
         // 2. Despachar Notificación Push al Sistema Operativo (Google FCM / Apple APNs) - Funciona con la App CERRADA
         $countDispositivos = 0;
         try {
-            $stmtPush = $pdo->prepare("SELECT * FROM push_subscriptions WHERE cliente_id = ? OR cliente_id IS NULL");
+            $stmtPush = $pdo->prepare("SELECT * FROM push_subscriptions WHERE cliente_id = ? OR cliente_id IS NULL OR cliente_id = 0");
             $stmtPush->execute([$clienteId]);
             $subscriptions = $stmtPush->fetchAll(PDO::FETCH_ASSOC);
+
+            // Si no hay suscripción asignada explícitamente a este cliente, tomar las suscripciones registradas
+            if (empty($subscriptions)) {
+                $stmtPushAll = $pdo->query("SELECT * FROM push_subscriptions ORDER BY id DESC LIMIT 5");
+                $subscriptions = $stmtPushAll->fetchAll(PDO::FETCH_ASSOC);
+                if (!empty($subscriptions)) {
+                    $stmtUpdSub = $pdo->prepare("UPDATE push_subscriptions SET cliente_id = ? WHERE cliente_id IS NULL OR cliente_id = 0");
+                    $stmtUpdSub->execute([$clienteId]);
+                }
+            }
 
             $payloadPush = json_encode([
                 'title' => "✂️ Confirmar Asistencia: Tu cita es en 2 horas",
