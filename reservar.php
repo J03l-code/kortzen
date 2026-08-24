@@ -396,10 +396,10 @@ $pageTitle = 'Reservar Cita';
         .wizard-nav {
             display: flex;
             justify-content: space-between;
-            gap: 1rem;
+            gap: 12px;
             margin: 20px auto 0 auto;
-            max-width: 440px;
-            width: 100%;
+            max-width: 375px;
+            width: calc(100% - 20px);
             padding-top: 16px;
             padding-bottom: 90px; /* Space above bottom nav bar */
             border-top: 1px solid rgba(255, 255, 255, 0.15);
