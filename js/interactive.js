@@ -119,25 +119,25 @@ document.addEventListener("DOMContentLoaded", () => {
             console.warn(e);
         }
 
-        // Renderizar resumen personalizado con alta legibilidad y contraste
+        // Renderizar resumen personalizado con tarjeta negra sólida de alto contraste
         const summaryText = document.getElementById('quiz-summary-text');
         if (summaryText) {
             summaryText.innerHTML = `
-                <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 18px; margin-bottom: 20px; text-align: left;">
-                    <div style="font-size: 0.8rem; font-weight: 700; color: #FFFFFF; margin-bottom: 12px; text-align: center; text-transform: uppercase; letter-spacing: 1.5px;">
-                        Respuestas vinculadas a tu perfil:
+                <div style="background: #111111; color: #FFFFFF; border-radius: 14px; padding: 20px; margin-bottom: 20px; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #FFFFFF; margin-bottom: 12px; text-align: center; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
+                        RESPUESTAS VINCULADAS A TU PERFIL
                     </div>
                     <div style="font-size: 0.95rem; color: #FFFFFF; margin-bottom: 8px; line-height: 1.5;">
-                        <strong style="color: #FFFFFF; font-weight: 800;">• Estilo:</strong> <span style="color: #FFFFFF; font-weight: 600;">${clientPreferences.estilo || 'Personalizado'}</span>
+                        <strong style="color: #FFFFFF; font-weight: 800;">• Estilo:</strong> <span style="color: #EEEEEE; font-weight: 600;">${clientPreferences.estilo || 'Personalizado'}</span>
                     </div>
                     <div style="font-size: 0.95rem; color: #FFFFFF; margin-bottom: 8px; line-height: 1.5;">
-                        <strong style="color: #FFFFFF; font-weight: 800;">• Ambiente:</strong> <span style="color: #FFFFFF; font-weight: 600;">${clientPreferences.ambiente || 'Relajado'}</span>
+                        <strong style="color: #FFFFFF; font-weight: 800;">• Ambiente:</strong> <span style="color: #EEEEEE; font-weight: 600;">${clientPreferences.ambiente || 'Relajado'}</span>
                     </div>
                     <div style="font-size: 0.95rem; color: #FFFFFF; line-height: 1.5;">
-                        <strong style="color: #FFFFFF; font-weight: 800;">• Bebida:</strong> <span style="color: #FFFFFF; font-weight: 600;">${clientPreferences.bebida || 'A elección'}</span>
+                        <strong style="color: #FFFFFF; font-weight: 800;">• Bebida:</strong> <span style="color: #EEEEEE; font-weight: 600;">${clientPreferences.bebida || 'A elección'}</span>
                     </div>
                 </div>
-                <div style="font-size: 0.85rem; color: #CCCCCC; font-style: italic; text-align: center; line-height: 1.5;">
+                <div style="font-size: 0.85rem; color: #444444; font-style: italic; text-align: center; line-height: 1.5; font-weight: 600;">
                     Tu barbero asignado revisará estas preferencias antes de iniciar tu atención.
                 </div>
             `;
