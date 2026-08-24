@@ -47,6 +47,9 @@ try {
                 $notas
             ]);
 
+            $newId = $pdo->lastInsertId();
+            registrarLog('CREAR', 'clientes', $newId, "Cliente '$nombre' registrado en el sistema");
+
             header('Location: ../clientes.php?success=Cliente creado exitosamente');
             exit;
 
@@ -92,6 +95,10 @@ try {
                 $id
             ]);
 
+            registrarLog('EDITAR', 'clientes', $id, "Datos del cliente '$nombre' actualizados");
+            header('Location: ../clientes.php?success=Cliente actualizado exitosamente');
+            exit;
+
         case 'update_puntos':
             $id = intval($_POST['id'] ?? 0);
             $puntos = intval($_POST['puntos'] ?? 0);
@@ -106,6 +113,8 @@ try {
 
             $stmt = $pdo->prepare("UPDATE clientes SET puntos = ? WHERE id = ?");
             $stmt->execute([$puntos, $id]);
+
+            registrarLog('PUNTOS', 'clientes', $id, "Puntos KORTZEN del cliente #$id actualizados a $puntos pts");
 
             $redirect = !empty($_POST['redirect_to']) ? $_POST['redirect_to'] : '../clientes.php';
             if (preg_match('/^(https?:|\/\/)/i', $redirect)) {
@@ -133,6 +142,8 @@ try {
             $stmtN = $pdo->prepare("UPDATE clientes SET notas_barbero = ? WHERE id = ?");
             $stmtN->execute([$notasBarbero, $clienteId]);
 
+            registrarLog('NOTAS', 'clientes', $clienteId, "Notas del barbero actualizadas para el cliente #$clienteId");
+
             header('Location: ../barber-dashboard.php?success=' . urlencode('Notas del cliente guardadas con éxito.'));
             exit;
 
@@ -147,6 +158,8 @@ try {
             $sql = "DELETE FROM clientes WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
+
+            registrarLog('ELIMINAR', 'clientes', $id, "Cliente #$id eliminado del sistema");
 
             header('Location: ../clientes.php?success=Cliente eliminado exitosamente');
             exit;

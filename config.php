@@ -307,25 +307,53 @@ function verifyCSRFToken($token)
 }
 
 /**
- * Registrar actividad en logs
- * @param string $accion
- * @param string $tabla
- * @param int $registro_id
- * @param string $descripcion
+ * Registrar actividad en logs del sistema
  */
-function registrarLog($accion, $tabla, $registro_id, $descripcion)
+function registrarLog($accion, $tabla, $registro_id = 0, $descripcion = '')
 {
-    if (!isLoggedIn()) {
-        return;
-    }
-
     try {
         $pdo = getConnection();
-        $sql = "INSERT INTO logs_actividad (usuario_id, accion, tabla_afectada, registro_id, descripcion) 
-                VALUES (?, ?, ?, ?, ?)";
+
+        // Auto-migración tabla de logs si no existe
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS logs_actividad (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                usuario_id INT NULL,
+                cliente_id INT NULL,
+                accion VARCHAR(50) NOT NULL,
+                tabla_afectada VARCHAR(50) NOT NULL,
+                registro_id INT NULL,
+                descripcion TEXT NOT NULL,
+                ip_address VARCHAR(45) NULL,
+                fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+
+        // Agregar columna cliente_id si la tabla vieja no la tenía
+        try {
+            $pdo->exec("ALTER TABLE logs_actividad ADD COLUMN cliente_id INT NULL AFTER usuario_id");
+        } catch (Exception $eCol) {}
+        try {
+            $pdo->exec("ALTER TABLE logs_actividad ADD COLUMN ip_address VARCHAR(45) NULL AFTER descripcion");
+        } catch (Exception $eIp) {}
+
+        $userId = $_SESSION['user_id'] ?? null;
+        $clienteId = $_SESSION['cliente_id'] ?? null;
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+        $sql = "INSERT INTO logs_actividad (usuario_id, cliente_id, accion, tabla_afectada, registro_id, descripcion, ip_address, fecha_hora) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$_SESSION['user_id'], $accion, $tabla, $registro_id, $descripcion]);
-    } catch (PDOException $e) {
+        $stmt->execute([
+            $userId ? intval($userId) : null,
+            $clienteId ? intval($clienteId) : null,
+            strtoupper(trim($accion)),
+            trim($tabla),
+            $registro_id ? intval($registro_id) : null,
+            trim($descripcion),
+            $ip
+        ]);
+    } catch (Exception $e) {
         error_log("Error al registrar log: " . $e->getMessage());
     }
 }

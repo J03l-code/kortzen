@@ -9,9 +9,10 @@ $usuario_filter = $_GET['usuario_id'] ?? '';
 
 // Obtener logs
 try {
-    $sql = "SELECT l.*, u.nombre as usuario_nombre 
+    $sql = "SELECT l.*, u.nombre as usuario_nombre, c.nombre as cliente_nombre 
             FROM logs_actividad l
-            INNER JOIN usuarios u ON l.usuario_id = u.id
+            LEFT JOIN usuarios u ON l.usuario_id = u.id
+            LEFT JOIN clientes c ON l.cliente_id = c.id
             WHERE 1=1";
 
     $params = [];
@@ -22,11 +23,12 @@ try {
     }
 
     if ($usuario_filter) {
-        $sql .= " AND l.usuario_id = ?";
+        $sql .= " AND (l.usuario_id = ? OR l.cliente_id = ?)";
+        $params[] = $usuario_filter;
         $params[] = $usuario_filter;
     }
 
-    $sql .= " ORDER BY l.fecha_hora DESC LIMIT 100";
+    $sql .= " ORDER BY l.fecha_hora DESC LIMIT 200";
 
     $logs = query($sql, $params);
 
@@ -170,7 +172,15 @@ include 'includes/header.php';
                             </span>
                         </td>
                         <td>
-                            <?php echo htmlspecialchars($log['usuario_nombre']); ?>
+                            <?php 
+                                if (!empty($log['usuario_nombre'])) {
+                                    echo '<strong>' . htmlspecialchars($log['usuario_nombre']) . '</strong> <span style="font-size:0.75rem; color:#888;">(Personal)</span>';
+                                } elseif (!empty($log['cliente_nombre'])) {
+                                    echo '<strong>' . htmlspecialchars($log['cliente_nombre']) . '</strong> <span style="font-size:0.75rem; color:#10B981;">(Cliente PWA)</span>';
+                                } else {
+                                    echo '<span style="color:#C0A062; font-weight:700;">Sistema / Automático</span>';
+                                }
+                            ?>
                         </td>
                         <td>
                             <span class="action-badge action-<?php echo strtolower($log['accion']); ?>">

@@ -75,6 +75,9 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$cliente_id, $servicio_id, $barbero_id, $sucursal_id, $fecha_hora, $estado, $notas]);
 
+            $newCitaId = $pdo->lastInsertId();
+            registrarLog('CREAR', 'citas', $newCitaId, "Cita #$newCitaId agendada para el $fecha_hora");
+
             header('Location: ../citas.php?success=Cita creada exitosamente');
             exit;
 

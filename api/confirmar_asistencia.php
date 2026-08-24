@@ -40,6 +40,8 @@ try {
     $stmtUpd = $pdo->prepare("UPDATE citas SET asistencia_confirmada = 1 WHERE id = ?");
     $stmtUpd->execute([$cita_id]);
 
+    registrarLog('CONFIRMAR', 'citas', $cita_id, "Cliente confirmó su asistencia a la cita #$cita_id");
+
     header('Location: ../cliente-dashboard.php?success=' . urlencode('¡Excelente! Has confirmado tu asistencia a la cita. El barbero ha sido notificado.'));
     exit;
 

@@ -1,6 +1,10 @@
 <?php
 require_once 'config.php';
 
+if (isset($_SESSION['user_id'])) {
+    registrarLog('LOGOUT', 'usuarios', $_SESSION['user_id'], 'Cierre de sesión de usuario');
+}
+
 // Destruir todas las variables de sesión
 $_SESSION = array();
 
