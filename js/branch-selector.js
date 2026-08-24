@@ -203,18 +203,38 @@ function updateBranchInfoBar() {
     if (existingBar) existingBar.remove();
 
     const barHTML = `
-        <div class="branch-info-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: #000000; color: #FFFFFF; border-bottom: 1px solid rgba(255,255,255,0.15); height: 42px; display: flex; align-items: center; backdrop-filter: blur(10px);">
-            <div class="branch-info-bar__content" style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 0 1.25rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem;">
-                <div class="branch-info-bar__location" style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="color: #D4AF37;">📍</span>
-                    <span><strong>Sucursal Actual:</strong> ${branch.name}</span>
-                    <span style="color: #666; margin: 0 4px;">|</span>
-                    <span style="color: #AAA; font-size: 0.75rem;" class="branch-address-text">${branch.address}</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button onclick="window.KortzenBranches.showSelector()" style="background: rgba(255, 255, 255, 0.15); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 4px; padding: 4px 12px; font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
-                        🔄 CAMBIAR SUCURSAL
+        <div class="branch-info-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: rgba(255, 255, 255, 0.98); color: #111111; border-bottom: 1px solid rgba(0, 0, 0, 0.08); height: 42px; display: flex; align-items: center; backdrop-filter: blur(10px);">
+            <div class="branch-info-bar__content" style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 0 1.25rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
+                <div class="branch-info-bar__location" style="display: flex; align-items: center; gap: 0.5rem; color: #111111;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <button onclick="window.KortzenBranches.showSelector()" 
+                            style="background: transparent; border: 1px solid rgba(0,0,0,0.12); padding: 3px 10px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.82rem; font-weight: 700; color: #111111; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;"
+                            onmouseover="this.style.background='rgba(0,0,0,0.05)'" 
+                            onmouseout="this.style.background='transparent'">
+                        <span>${branch.name}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left: 2px;">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                     </button>
+                </div>
+                <div class="branch-info-bar__details" style="display: flex; align-items: center; gap: 1.25rem; color: #555555;">
+                    <span class="branch-info-bar__item" style="display: flex; align-items: center; gap: 0.4rem;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        ${branch.openTime} - ${branch.closeTime}
+                    </span>
+                    <span class="branch-info-bar__item" style="display: flex; align-items: center; gap: 0.4rem;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        ${branch.phone}
+                    </span>
+                    <div id="header-user-profile-badge" style="display: inline-flex; align-items: center; gap: 6px;"></div>
                 </div>
             </div>
         </div>
@@ -226,6 +246,30 @@ function updateBranchInfoBar() {
         document.body.classList.add('has-branch-bar');
         header.style.top = '42px';
     }
+
+    // Auto-cargar perfil del usuario si está iniciada la sesión
+    fetch('/api/get_client_profile.php')
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.cliente) {
+                const badge = document.getElementById('header-user-profile-badge');
+                if (badge) {
+                    const firstName = res.cliente.nombre.split(' ')[0];
+                    const initial = firstName.charAt(0).toUpperCase();
+                    const fotoHtml = res.cliente.foto ? 
+                        `<img src="${res.cliente.foto}" style="width:22px; height:22px; border-radius:50%; object-fit:cover;" alt="Avatar">` :
+                        `<div style="width:22px; height:22px; border-radius:50%; background:#111; color:#fff; font-size:0.68rem; font-weight:800; display:flex; align-items:center; justify-content:center;">${initial}</div>`;
+
+                    badge.innerHTML = `
+                        <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 4px;"></span>
+                        <div style="display:flex; align-items:center; gap:6px; color:#111; font-weight:700;">
+                            ${fotoHtml}
+                            <span>${firstName}</span>
+                        </div>
+                    `;
+                }
+            }
+        }).catch(() => {});
 }
 
 /**
