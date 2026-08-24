@@ -59,6 +59,11 @@ $stmtStock = $pdo->prepare("SELECT * FROM inventario_barbero WHERE barbero_id = 
 $stmtStock->execute([$barbero_id]);
 $stockBarbero = $stmtStock->fetchAll(PDO::FETCH_ASSOC);
 
+// Obtener inventario general central de la sucursal (para debitar automáticamente)
+$stmtCentral = $pdo->prepare("SELECT * FROM inventario WHERE (sucursal_id = ? OR sucursal_id IS NULL) ORDER BY producto ASC");
+$stmtCentral->execute([$barbero['sucursal_id']]);
+$inventarioCentral = $stmtCentral->fetchAll(PDO::FETCH_ASSOC);
+
 // 2. Historial de Citas Atendidas por este Barbero
 $stmtCitas = $pdo->prepare("
     SELECT c.*, cl.nombre as cliente_nombre, cl.telefono as cliente_telefono, s.nombre as servicio_nombre, suc.nombre as sucursal_nombre
@@ -438,6 +443,30 @@ include 'includes/header.php';
             <input type="hidden" name="action" value="guardar_stock">
             <input type="hidden" name="barbero_id" value="<?php echo $barbero_id; ?>">
             <input type="hidden" name="stock_id" id="modalStockId" value="0">
+            <input type="hidden" name="inventario_central_id" id="modalInventarioCentralId" value="0">
+
+            <?php if (!empty($inventarioCentral)): ?>
+                <div style="margin-bottom: 16px; background: #F0FDF4; border: 1.5px solid #10B981; padding: 12px; border-radius: 10px;">
+                    <label style="display: block; font-weight: 800; font-size: 0.78rem; color: #047857; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        📦 Seleccionar del Inventario Central (Débito Automático):
+                    </label>
+                    <select id="selectCentralStock" onchange="seleccionarItemCentral(this)" style="width: 100%; padding: 10px; border: 1px solid #10B981; border-radius: 6px; font-size: 0.88rem; font-weight: 700; background: #FFFFFF;">
+                        <option value="">-- Seleccionar producto para debitar del stock general --</option>
+                        <?php foreach ($inventarioCentral as $ic): ?>
+                            <option value="<?php echo $ic['id']; ?>"
+                                    data-producto="<?php echo htmlspecialchars($ic['producto']); ?>"
+                                    data-cantidad="<?php echo $ic['cantidad']; ?>"
+                                    data-unidad="<?php echo htmlspecialchars($ic['unidad'] ?? 'unidades'); ?>"
+                                    data-precio="<?php echo $ic['precio']; ?>">
+                                <?php echo htmlspecialchars($ic['producto']); ?> (Stock Central: <?php echo number_format($ic['cantidad'], 1); ?> <?php echo htmlspecialchars($ic['unidad'] ?? 'und'); ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span style="font-size: 0.73rem; color: #047857; margin-top: 6px; display: block; font-weight: 700;">
+                        💡 Al asignar stock al barbero, se descontará automáticamente en tiempo real del inventario general.
+                    </span>
+                </div>
+            <?php endif; ?>
 
             <div style="margin-bottom: 14px;">
                 <label style="display: block; font-weight: 800; font-size: 0.8rem; color: #333333; margin-bottom: 4px; text-transform: uppercase;">
@@ -486,7 +515,7 @@ include 'includes/header.php';
                     Cancelar
                 </button>
                 <button type="submit" style="flex: 1; padding: 10px; background: #111111; color: #FFFFFF; border: none; border-radius: 8px; font-weight: 800; cursor: pointer;">
-                    Guardar Stock
+                    Guardar y Debitar Stock
                 </button>
             </div>
         </form>
@@ -494,9 +523,24 @@ include 'includes/header.php';
 </div>
 
 <script>
+    function seleccionarItemCentral(selectElem) {
+        const option = selectElem.options[selectElem.selectedIndex];
+        if (option && option.value) {
+            document.getElementById('modalInventarioCentralId').value = option.value;
+            document.getElementById('modalStockProducto').value = option.getAttribute('data-producto') || '';
+            document.getElementById('modalStockUnidad').value = option.getAttribute('data-unidad') || 'unidades';
+            document.getElementById('modalStockPrecio').value = option.getAttribute('data-precio') || '0.00';
+            document.getElementById('modalStockCantidad').focus();
+        } else {
+            document.getElementById('modalInventarioCentralId').value = '0';
+        }
+    }
+
     function abrirModalStock() {
         document.getElementById('modalStockTitle').innerText = 'Asignar Producto al Stock del Barbero';
         document.getElementById('modalStockId').value = '0';
+        document.getElementById('modalInventarioCentralId').value = '0';
+        if (document.getElementById('selectCentralStock')) document.getElementById('selectCentralStock').value = '';
         document.getElementById('modalStockProducto').value = '';
         document.getElementById('modalStockCantidad').value = '';
         document.getElementById('modalStockPrecio').value = '0.00';
@@ -507,6 +551,8 @@ include 'includes/header.php';
     function editarStockItem(item) {
         document.getElementById('modalStockTitle').innerText = 'Editar Stock del Barbero';
         document.getElementById('modalStockId').value = item.id;
+        document.getElementById('modalInventarioCentralId').value = '0';
+        if (document.getElementById('selectCentralStock')) document.getElementById('selectCentralStock').value = '';
         document.getElementById('modalStockProducto').value = item.producto;
         document.getElementById('modalStockCantidad').value = item.cantidad;
         document.getElementById('modalStockUnidad').value = item.unidad;
