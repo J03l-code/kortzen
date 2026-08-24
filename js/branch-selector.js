@@ -97,7 +97,7 @@ function createBranchSelectorModal() {
     const proximamenteBranches = cachedBranches.filter(b => b.isProximamente || b.estado === 'proximamente');
 
     const modalHTML = `
-        <div id="branch-modal" class="branch-modal-overlay" style="position: fixed; inset: 0; z-index: 100000; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 12px; animation: fadeIn 0.3s ease; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box;">
+        <div id="branch-modal" class="branch-modal-overlay" onclick="if(event.target === this) closeBranchModal();" style="position: fixed; inset: 0; z-index: 100000; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 12px; animation: fadeIn 0.3s ease; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box;">
             <div class="branch-modal-card" style="background: #0D0D0D; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; color: #FFFFFF; padding: 1.5rem 1.25rem; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.95); position: relative; box-sizing: border-box;">
                 
                 <!-- BOTÓN X PARA CERRAR -->
@@ -227,6 +227,16 @@ function closeBranchModal() {
     const modal = document.getElementById('branch-modal');
     if (modal) modal.remove();
 }
+
+// Escuchar tecla ESC para cerrar el modal de sucursales en cualquier momento
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+        const modal = document.getElementById('branch-modal');
+        if (modal) {
+            closeBranchModal();
+        }
+    }
+});
 
 /**
  * Actualizar la barra superior informativa de sucursal
