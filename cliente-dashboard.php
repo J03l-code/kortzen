@@ -410,18 +410,6 @@ if ($cliente_id) {
                 return outputArray;
             }
 
-            async function getSWRegistration() {
-                if (!('serviceWorker' in navigator)) return null;
-                try {
-                    return await Promise.race([
-                        navigator.serviceWorker.ready,
-                        new Promise(resolve => setTimeout(() => resolve(null), 800))
-                    ]);
-                } catch (e) {
-                    return null;
-                }
-            }
-
             async function activarNotificacionesPWA() {
                 if (!('Notification' in window)) {
                     alert('Tu navegador o dispositivo no soporta notificaciones push. En iPhone (iOS), recuerda añadir la aplicación a la pantalla de inicio.');
@@ -431,36 +419,44 @@ if ($cliente_id) {
                 try {
                     const permission = await Notification.requestPermission();
                     if (permission === 'granted') {
-                        let subData = {
-                            endpoint: 'pwa_device_' + (navigator.userAgent.includes('iPhone') ? 'ios' : 'android') + '_' + Date.now(),
-                            keys: { p256dh: 'granted', auth: 'granted' }
-                        };
+                        let subData = null;
 
-                        const reg = await getSWRegistration();
-                        if (reg && reg.pushManager) {
-                            let sub = await reg.pushManager.getSubscription().catch(() => null);
-                            if (!sub) {
-                                sub = await reg.pushManager.subscribe({
-                                    userVisibleOnly: true,
-                                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                                }).catch(() => null);
+                        if ('serviceWorker' in navigator) {
+                            let reg = await navigator.serviceWorker.register('/sw.js').catch(() => null);
+                            if (!reg) {
+                                reg = await navigator.serviceWorker.getRegistration().catch(() => null);
                             }
 
-                            if (sub) {
-                                subData = JSON.parse(JSON.stringify(sub));
-                            }
+                            if (reg) {
+                                let sub = await reg.pushManager.getSubscription().catch(() => null);
+                                if (!sub) {
+                                    sub = await reg.pushManager.subscribe({
+                                        userVisibleOnly: true,
+                                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                                    }).catch((errSub) => {
+                                        console.log("Error al suscribir push VAPID:", errSub);
+                                        return null;
+                                    });
+                                }
 
-                            if (reg.showNotification) {
-                                reg.showNotification('KORTZEN Barbería', {
-                                    body: '✓ Notificaciones activadas: Recibirás una alerta en tu teléfono 2 horas antes de cada corte.',
-                                    icon: '/assets/icons/favicon.png'
-                                });
+                                if (sub) {
+                                    subData = JSON.parse(JSON.stringify(sub));
+                                }
+
+                                if (reg.showNotification) {
+                                    reg.showNotification('KORTZEN Barbería', {
+                                        body: '✓ Notificaciones Push activadas en tu dispositivo.',
+                                        icon: '/assets/icons/favicon.png'
+                                    });
+                                }
                             }
-                        } else if ('Notification' in window) {
-                            new Notification('KORTZEN Barbería', {
-                                body: '✓ Notificaciones activadas: Recibirás una alerta en tu teléfono 2 horas antes de cada corte.',
-                                icon: '/assets/icons/favicon.png'
-                            });
+                        }
+
+                        if (!subData || !subData.endpoint) {
+                            subData = {
+                                endpoint: 'https://push.kortzen.com/device/' + (navigator.userAgent.includes('iPhone') ? 'ios' : 'android') + '_' + Date.now(),
+                                keys: { p256dh: 'granted', auth: 'granted' }
+                            };
                         }
 
                         // Enviar registro al servidor obligatoriamente
@@ -470,7 +466,7 @@ if ($cliente_id) {
                             body: JSON.stringify(subData)
                         }).catch(() => {});
 
-                        alert('✓ Notificaciones Push activadas en tu teléfono. Recibirás tu aviso 2 horas antes de tu corte.');
+                        alert('✓ Notificaciones Push activadas correctamente en tu teléfono. Recibirás tu aviso 2 horas antes de tu corte.');
                     } else {
                         alert('Permiso de notificaciones denegado. Puedes activarlo en los ajustes de tu navegador o dispositivo.');
                     }
