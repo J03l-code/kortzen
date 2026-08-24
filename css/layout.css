@@ -107,16 +107,21 @@
     line-height: 1 !important;
     margin: 0 !important;
     padding: 0 !important;
-    display: inline-block !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
 }
 
 .header__logo-text span {
     color: var(--color-gold, #C0A062) !important;
+    white-space: nowrap !important;
+    display: inline !important;
 }
 
 /* Home Page Header text color when hero is dark */
-body.page-home .header:not(.header--scrolled):not(.header--menu-open) .header__logo-text,
-body.page-home .header:not(.header--scrolled):not(.header--menu-open) .nav__link {
+body.page-home .header:not(.header--scrolled):not(.header--menu-open):not(.menu-open) .header__logo-text,
+body.page-home .header:not(.header--scrolled):not(.header--menu-open):not(.menu-open) .nav__link {
     color: #FFFFFF !important;
 }
 
@@ -152,7 +157,7 @@ body.page-home .header:not(.header--scrolled):not(.header--menu-open) .nav__link
 }
 
 /* When hero is dark on page-home non-scrolled AND menu is closed */
-body.page-home .header:not(.header--scrolled):not(.header--menu-open) .menu-toggle:not(.menu-toggle--active) .menu-toggle__line {
+body.page-home .header:not(.header--scrolled):not(.header--menu-open):not(.menu-open) .menu-toggle:not(.menu-toggle--active) .menu-toggle__line {
     background-color: #FFFFFF !important;
 }
 
@@ -182,19 +187,26 @@ body.menu-open .menu-toggle__line {
 /* Header Active state when menu is open: Make entire KORTZEN logo SOLID BLACK (#000000) */
 body.menu-open .header,
 body.nav-open .header,
+body.has-menu-open .header,
 .header:has(.menu-toggle--active),
 .header.header--menu-open {
     z-index: 10005 !important;
 }
 
 body.menu-open .header .header__logo-text,
+body.menu-open .header .header__logo-text *,
 body.menu-open .header .header__logo-text span,
 body.nav-open .header .header__logo-text,
+body.nav-open .header .header__logo-text *,
 body.nav-open .header .header__logo-text span,
 .header:has(.menu-toggle--active) .header__logo-text,
+.header:has(.menu-toggle--active) .header__logo-text *,
 .header:has(.menu-toggle--active) .header__logo-text span,
 .header.header--menu-open .header__logo-text,
-.header.header--menu-open .header__logo-text span {
+.header.header--menu-open .header__logo-text *,
+.header.header--menu-open .header__logo-text span,
+.mobile-nav--active ~ .header .header__logo-text,
+.mobile-nav--active ~ .header .header__logo-text * {
     color: #000000 !important;
 }
 
