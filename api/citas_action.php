@@ -76,7 +76,12 @@ try {
             $stmt->execute([$cliente_id, $servicio_id, $barbero_id, $sucursal_id, $fecha_hora, $estado, $notas]);
 
             $newCitaId = $pdo->lastInsertId();
-            registrarLog('CREAR', 'citas', $newCitaId, "Cita #$newCitaId agendada para el $fecha_hora");
+
+            $stmtCName = $pdo->prepare("SELECT nombre FROM clientes WHERE id = ?");
+            $stmtCName->execute([$cliente_id]);
+            $clienteNombre = $stmtCName->fetchColumn() ?: "Cliente #$cliente_id";
+
+            registrarLog('CREAR', 'citas', $newCitaId, "Cita agendada para el cliente '$clienteNombre' ($fecha_hora)");
 
             header('Location: ../citas.php?success=Cita creada exitosamente');
             exit;
@@ -100,11 +105,15 @@ try {
             }
             // Si es admin, no verificamos ownership, confiamos en su poder.
 
+            $stmtCName = $pdo->prepare("SELECT c.nombre FROM citas cita JOIN clientes c ON cita.cliente_id = c.id WHERE cita.id = ?");
+            $stmtCName->execute([$id]);
+            $clienteNombre = $stmtCName->fetchColumn() ?: "Cita #$id";
+
             $sql = "UPDATE citas SET estado = 'cancelada' WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
 
-            registrarLog('UPDATE', 'citas', $id, 'Cita cancelada por barbero');
+            registrarLog('CANCELAR', 'citas', $id, "Cita #$id cancelada para el cliente '$clienteNombre'");
             header('Location: ' . $redirect_url . '?success=' . urlencode('Cita cancelada correctamente.'));
             exit;
 

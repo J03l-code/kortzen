@@ -114,7 +114,11 @@ try {
             $stmt = $pdo->prepare("UPDATE clientes SET puntos = ? WHERE id = ?");
             $stmt->execute([$puntos, $id]);
 
-            registrarLog('PUNTOS', 'clientes', $id, "Puntos KORTZEN del cliente #$id actualizados a $puntos pts");
+            $stmtCName = $pdo->prepare("SELECT nombre FROM clientes WHERE id = ?");
+            $stmtCName->execute([$id]);
+            $clienteNombre = $stmtCName->fetchColumn() ?: "ID #$id";
+
+            registrarLog('PUNTOS', 'clientes', $id, "Puntos KORTZEN del cliente '$clienteNombre' actualizados a " . number_format($puntos) . " pts");
 
             $redirect = !empty($_POST['redirect_to']) ? $_POST['redirect_to'] : '../clientes.php';
             if (preg_match('/^(https?:|\/\/)/i', $redirect)) {
@@ -142,7 +146,11 @@ try {
             $stmtN = $pdo->prepare("UPDATE clientes SET notas_barbero = ? WHERE id = ?");
             $stmtN->execute([$notasBarbero, $clienteId]);
 
-            registrarLog('NOTAS', 'clientes', $clienteId, "Notas del barbero actualizadas para el cliente #$clienteId");
+            $stmtCName = $pdo->prepare("SELECT nombre FROM clientes WHERE id = ?");
+            $stmtCName->execute([$clienteId]);
+            $clienteNombre = $stmtCName->fetchColumn() ?: "ID #$clienteId";
+
+            registrarLog('NOTAS', 'clientes', $clienteId, "Notas del barbero guardadas para el cliente '$clienteNombre'");
 
             header('Location: ../barber-dashboard.php?success=' . urlencode('Notas del cliente guardadas con éxito.'));
             exit;
@@ -154,12 +162,16 @@ try {
                 throw new Exception('ID de cliente inválido.');
             }
 
+            $stmtCName = $pdo->prepare("SELECT nombre FROM clientes WHERE id = ?");
+            $stmtCName->execute([$id]);
+            $clienteNombre = $stmtCName->fetchColumn() ?: "ID #$id";
+
             // Las citas se eliminarán automáticamente por CASCADE
             $sql = "DELETE FROM clientes WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
 
-            registrarLog('ELIMINAR', 'clientes', $id, "Cliente #$id eliminado del sistema");
+            registrarLog('ELIMINAR', 'clientes', $id, "Cliente '$clienteNombre' fue eliminado del sistema");
 
             header('Location: ../clientes.php?success=Cliente eliminado exitosamente');
             exit;
