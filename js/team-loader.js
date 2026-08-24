@@ -13,8 +13,9 @@ const TeamLoader = {
 
         // Escuchar cambios de sucursal
         window.addEventListener('kortzen:branchChanged', (e) => {
-            if (e.detail && e.detail.branchId) {
-                this.loadTeam(e.detail.branchId);
+            const branchId = e.detail ? (e.detail.id || e.detail.branchId) : null;
+            if (branchId) {
+                this.loadTeam(branchId);
             }
         });
 

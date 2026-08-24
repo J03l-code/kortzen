@@ -78,7 +78,7 @@ function setSelectedBranch(branchId) {
     updateGlobalFooter(branch);
 
     // Emitir evento personalizado para recalcular barberos y servicios en reservar.php / nosotros.html
-    window.dispatchEvent(new CustomEvent('kortzen:branchChanged', { detail: branch, branchId: branch.id }));
+    window.dispatchEvent(new CustomEvent('kortzen:branchChanged', { detail: { ...branch, id: branch.id, branchId: branch.id } }));
     return true;
 }
 
