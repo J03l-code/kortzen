@@ -475,9 +475,22 @@ if ($cliente_id) {
                 }
             }
 
+            async function getSWRegSafe() {
+                if (!('serviceWorker' in navigator)) return null;
+                try {
+                    let reg = await navigator.serviceWorker.getRegistration('/sw.js').catch(() => null);
+                    if (!reg) {
+                        reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => null);
+                    }
+                    return reg;
+                } catch (e) {
+                    return null;
+                }
+            }
+
             async function probarNotificacionDirecta() {
                 if (!('Notification' in window)) {
-                    alert('Tu dispositivo no soporta notificaciones Web Push.');
+                    alert('Tu dispositivo no soporta notificaciones Web Push. En iPhone, recuerda añadir la aplicación a la pantalla de inicio.');
                     return;
                 }
 
@@ -488,25 +501,30 @@ if ($cliente_id) {
                     }
 
                     if (perm === 'granted') {
-                        const reg = await getSWRegistration();
+                        const reg = await getSWRegSafe();
                         if (reg && reg.showNotification) {
-                            reg.showNotification('✂️ KORTZEN Barbería - PRUEBA', {
-                                body: '¡Notificación Push recibida con éxito en la pantalla de tu teléfono!',
+                            await reg.showNotification('✂️ KORTZEN Barbería - PRUEBA', {
+                                body: '¡Notificación Push recibida con éxito en tu dispositivo!',
                                 icon: '/assets/icons/favicon.png',
                                 vibrate: [200, 100, 200],
                                 tag: 'test-kortzen-push',
                                 renotify: true,
                                 data: { url: 'cliente-dashboard.php' }
                             });
+                            alert('✓ Notificación de prueba enviada a la pantalla de tu teléfono.');
                         } else {
-                            new Notification('✂️ KORTZEN Barbería - PRUEBA', {
-                                body: '¡Notificación Push recibida con éxito en tu teléfono!',
-                                icon: '/assets/icons/favicon.png'
-                            });
+                            const bTitle = document.getElementById('pwaNotifTitle');
+                            const bBody = document.getElementById('pwaNotifBody');
+                            const bBanner = document.getElementById('pwaNotifBanner');
+                            if (bTitle && bBody && bBanner) {
+                                bTitle.innerText = '✂️ KORTZEN Barbería - PRUEBA';
+                                bBody.innerText = '¡Notificación de prueba recibida con éxito en tu aplicación!';
+                                bBanner.style.display = 'block';
+                            }
+                            alert('✓ Notificación de prueba despachada a tu aplicación PWA.');
                         }
-                        alert('✓ Notificación de prueba despachada a tu teléfono.');
                     } else {
-                        alert('⚠️ Las notificaciones están desactivadas en los ajustes de tu teléfono o navegador. Cámbialas a "Permitir" para recibir alertas.');
+                        alert('⚠️ Las notificaciones están desactivadas en los ajustes de tu teléfono o navegador.');
                     }
                 } catch (err) {
                     alert('✓ Notificación de prueba enviada.');
