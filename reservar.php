@@ -78,28 +78,46 @@ $pageTitle = 'Reservar Cita';
             font-weight: 800 !important;
             font-size: 0.85rem !important;
         }
-        .flatpickr-day {
+        /* 1. DIAS DISPONIBLES / SELECCIONABLES (DESTACADOS CON TEXTO BLANCO BRILLANTE Y ANILLO DORADO) */
+        .flatpickr-day:not(.disabled):not(.prevMonthDay):not(.nextMonthDay) {
             color: #FFFFFF !important;
-            font-weight: 700 !important;
-            border-radius: 8px !important;
+            font-weight: 800 !important;
+            background: #1E1E22 !important;
+            border: 1px solid rgba(192, 160, 98, 0.45) !important;
+            border-radius: 50% !important;
+            transition: all 0.2s ease !important;
         }
-        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.selected:focus, .flatpickr-day.selected:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.selected.nextMonthDay {
+        .flatpickr-day:not(.disabled):not(.prevMonthDay):not(.nextMonthDay):hover {
             background: #C0A062 !important;
+            color: #000000 !important;
             border-color: #C0A062 !important;
+            transform: scale(1.1) !important;
+        }
+
+        /* 2. DIA SELECCIONADO (CIRCULO ORO INTENSO) */
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.selected:focus, .flatpickr-day.selected:hover {
+            background: #C0A062 !important;
+            border: 2px solid #FFFFFF !important;
             color: #000000 !important;
             font-weight: 800 !important;
+            border-radius: 50% !important;
+            box-shadow: 0 0 15px rgba(192, 160, 98, 0.8) !important;
+            transform: scale(1.1) !important;
         }
-        .flatpickr-day:hover {
-            background: rgba(192, 160, 98, 0.3) !important;
-            border-color: #C0A062 !important;
-            color: #FFFFFF !important;
+
+        /* 3. DIAS NO DISPONIBLES / PASADOS / DESHABILITADOS (OPACIDAD BAJA Y TACHADOS) */
+        .flatpickr-day.disabled, .flatpickr-day.disabled:hover, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay, .flatpickr-day.flatpickr-disabled {
+            color: #333333 !important;
+            opacity: 0.25 !important;
+            text-decoration: line-through !important;
+            background: transparent !important;
+            border: 1px solid transparent !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
         }
+
         .flatpickr-day.today {
-            border-color: #C0A062 !important;
-            font-weight: 800 !important;
-        }
-        .flatpickr-day.disabled, .flatpickr-day.disabled:hover, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
-            color: #444444 !important;
+            border: 2px solid #C0A062 !important;
         }
         .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month {
             color: #C0A062 !important;
@@ -438,13 +456,10 @@ $pageTitle = 'Reservar Cita';
             <h2 style="margin-bottom: 20px; font-weight: 800;">Elige Fecha y Hora</h2>
             <div class="datetime-wrapper">
                 <div style="background: #161618; border: 1.5px solid #C0A062; border-radius: 14px; padding: 18px; margin-bottom: 22px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);">
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                    <div style="margin-bottom:12px;">
                         <label style="display:flex; align-items:center; gap:8px; color:#FFFFFF; font-weight:800; font-size:1.05rem; margin:0;">
                             <i class="fas fa-calendar-alt" style="color:#C0A062; font-size:1.2rem;"></i> Selecciona el día de tu cita
                         </label>
-                        <span style="background: #C0A062; color: #000000; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
-                            <i class="fas fa-hand-pointer"></i> TOCA AQUÍ PARA ELEGIR
-                        </span>
                     </div>
                     <div style="position: relative; width: 100%;">
                         <i class="fas fa-calendar-day" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #C0A062; font-size: 1.2rem; pointer-events: none; z-index: 2;"></i>
