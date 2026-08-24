@@ -6,7 +6,7 @@ if (!isLoggedIn()) {
     exit;
 }
 
-$action = $_POST['action'] ?? '';
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 try {
     $pdo = getConnection();
@@ -27,7 +27,7 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$nombre, $comentario, $calificacion, $fecha, $visible]);
 
-            header('Location: ../resenas.php?success=Reseña agregada exitosamente');
+            header('Location: ../resenas.php?success=' . urlencode('Reseña agregada exitosamente'));
             exit;
 
         case 'update':
@@ -47,11 +47,35 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$nombre, $comentario, $calificacion, $fecha, $visible, $id]);
 
-            header('Location: ../resenas.php?success=Reseña actualizada exitosamente');
+            header('Location: ../resenas.php?success=' . urlencode('Reseña actualizada exitosamente'));
+            exit;
+
+        case 'aprobar':
+        case 'aprobar_resena':
+            $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
+            if ($id <= 0) throw new Exception('ID de reseña inválido');
+
+            $sql = "UPDATE resenas SET visible = 1 WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$id]);
+
+            header('Location: ../resenas.php?success=' . urlencode('Reseña aprobada y publicada exitosamente en el sitio web'));
+            exit;
+
+        case 'rechazar':
+        case 'ocultar_resena':
+            $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
+            if ($id <= 0) throw new Exception('ID de reseña inválido');
+
+            $sql = "UPDATE resenas SET visible = 0 WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$id]);
+
+            header('Location: ../resenas.php?success=' . urlencode('Reseña ocultada de la web'));
             exit;
 
         case 'delete':
-            $id = intval($_POST['id'] ?? 0);
+            $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
             if ($id <= 0)
                 throw new Exception('ID inválido');
 
@@ -59,12 +83,8 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
 
-            header('Location: ../resenas.php?success=Reseña eliminada exitosamente');
+            header('Location: ../resenas.php?success=' . urlencode('Reseña eliminada exitosamente'));
             exit;
-
-        case 'toggle_visibility':
-            // Can be implemented via AJAX if needed, but for now full post is fine
-            break;
 
         default:
             throw new Exception('Acción no válida');

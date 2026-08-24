@@ -109,7 +109,12 @@
                     </a>
                 <?php endif; ?>
 
-                <?php if (isAdminTecnico() || $currentUser['rol'] === 'admin_local'): ?>
+                <?php if (isAdminTecnico() || $currentUser['rol'] === 'admin_local'): 
+                    $pendingCountBadge = 0;
+                    try {
+                        $pendingCountBadge = intval(query("SELECT COUNT(*) as total FROM resenas WHERE visible = 0")[0]['total'] ?? 0);
+                    } catch (Exception $e) {}
+                ?>
                     <a href="resenas.php"
                         class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'resenas.php' ? 'active' : ''; ?>">
                         <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -119,6 +124,11 @@
                             </path>
                         </svg>
                         <span>Reseñas</span>
+                        <?php if ($pendingCountBadge > 0): ?>
+                            <span style="background: #F59E0B; color: #FFFFFF; font-size: 0.68rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; margin-left: 4px;" title="<?php echo $pendingCountBadge; ?> reseña(s) pendiente(s) por moderar">
+                                <?php echo $pendingCountBadge; ?>
+                            </span>
+                        <?php endif; ?>
                     </a>
                 <?php endif; ?>
 
