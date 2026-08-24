@@ -194,7 +194,25 @@ body.nav-open .header .header__logo-text,
     color: #111111 !important;
 }
 
+/* Hide old header user dropdown to avoid duplicate user profile badges */
+.header__user {
+    display: none !important;
+}
+
+@media (max-width: 1023px) {
+    .header__cta {
+        display: none !important;
+    }
+}
+
 /* Mobile Navigation Overlay */
+.mobile-nav:not(.mobile-nav--active) {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 .mobile-nav {
     position: fixed !important;
     top: 42px !important;
@@ -215,8 +233,10 @@ body.nav-open .header .header__logo-text,
 }
 
 .mobile-nav--active {
+    display: flex !important;
     opacity: 1 !important;
     visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 .mobile-nav__links {
