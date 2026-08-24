@@ -294,9 +294,10 @@ function updateBranchInfoBar() {
             if (res.success && res.cliente) {
                 const firstName = res.cliente.nombre.split(' ')[0];
                 const initial = firstName.charAt(0).toUpperCase();
-                const fotoHtml = res.cliente.foto ? 
-                    `<img src="${res.cliente.foto}" style="width:22px; height:22px; border-radius:50%; object-fit:cover; border: 1px solid #111;" alt="Avatar">` :
-                    `<div style="width:22px; height:22px; border-radius:50%; background:#111111; color:#FFFFFF; font-size:0.68rem; font-weight:800; display:flex; align-items:center; justify-content:center;">${initial}</div>`;
+                const fotoUrl = res.cliente.foto || res.cliente.foto_perfil;
+                const fotoHtml = fotoUrl ? 
+                    `<img src="${fotoUrl}" referrerpolicy="no-referrer" style="width:24px; height:24px; border-radius:50%; object-fit:cover; border: 1px solid #111; flex-shrink: 0;" alt="Avatar">` :
+                    `<div style="width:24px; height:24px; border-radius:50%; background:#111111; color:#FFFFFF; font-size:0.68rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink: 0;">${initial}</div>`;
 
                 badge.innerHTML = `
                     <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px; flex-shrink: 0;"></span>
