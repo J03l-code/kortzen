@@ -88,6 +88,9 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo]);
 
+            $newUserId = $pdo->lastInsertId();
+            registrarLog('CREAR', 'usuarios', $newUserId, "Usuario '$nombre' ($rol) registrado exitosamente");
+
             header('Location: ../usuarios.php?success=Usuario creado exitosamente');
             exit;
 
@@ -146,6 +149,8 @@ try {
                 $stmt->execute([$nombre, $email, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo, $id]);
             }
 
+            registrarLog('EDITAR', 'usuarios', $id, "Datos del usuario '$nombre' ($rol) actualizados");
+
             header('Location: ../usuarios.php?success=Usuario actualizado exitosamente');
             exit;
 
@@ -160,6 +165,12 @@ try {
             if ($id == $_SESSION['user_id']) {
                 throw new Exception('No puedes eliminar tu propia cuenta.');
             }
+
+            // Obtener nombre del usuario antes de eliminarlo para el registro de log
+            $stmtU = $pdo->prepare("SELECT nombre, rol FROM usuarios WHERE id = ?");
+            $stmtU->execute([$id]);
+            $uData = $stmtU->fetch(PDO::FETCH_ASSOC);
+            $uNombre = $uData ? $uData['nombre'] : "ID #$id";
 
             // Primero desvincular las citas del barbero (poner barbero_id en NULL)
             $sqlCitas = "UPDATE citas SET barbero_id = NULL WHERE barbero_id = ?";
@@ -181,7 +192,7 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
 
-            registrarLog('DELETE', 'usuarios', $id, 'Usuario eliminado');
+            registrarLog('ELIMINAR', 'usuarios', $id, "Usuario '$uNombre' fue eliminado del sistema");
             header('Location: ../usuarios.php?success=Usuario eliminado exitosamente');
             exit;
 

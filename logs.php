@@ -9,6 +9,26 @@ $usuario_filter = $_GET['usuario_id'] ?? '';
 
 // Obtener logs
 try {
+    $pdo = getConnection();
+
+    // Asegurar estructura de la tabla logs_actividad
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS logs_actividad (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            usuario_id INT NULL,
+            cliente_id INT NULL,
+            accion VARCHAR(50) NOT NULL,
+            tabla_afectada VARCHAR(50) NOT NULL,
+            registro_id INT NULL,
+            descripcion TEXT NOT NULL,
+            ip_address VARCHAR(45) NULL,
+            fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+
+    try { $pdo->exec("ALTER TABLE logs_actividad ADD COLUMN cliente_id INT NULL AFTER usuario_id"); } catch (Exception $e1) {}
+    try { $pdo->exec("ALTER TABLE logs_actividad ADD COLUMN ip_address VARCHAR(45) NULL AFTER descripcion"); } catch (Exception $e2) {}
+
     $sql = "SELECT l.*, u.nombre as usuario_nombre, c.nombre as cliente_nombre 
             FROM logs_actividad l
             LEFT JOIN usuarios u ON l.usuario_id = u.id
@@ -28,7 +48,7 @@ try {
         $params[] = $usuario_filter;
     }
 
-    $sql .= " ORDER BY l.fecha_hora DESC LIMIT 200";
+    $sql .= " ORDER BY l.fecha_hora DESC LIMIT 300";
 
     $logs = query($sql, $params);
 
@@ -36,7 +56,7 @@ try {
     $usuarios = query("SELECT id, nombre FROM usuarios ORDER BY nombre ASC");
     $tablasDisponibles = query("SELECT DISTINCT tabla_afectada FROM logs_actividad WHERE tabla_afectada IS NOT NULL AND tabla_afectada != '' ORDER BY tabla_afectada ASC");
 
-} catch (PDOException $e) {
+} catch (Exception $e) {
     error_log("Error al obtener logs: " . $e->getMessage());
     $logs = [];
     $usuarios = [];
@@ -178,8 +198,12 @@ include 'includes/header.php';
                                     echo '<strong>' . htmlspecialchars($log['usuario_nombre']) . '</strong> <span style="font-size:0.75rem; color:#888;">(Personal)</span>';
                                 } elseif (!empty($log['cliente_nombre'])) {
                                     echo '<strong>' . htmlspecialchars($log['cliente_nombre']) . '</strong> <span style="font-size:0.75rem; color:#10B981;">(Cliente PWA)</span>';
+                                } elseif (!empty($log['usuario_id'])) {
+                                    echo '<strong>Usuario #' . intval($log['usuario_id']) . '</strong> <span style="font-size:0.75rem; color:#888;">(Personal)</span>';
+                                } elseif (!empty($log['cliente_id'])) {
+                                    echo '<strong>Cliente #' . intval($log['cliente_id']) . '</strong> <span style="font-size:0.75rem; color:#10B981;">(Cliente PWA)</span>';
                                 } else {
-                                    echo '<span style="color:#C0A062; font-weight:700;">Sistema / Automático</span>';
+                                    echo '<span style="color:#C0A062; font-weight:700;">Sistema / Administrador</span>';
                                 }
                             ?>
                         </td>
