@@ -159,6 +159,9 @@ try {
                     $newEst = $activo == 1 ? 'Activo' : 'Inactivo';
                     $cambios[] = "Estado: '$oldEst' ➔ '$newEst'";
                 }
+                if (($old['foto_url'] ?? '') !== $foto_url && !empty($foto_url)) {
+                    $cambios[] = "Foto/Imagen del servicio actualizada";
+                }
             }
 
             $pdo->beginTransaction();

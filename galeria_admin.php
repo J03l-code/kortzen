@@ -36,6 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['imagen'])) {
                 $stmt = getConnection()->prepare($sql);
                 $stmt->execute([$titulo, $descripcion, $categoria, $url]);
 
+                $newId = getConnection()->lastInsertId();
+                $origName = $_FILES["imagen"]["name"] ?? $fileName;
+                registrarLog('SUBIR_FOTO', 'galeria', $newId, "Nueva foto '$titulo' subida a la Galería Web (Categoría: '$categoria', Archivo: '$origName')");
+
                 // Redirect to prevent re-submission
                 header('Location: galeria_admin.php?success=uploaded');
                 exit;
@@ -60,15 +64,21 @@ if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
     try {
         // Obtener ruta para borrar archivo
-        $img = query("SELECT imagen_url FROM galeria_imagenes WHERE id = ?", [$id]);
+        $img = query("SELECT titulo, categoria, imagen_url FROM galeria_imagenes WHERE id = ?", [$id]);
         if ($img) {
+            $gTitle = !empty($img[0]['titulo']) ? $img[0]['titulo'] : "ID #$id";
+            $gCat = !empty($img[0]['categoria']) ? $img[0]['categoria'] : "corte";
+
             $path = ltrim($img[0]['imagen_url'], '/'); // Remove leading slash
-            if (file_exists($path))
+            if (file_exists($path)) {
                 unlink($path);
+            }
 
             // Borrar de DB
             $stmt = getConnection()->prepare("DELETE FROM galeria_imagenes WHERE id = ?");
             $stmt->execute([$id]);
+
+            registrarLog('ELIMINAR_FOTO', 'galeria', $id, "Foto '$gTitle' (Categoría: '$gCat') fue eliminada de la Galería Web");
             $success = "Imagen eliminada.";
         }
     } catch (Exception $e) {

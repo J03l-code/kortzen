@@ -154,6 +154,9 @@ try {
                 if (($old['comision_porcentaje'] ?? 0) != $comision_porcentaje) {
                     $cambios[] = "Comisión: " . floatval($old['comision_porcentaje'] ?? 0) . "% ➔ {$comision_porcentaje}%";
                 }
+                if (!empty($foto_url) && ($old['foto_url'] ?? '') !== $foto_url) {
+                    $cambios[] = "Foto de perfil del barbero actualizada";
+                }
             }
 
             // Si se proporcionó contraseña, actualizarla
