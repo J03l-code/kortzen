@@ -179,7 +179,7 @@ body.menu-open .menu-toggle__line {
     transform: translateY(-7px) rotate(-45deg) !important;
 }
 
-/* Header Active state when menu is open */
+/* Header Active state when menu is open: Make entire KORTZEN logo SOLID BLACK (#000000) */
 body.menu-open .header,
 body.nav-open .header,
 .header:has(.menu-toggle--active),
@@ -188,10 +188,14 @@ body.nav-open .header,
 }
 
 body.menu-open .header .header__logo-text,
+body.menu-open .header .header__logo-text span,
 body.nav-open .header .header__logo-text,
+body.nav-open .header .header__logo-text span,
 .header:has(.menu-toggle--active) .header__logo-text,
-.header.header--menu-open .header__logo-text {
-    color: #111111 !important;
+.header:has(.menu-toggle--active) .header__logo-text span,
+.header.header--menu-open .header__logo-text,
+.header.header--menu-open .header__logo-text span {
+    color: #000000 !important;
 }
 
 /* Hide old header user dropdown to avoid duplicate user profile badges */
