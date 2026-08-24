@@ -186,7 +186,7 @@ try {
             $stmtCitaInfo->execute([$id]);
             $citaInfo = $stmtCitaInfo->fetch();
             $sucursal_id = $citaInfo['sucursal_id'] ?? 0;
-            $usuario_id = $_SESSION['user_id']; // Quién completó la cita (vendedor)
+            $usuario_id = $_SESSION['user_id'];
 
             // 2. Procesar inventario y Registrar Venta
             if (!empty($materiales)) {
@@ -199,22 +199,36 @@ try {
                     $cant = floatval($cantidades[$i]);
 
                     if ($prodId > 0 && $cant > 0) {
-                        // Actualizar Stock
                         $stmtStock->execute([$cant, $prodId]);
 
-                        // Obtener precio actual
                         $stmtPrice->execute([$prodId]);
                         $prodInfo = $stmtPrice->fetch();
                         $precioUnitario = $prodInfo['precio'] ?? 0;
 
-                        // Registrar Venta/Consumo
                         if ($sucursal_id > 0) {
                             $stmtVenta->execute([$id, $prodId, $cant, $precioUnitario, $sucursal_id, $usuario_id]);
                         }
                     }
                 }
-                registrarLog('UPDATE', 'inventario', $id, 'Materiales consumidos/vendidos en cita');
             }
+
+            $stmtCDetails = $pdo->prepare("
+                SELECT c.nombre as cliente_nombre, s.nombre as servicio_nombre, b.nombre as barbero_nombre, cita.precio_final
+                FROM citas cita
+                LEFT JOIN clientes c ON cita.cliente_id = c.id
+                LEFT JOIN servicios s ON cita.servicio_id = s.id
+                LEFT JOIN usuarios b ON cita.barbero_id = b.id
+                WHERE cita.id = ?
+            ");
+            $stmtCDetails->execute([$id]);
+            $cD = $stmtCDetails->fetch(PDO::FETCH_ASSOC);
+
+            $cNombre = $cD ? $cD['cliente_nombre'] : "Cita #$id";
+            $sNombre = $cD ? $cD['servicio_nombre'] : "Servicio";
+            $bNombre = $cD ? $cD['barbero_nombre'] : "Barbero";
+            $precioVal = number_format(floatval($cD['precio_final'] ?? 0), 2);
+
+            registrarLog('COMPLETAR', 'citas', $id, "Cita #$id finalizada para el cliente '$cNombre' (Servicio: '$sNombre', Barbero: '$bNombre', Valor: $$precioVal, Propina: $$propina, +$puntosPorCorte pts ganados)");
 
             $msgOk = 'Cita completada con éxito.';
             if ($propina > 0) {
@@ -230,9 +244,23 @@ try {
                 throw new Exception('ID de cita inválido.');
             }
 
+            $stmtCDetails = $pdo->prepare("
+                SELECT c.nombre as cliente_nombre, s.nombre as servicio_nombre
+                FROM citas cita
+                LEFT JOIN clientes c ON cita.cliente_id = c.id
+                LEFT JOIN servicios s ON cita.servicio_id = s.id
+                WHERE cita.id = ?
+            ");
+            $stmtCDetails->execute([$id]);
+            $cD = $stmtCDetails->fetch(PDO::FETCH_ASSOC);
+            $cNombre = $cD ? $cD['cliente_nombre'] : "Cliente";
+            $sNombre = $cD ? $cD['servicio_nombre'] : "Servicio";
+
             $sql = "DELETE FROM citas WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
+
+            registrarLog('ELIMINAR', 'citas', $id, "Cita #$id ('$sNombre') del cliente '$cNombre' fue eliminada del sistema");
 
             header('Location: ../citas.php?success=Cita eliminada exitosamente');
             exit;

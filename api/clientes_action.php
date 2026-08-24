@@ -111,14 +111,18 @@ try {
                 $pdo->exec("ALTER TABLE clientes ADD COLUMN puntos INT DEFAULT 0 AFTER telefono");
             } catch (Exception $ex) {}
 
+            $stmtCInfo = $pdo->prepare("SELECT nombre, puntos FROM clientes WHERE id = ?");
+            $stmtCInfo->execute([$id]);
+            $cInfo = $stmtCInfo->fetch(PDO::FETCH_ASSOC);
+            $clienteNombre = $cInfo ? $cInfo['nombre'] : "ID #$id";
+            $puntosAnteriores = intval($cInfo['puntos'] ?? 0);
+            $diferencia = $puntos - $puntosAnteriores;
+            $diffStr = ($diferencia >= 0 ? "+$diferencia" : "$diferencia") . " pts";
+
             $stmt = $pdo->prepare("UPDATE clientes SET puntos = ? WHERE id = ?");
             $stmt->execute([$puntos, $id]);
 
-            $stmtCName = $pdo->prepare("SELECT nombre FROM clientes WHERE id = ?");
-            $stmtCName->execute([$id]);
-            $clienteNombre = $stmtCName->fetchColumn() ?: "ID #$id";
-
-            registrarLog('PUNTOS', 'clientes', $id, "Puntos KORTZEN del cliente '$clienteNombre' actualizados a " . number_format($puntos) . " pts");
+            registrarLog('PUNTOS', 'clientes', $id, "Puntos KORTZEN del cliente '$clienteNombre' (#$id) modificados de $puntosAnteriores pts a $puntos pts ($diffStr)");
 
             $redirect = !empty($_POST['redirect_to']) ? $_POST['redirect_to'] : '../clientes.php';
             if (preg_match('/^(https?:|\/\/)/i', $redirect)) {

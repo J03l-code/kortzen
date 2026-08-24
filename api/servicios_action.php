@@ -75,6 +75,7 @@ try {
                 }
 
                 $pdo->commit();
+                registrarLog('CREAR', 'servicios', $servicioId, "Nuevo servicio '$nombre' creado (Precio: $$precio, Duración: $duracion_minutos min, Categoría: '$categoria')");
                 header('Location: ../servicios.php?success=Servicio creado exitosamente');
             } catch (Exception $e) {
                 $pdo->rollBack();
@@ -141,11 +142,9 @@ try {
                 $stmt->execute([$nombre, $descripcion, $precio, $duracion_minutos, $categoria, $foto_url, $activo, $destacado, $id]);
 
                 // Update branch associations
-                // First delete existing
                 $deleteStmt = $pdo->prepare("DELETE FROM servicios_sucursales WHERE servicio_id = ?");
                 $deleteStmt->execute([$id]);
 
-                // Then insert new ones
                 if (!empty($sucursales)) {
                     $insertSql = "INSERT INTO servicios_sucursales (servicio_id, sucursal_id) VALUES (?, ?)";
                     $insertStmt = $pdo->prepare($insertSql);
@@ -155,6 +154,7 @@ try {
                 }
 
                 $pdo->commit();
+                registrarLog('EDITAR', 'servicios', $id, "Servicio '$nombre' (#$id) actualizado (Precio: $$precio, Duración: $duracion_minutos min, Categoría: '$categoria')");
                 header('Location: ../servicios.php?success=Servicio actualizado exitosamente');
             } catch (Exception $e) {
                 $pdo->rollBack();
@@ -175,9 +175,14 @@ try {
                 throw new Exception('No se puede eliminar el servicio porque tiene citas asociadas.');
             }
 
+            $sName = query("SELECT nombre FROM servicios WHERE id = ?", [$id]);
+            $sNom = !empty($sName) ? $sName[0]['nombre'] : "ID #$id";
+
             $sql = "DELETE FROM servicios WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
+
+            registrarLog('ELIMINAR', 'servicios', $id, "Servicio '$sNom' (#$id) fue eliminado del catálogo");
 
             header('Location: ../servicios.php?success=Servicio eliminado exitosamente');
             exit;
