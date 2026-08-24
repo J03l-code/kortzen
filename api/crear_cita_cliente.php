@@ -31,9 +31,25 @@ if (empty($telefono)) {
 try {
     $pdo = getConnection();
 
-    // 0. Actualizar teléfono del cliente
-    $stmtUpdate = $pdo->prepare("UPDATE clientes SET telefono = ? WHERE id = ?");
-    $stmtUpdate->execute([$telefono, $clienteId]);
+    // 0. Actualizar teléfono y preferencias del cliente si vienen en la petición
+    $estiloBuscado = isset($_POST['estilo_buscado']) ? trim($_POST['estilo_buscado']) : null;
+    $ambientePreferido = isset($_POST['ambiente_preferido']) ? trim($_POST['ambiente_preferido']) : null;
+    $bebidaPreferida = isset($_POST['bebida_preferida']) ? trim($_POST['bebida_preferida']) : null;
+
+    if ($estiloBuscado || $ambientePreferido || $bebidaPreferida) {
+        $stmtUpdatePref = $pdo->prepare("
+            UPDATE clientes 
+            SET telefono = ?, 
+                estilo_buscado = COALESCE(?, estilo_buscado), 
+                ambiente_preferido = COALESCE(?, ambiente_preferido), 
+                bebida_preferida = COALESCE(?, bebida_preferida) 
+            WHERE id = ?
+        ");
+        $stmtUpdatePref->execute([$telefono, $estiloBuscado, $ambientePreferido, $bebidaPreferida, $clienteId]);
+    } else {
+        $stmtUpdate = $pdo->prepare("UPDATE clientes SET telefono = ? WHERE id = ?");
+        $stmtUpdate->execute([$telefono, $clienteId]);
+    }
 
     // 1. Validar disponibilidad (Doble check para concurrencia)
     $fechaHora = "$fecha $hora:00";

@@ -912,6 +912,17 @@ $pageTitle = 'Reservar Cita';
                 formData.append('hora', bookingData.time);
                 formData.append('telefono', bookingData.phone);
                 
+                // Incluir preferencias guardadas del cuestionario de estilo si existen
+                const prefsRaw = localStorage.getItem('kortzen_client_preferences');
+                if (prefsRaw) {
+                    try {
+                        const prefs = JSON.parse(prefsRaw);
+                        if (prefs.estilo) formData.append('estilo_buscado', prefs.estilo);
+                        if (prefs.ambiente) formData.append('ambiente_preferido', prefs.ambiente);
+                        if (prefs.bebida) formData.append('bebida_preferida', prefs.bebida);
+                    } catch(e) {}
+                }
+                
                 if (referralCodeApplied && referralCodeApplied.trim() !== '') {
                     formData.append('codigo_referido', referralCodeApplied.trim());
                 }
