@@ -21,12 +21,13 @@ const TeamLoader = {
 
         // Cargar inicial si ya hay sucursal seleccionada o usar defecto
         document.addEventListener('DOMContentLoaded', () => {
-            // Esperar un poco a que KortzenBranches se inicialice si es necesario
-            setTimeout(() => {
-                const currentBranch = window.KortzenBranches ? window.KortzenBranches.getSelected() : null;
-                const branchId = currentBranch ? currentBranch.id : 1; // Default to ID 1
-                this.loadTeam(branchId);
-            }, 100);
+            const savedId = localStorage.getItem('kortzen_selected_branch');
+            let branchId = savedId ? parseInt(savedId) : null;
+            if (!branchId && window.KortzenBranches && typeof window.KortzenBranches.getSelected === 'function') {
+                const cur = window.KortzenBranches.getSelected();
+                branchId = cur ? cur.id : 1;
+            }
+            this.loadTeam(branchId || 1);
         });
     },
 

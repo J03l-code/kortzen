@@ -48,11 +48,16 @@ function getSelectedBranch() {
     if (currentSelectedBranch) return currentSelectedBranch;
 
     const savedId = localStorage.getItem(BRANCH_STORAGE_KEY);
-    if (savedId && cachedBranches.length > 0) {
-        const found = cachedBranches.find(b => b.id == savedId && !b.isProximamente && b.estado === 'activo');
-        if (found) {
-            currentSelectedBranch = found;
-            return currentSelectedBranch;
+    if (savedId) {
+        if (cachedBranches.length > 0) {
+            const found = cachedBranches.find(b => b.id == savedId && !b.isProximamente && b.estado === 'activo');
+            if (found) {
+                currentSelectedBranch = found;
+                return currentSelectedBranch;
+            }
+        } else {
+            // Si cachedBranches aún se está cargando de la API, devolver id preservado de localStorage
+            return { id: parseInt(savedId) };
         }
     }
 
@@ -62,7 +67,7 @@ function getSelectedBranch() {
         currentSelectedBranch = firstActive;
         localStorage.setItem(BRANCH_STORAGE_KEY, firstActive.id);
     }
-    return currentSelectedBranch;
+    return currentSelectedBranch || { id: 1 };
 }
 
 /**
@@ -414,6 +419,11 @@ async function initBranchSelector() {
     if (!isDashboardPage) {
         updateBranchInfoBar();
         if (selected) updateGlobalFooter(selected);
+    }
+
+    // Emitir evento para notificar a team-loader y reservar.php con los datos completos de la sucursal activa
+    if (selected && selected.id) {
+        window.dispatchEvent(new CustomEvent('kortzen:branchChanged', { detail: { ...selected, id: selected.id, branchId: selected.id } }));
     }
 }
 
