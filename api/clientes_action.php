@@ -82,6 +82,32 @@ try {
                 }
             }
 
+            // Obtener datos anteriores para registrar el cambio exacto
+            $oldC = query("SELECT * FROM clientes WHERE id = ?", [$id]);
+            $old = !empty($oldC) ? $oldC[0] : [];
+
+            $cambios = [];
+            if (!empty($old)) {
+                if (($old['nombre'] ?? '') !== $nombre) {
+                    $cambios[] = "Nombre: '" . ($old['nombre'] ?? '') . "' ➔ '$nombre'";
+                }
+                if (($old['email'] ?? '') !== $email) {
+                    $oldEm = $old['email'] ?: 'Sin email';
+                    $newEm = $email ?: 'Sin email';
+                    $cambios[] = "Email: '$oldEm' ➔ '$newEm'";
+                }
+                if (($old['telefono'] ?? '') !== $telefono) {
+                    $oldTel = $old['telefono'] ?: 'Sin teléfono';
+                    $newTel = $telefono ?: 'Sin teléfono';
+                    $cambios[] = "Teléfono: '$oldTel' ➔ '$newTel'";
+                }
+                if (($old['fecha_nacimiento'] ?? '') !== $fecha_nacimiento) {
+                    $oldF = $old['fecha_nacimiento'] ?: 'Sin fecha';
+                    $newF = $fecha_nacimiento ?: 'Sin fecha';
+                    $cambios[] = "F. Nacimiento: '$oldF' ➔ '$newF'";
+                }
+            }
+
             $sql = "UPDATE clientes 
                     SET nombre = ?, email = ?, telefono = ?, fecha_nacimiento = ?, notas = ? 
                     WHERE id = ?";
@@ -95,7 +121,8 @@ try {
                 $id
             ]);
 
-            registrarLog('EDITAR', 'clientes', $id, "Datos del cliente '$nombre' actualizados");
+            $descCambios = !empty($cambios) ? implode('; ', $cambios) : 'Guardado sin modificaciones de texto';
+            registrarLog('EDITAR', 'clientes', $id, "Cliente '$nombre' (#$id) actualizado. [$descCambios]");
             header('Location: ../clientes.php?success=Cliente actualizado exitosamente');
             exit;
 

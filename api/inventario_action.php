@@ -125,17 +125,32 @@ try {
                 throw new Exception('El stock mínimo no puede ser negativo.');
             }
 
-            // Verificar que la sucursal existe
-            $check = query("SELECT COUNT(*) as count FROM sucursales WHERE id = ?", [$sucursal_id]);
-            if ($check[0]['count'] == 0) {
-                throw new Exception('La sucursal seleccionada no existe.');
+            // Obtener datos anteriores para comparar cambios
+            $oldInv = query("SELECT * FROM inventario WHERE id = ?", [$id]);
+            $old = !empty($oldInv) ? $oldInv[0] : [];
+
+            $cambios = [];
+            if (!empty($old)) {
+                if (($old['producto'] ?? '') !== $producto) {
+                    $cambios[] = "Nombre: '" . ($old['producto'] ?? '') . "' ➔ '$producto'";
+                }
+                if (($old['cantidad'] ?? 0) != $cantidad) {
+                    $cambios[] = "Stock: " . intval($old['cantidad'] ?? 0) . " ➔ $cantidad u.";
+                }
+                if (($old['precio'] ?? 0) != $precio) {
+                    $cambios[] = "Precio: $" . number_format(floatval($old['precio'] ?? 0), 2) . " ➔ $" . number_format($precio, 2);
+                }
+                if (($old['stock_minimo'] ?? 0) != $stock_minimo) {
+                    $cambios[] = "Stock Mín.: " . intval($old['stock_minimo'] ?? 0) . " ➔ $stock_minimo u.";
+                }
             }
 
             $sql = "UPDATE inventario SET producto = ?, cantidad = ?, precio = ?, stock_minimo = ?, sucursal_id = ? WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$producto, $cantidad, $precio, $stock_minimo, $sucursal_id, $id]);
 
-            registrarLog('EDITAR', 'inventario', $id, "Producto '$producto' actualizado en inventario");
+            $descCambios = !empty($cambios) ? implode('; ', $cambios) : 'Guardado sin modificaciones de texto';
+            registrarLog('EDITAR', 'inventario', $id, "Producto '$producto' (#$id) actualizado. [$descCambios]");
 
             header('Location: ../inventario.php?success=Producto actualizado exitosamente');
             exit;

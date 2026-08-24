@@ -133,6 +133,29 @@ try {
             try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_productos DECIMAL(5,2) DEFAULT 10.00 AFTER comision_fin_semana"); } catch (Exception $ex) {}
             try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '15:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1"); } catch (Exception $ex_a) {}
 
+            // Obtener datos anteriores para registrar el cambio exacto
+            $oldU = query("SELECT * FROM usuarios WHERE id = ?", [$id]);
+            $old = !empty($oldU) ? $oldU[0] : [];
+
+            $cambios = [];
+            if (!empty($old)) {
+                if (($old['nombre'] ?? '') !== $nombre) {
+                    $cambios[] = "Nombre: '" . ($old['nombre'] ?? '') . "' ➔ '$nombre'";
+                }
+                if (($old['email'] ?? '') !== $email) {
+                    $cambios[] = "Email: '" . ($old['email'] ?? '') . "' ➔ '$email'";
+                }
+                if (($old['rol'] ?? '') !== $rol) {
+                    $cambios[] = "Rol: '" . ($old['rol'] ?? '') . "' ➔ '$rol'";
+                }
+                if (!empty($password)) {
+                    $cambios[] = "Contraseña de acceso actualizada";
+                }
+                if (($old['comision_porcentaje'] ?? 0) != $comision_porcentaje) {
+                    $cambios[] = "Comisión: " . floatval($old['comision_porcentaje'] ?? 0) . "% ➔ {$comision_porcentaje}%";
+                }
+            }
+
             // Si se proporcionó contraseña, actualizarla
             if (!empty($password)) {
                 if (strlen($password) < 6) {
@@ -149,7 +172,8 @@ try {
                 $stmt->execute([$nombre, $email, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo, $id]);
             }
 
-            registrarLog('EDITAR', 'usuarios', $id, "Datos del usuario '$nombre' ($rol) actualizados");
+            $descCambios = !empty($cambios) ? implode('; ', $cambios) : 'Guardado sin modificaciones de texto';
+            registrarLog('EDITAR', 'usuarios', $id, "Usuario '$nombre' (#$id) actualizado. [$descCambios]");
 
             header('Location: ../usuarios.php?success=Usuario actualizado exitosamente');
             exit;
