@@ -40,14 +40,16 @@ $countTotal = query("SELECT COUNT(*) as total FROM resenas")[0]['total'] ?? 0;
 </div>
 
 <?php if (isset($_GET['success'])): ?>
-    <div class="alert alert-success" style="background: #E8F8F0; color: #1E7E45; border: 1px solid #C2EBCF; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 700;">
-        ✅ <?php echo htmlspecialchars($_GET['success']); ?>
+    <div class="alert alert-success" style="background: #E8F8F0; color: #1E7E45; border: 1px solid #C2EBCF; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-check-circle"></i>
+        <span><?php echo htmlspecialchars($_GET['success']); ?></span>
     </div>
 <?php endif; ?>
 
 <?php if (isset($_GET['error'])): ?>
-    <div class="alert alert-error" style="background: #FDF2F2; color: #9B1C1C; border: 1px solid #F8B4B4; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 700;">
-        ❌ <?php echo htmlspecialchars($_GET['error']); ?>
+    <div class="alert alert-error" style="background: #FDF2F2; color: #9B1C1C; border: 1px solid #F8B4B4; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-exclamation-circle"></i>
+        <span><?php echo htmlspecialchars($_GET['error']); ?></span>
     </div>
 <?php endif; ?>
 
@@ -55,36 +57,39 @@ $countTotal = query("SELECT COUNT(*) as total FROM resenas")[0]['total'] ?? 0;
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
     <a href="resenas.php?filtro=pendientes" style="text-decoration: none;">
         <div style="background: <?php echo $filter === 'pendientes' ? '#FFFBEB' : '#FFFFFF'; ?>; border: 1.5px solid <?php echo $filter === 'pendientes' ? '#F59E0B' : '#EAEAEA'; ?>; border-radius: 12px; padding: 16px; transition: all 0.2s;">
-            <div style="font-size: 0.75rem; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-                ⏳ Pendientes de Moderación
+            <div style="font-size: 0.75rem; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-clock"></i>
+                <span>PENDIENTES DE MODERACIÓN</span>
             </div>
             <div style="font-size: 1.6rem; font-weight: 900; color: #92400E;">
                 <?php echo $countPendientes; ?>
             </div>
             <div style="font-size: 0.78rem; color: #B45309; margin-top: 4px;">
-                <?php echo $countPendientes > 0 ? '¡Requieren tu aprobación!' : 'No hay pendientes por revisar'; ?>
+                <?php echo $countPendientes > 0 ? 'Requieren aprobación' : 'No hay pendientes por revisar'; ?>
             </div>
         </div>
     </a>
 
     <a href="resenas.php?filtro=aprobadas" style="text-decoration: none;">
         <div style="background: <?php echo $filter === 'aprobadas' ? '#ECFDF5' : '#FFFFFF'; ?>; border: 1.5px solid <?php echo $filter === 'aprobadas' ? '#10B981' : '#EAEAEA'; ?>; border-radius: 12px; padding: 16px; transition: all 0.2s;">
-            <div style="font-size: 0.75rem; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-                ✅ Publicadas en Web
+            <div style="font-size: 0.75rem; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-check-double"></i>
+                <span>PUBLICADAS EN WEB</span>
             </div>
             <div style="font-size: 1.6rem; font-weight: 900; color: #065F46;">
                 <?php echo $countAprobadas; ?>
             </div>
             <div style="font-size: 0.78rem; color: #047857; margin-top: 4px;">
-                Visibles para tus futuros clientes
+                Visibles para tus clientes
             </div>
         </div>
     </a>
 
     <a href="resenas.php?filtro=todas" style="text-decoration: none;">
         <div style="background: <?php echo $filter === 'todas' ? '#F3F4F6' : '#FFFFFF'; ?>; border: 1.5px solid <?php echo $filter === 'todas' ? '#111111' : '#EAEAEA'; ?>; border-radius: 12px; padding: 16px; transition: all 0.2s;">
-            <div style="font-size: 0.75rem; font-weight: 800; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-                📋 Total Registradas
+            <div style="font-size: 0.75rem; font-weight: 800; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-list-alt"></i>
+                <span>TOTAL REGISTRADAS</span>
             </div>
             <div style="font-size: 1.6rem; font-weight: 900; color: #111827;">
                 <?php echo $countTotal; ?>
@@ -102,10 +107,10 @@ $countTotal = query("SELECT COUNT(*) as total FROM resenas")[0]['total'] ?? 0;
         Todas (<?php echo $countTotal; ?>)
     </a>
     <a href="resenas.php?filtro=pendientes" class="btn" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 800; border: 1px solid #DDD; background: <?php echo $filter === 'pendientes' ? '#111111' : '#FFFFFF'; ?>; color: <?php echo $filter === 'pendientes' ? '#FFFFFF' : '#111111'; ?>; text-decoration: none;">
-        ⏳ Pendientes (<?php echo $countPendientes; ?>)
+        Pendientes (<?php echo $countPendientes; ?>)
     </a>
     <a href="resenas.php?filtro=aprobadas" class="btn" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 800; border: 1px solid #DDD; background: <?php echo $filter === 'aprobadas' ? '#111111' : '#FFFFFF'; ?>; color: <?php echo $filter === 'aprobadas' ? '#FFFFFF' : '#111111'; ?>; text-decoration: none;">
-        ✅ Publicadas (<?php echo $countAprobadas; ?>)
+        Publicadas (<?php echo $countAprobadas; ?>)
     </a>
 </div>
 
@@ -149,12 +154,12 @@ $countTotal = query("SELECT COUNT(*) as total FROM resenas")[0]['total'] ?? 0;
                         </td>
                         <td>
                             <?php if ($r['visible']): ?>
-                                <span style="background: #DEF7EC; color: #03543F; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; display: inline-block;">
-                                    ✅ Publicada
+                                <span style="background: #DEF7EC; color: #03543F; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-check" style="font-size: 0.68rem;"></i> PUBLICADA
                                 </span>
                             <?php else: ?>
-                                <span style="background: #FEF08A; color: #713F12; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; display: inline-block;">
-                                    ⏳ Pendiente Moderación
+                                <span style="background: #FEF08A; color: #713F12; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-hourglass-half" style="font-size: 0.68rem;"></i> PENDIENTE
                                 </span>
                             <?php endif; ?>
                         </td>
@@ -166,7 +171,8 @@ $countTotal = query("SELECT COUNT(*) as total FROM resenas")[0]['total'] ?? 0;
                                         <input type="hidden" name="action" value="aprobar">
                                         <input type="hidden" name="id" value="<?php echo $r['id']; ?>">
                                         <button type="submit" style="background: #10B981; color: #FFFFFF; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Aprobar y publicar en la web">
-                                            <span>✓ APROBAR</span>
+                                            <i class="fas fa-check"></i>
+                                            <span>APROBAR</span>
                                         </button>
                                     </form>
                                 <?php else: ?>
@@ -189,7 +195,7 @@ $countTotal = query("SELECT COUNT(*) as total FROM resenas")[0]['total'] ?? 0;
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?php echo $r['id']; ?>">
                                     <button type="submit" class="btn-icon delete" title="Eliminar" style="background: none; border: none; color: #EF4444; cursor: pointer; padding: 6px;">
-                                        <i class="fas fa-trash"></i>
+                                        <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
                             </div>
