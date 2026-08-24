@@ -142,9 +142,17 @@ $gananciaHoyVentas = query("
     WHERE usuario_id = ? AND DATE(fecha) = CURDATE()
 ", [$barbero_id])[0]['total'] ?? 0;
 
-$miGananciaDia = floatval($gananciaHoyServicios) + floatval($gananciaHoyVentas);
+// Propinas Recibidas Hoy (Rubro Independiente)
+$propinasHoy = floatval(query("
+    SELECT SUM(IFNULL(propina, 0)) as total
+    FROM citas 
+    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
+", [$barbero_id])[0]['total'] ?? 0);
 
-// Ganancia Mes (Servicios + Ventas)
+$gananciaServiciosVentasHoy = floatval($gananciaHoyServicios) + floatval($gananciaHoyVentas);
+$miGananciaDia = $gananciaServiciosVentasHoy + $propinasHoy;
+
+// Ganancia Mes (Servicios + Ventas + Propinas)
 $monthStart = date('Y-m-01');
 $monthEnd = date('Y-m-t');
 
@@ -160,7 +168,15 @@ $gananciaMesVentas = query("
     WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
 ", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
 
-$miGananciaMes = floatval($gananciaMesServicios) + floatval($gananciaMesVentas);
+// Propinas Recibidas Mes (Rubro Independiente)
+$propinasMes = floatval(query("
+    SELECT SUM(IFNULL(propina, 0)) as total
+    FROM citas 
+    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0);
+
+$gananciaServiciosVentasMes = floatval($gananciaMesServicios) + floatval($gananciaMesVentas);
+$miGananciaMes = $gananciaServiciosVentasMes + $propinasMes;
 
 // Total de citas completadas hoy
 $countHoy = query("
@@ -512,18 +528,30 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
             </div>
         <?php endif; ?>
 
-        <!-- Tarjetas de Métricas de Ganancias (Grid Minimalista de 3 columnas) -->
+        <!-- Tarjetas de Métricas de Ganancias (Grid Minimalista de 4 columnas) -->
         <div class="barber-stats-grid">
             
             <div class="barber-stat-card">
                 <div class="barber-stat-header">
-                    <span class="barber-stat-label">Ganancias Hoy</span>
+                    <span class="barber-stat-label">Ganancias Totales Hoy</span>
                     <div class="barber-stat-icon-box">
                         <svg class="barber-icon-stroke" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     </div>
                 </div>
                 <div class="barber-stat-val">$<?php echo number_format($miGananciaDia, 2); ?></div>
-                <div class="barber-stat-sub"><?php echo $totalCitasHoy; ?> cortes + ventas</div>
+                <div class="barber-stat-sub">Servicios + Ventas + Propinas</div>
+            </div>
+
+            <!-- RUBRO APARTE DE PROPINAS -->
+            <div class="barber-stat-card" style="border: 1.5px solid #10B981; background: #F0FDF4;">
+                <div class="barber-stat-header">
+                    <span class="barber-stat-label" style="color: #047857; font-weight: 800;">Propinas (Rubro Aparte)</span>
+                    <div class="barber-stat-icon-box" style="color: #047857;">
+                        <svg class="barber-icon-stroke" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                </div>
+                <div class="barber-stat-val" style="color: #065F46;">+$<?php echo number_format($propinasHoy, 2); ?></div>
+                <div class="barber-stat-sub" style="color: #047857; font-weight: 700;">Acumulado Mes: +$<?php echo number_format($propinasMes, 2); ?></div>
             </div>
 
             <div class="barber-stat-card">
@@ -534,7 +562,7 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                     </div>
                 </div>
                 <div class="barber-stat-val">$<?php echo number_format($miGananciaMes, 2); ?></div>
-                <div class="barber-stat-sub">Comisiones acumuladas</div>
+                <div class="barber-stat-sub">Total acumulado del mes</div>
             </div>
 
             <div class="barber-stat-card">
@@ -563,10 +591,10 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                 $fechaLegible = $esHoy ? 'Hoy (' . date('d/m/Y', $tsProximo) . ')' : date('d/m/Y', $tsProximo);
                 $horaProxima = date('H:i', $tsProximo);
             ?>
-            <div style="background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 14px; padding: 20px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <div style="background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 14px; padding: 18px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                     <div>
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #777777; text-transform: uppercase; letter-spacing: 1px;">FECHA Y HORA DE ATENCIÓN</span>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #777777; text-transform: uppercase; letter-spacing: 1px;">FECHA Y HORA</span>
                         <div style="font-size: 1.3rem; font-weight: 900; color: #111111; margin-top: 2px;"><?php echo $fechaLegible; ?> • <?php echo $horaProxima; ?></div>
                     </div>
                     <div style="text-align: right;">
@@ -575,21 +603,11 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                     </div>
                 </div>
 
-                <div style="border-top: 1px solid #EAEAEA; padding-top: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="border-top: 1px solid #EAEAEA; padding-top: 14px; margin-bottom: 14px;">
                     <div>
                         <span style="font-size: 0.8rem; color: #666666;">Cliente:</span>
                         <strong style="color: #111111; font-size: 0.95rem; margin-left: 4px;"><?php echo htmlspecialchars($proximo['cliente'] ?? 'Cliente'); ?></strong>
                     </div>
-
-                    <?php if (!empty($proximo['cliente_telefono'])): 
-                        $telClean = preg_replace('/[^0-9]/', '', $proximo['cliente_telefono']);
-                        $msgWa = urlencode("Hola " . ($proximo['cliente'] ?? '') . ", te recordamos tu cita hoy a las " . $horaProxima . " en KORTZEN con el barbero " . ($currentUser['nombre'] ?? 'Kortzen') . ". ¡Te esperamos!");
-                    ?>
-                        <a href="https://wa.me/<?php echo $telClean; ?>?text=<?php echo $msgWa; ?>" target="_blank" style="color:#25D366; text-decoration:none; font-weight:800; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; border:1px solid #25D366; padding:6px 12px; border-radius:8px; background:#FFFFFF;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                            <span>Recordatorio WhatsApp</span>
-                        </a>
-                    <?php endif; ?>
                 </div>
 
                 <!-- Tarjeta de Preferencias del Cliente (3 preguntas respondidas) -->
@@ -621,7 +639,7 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                     <input type="hidden" name="action" value="guardar_notas_barbero">
                     <input type="hidden" name="cliente_id" value="<?php echo $proximo['cliente_id_bd'] ?? $proximo['cliente_id']; ?>">
                     <label style="font-size: 0.72rem; font-weight: 800; color: #555555; text-transform: uppercase; display: block; margin-bottom: 6px;">
-                        📝 Notas de Preferencias del Cliente (Privado)
+                        Notas de Preferencias del Cliente (Privado)
                     </label>
                     <textarea name="notas_barbero" placeholder="Ej: Degradado bajo #1.5, tijera arriba, raya al lado izquierdo..." style="width: 100%; height: 50px; border: 1px solid #DDD; border-radius: 8px; padding: 8px; font-size: 0.82rem; font-family: inherit; resize: none; box-sizing: border-box; background: #FAFAFA;"><?php echo htmlspecialchars($proximo['notas_barbero'] ?? ''); ?></textarea>
                     <button type="submit" style="margin-top: 6px; background: #111111; color: #FFFFFF; border: none; padding: 6px 14px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; text-transform: uppercase;">
@@ -629,14 +647,9 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                     </button>
                 </form>
 
-                <form method="POST">
-                    <input type="hidden" name="action" value="completar_cita">
-                    <input type="hidden" name="cita_id" value="<?php echo $proximo['id']; ?>">
-                    <button type="submit" class="btn-action-black">
-                        <svg class="barber-icon-stroke" style="stroke: #FFFFFF; width: 18px; height: 18px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Marcar Servicio como Completado</span>
-                    </button>
-                </form>
+                <div style="background: #F9FAFB; border: 1px dashed #D1D5DB; border-radius: 10px; padding: 12px; text-align: center;">
+                    <span style="font-size: 0.8rem; font-weight: 800; color: #4B5563;">🔒 Finalización de servicio y cobro a cargo del administrador del local.</span>
+                </div>
             </div>
             <?php else: ?>
             <div style="text-align: center; padding: 24px; background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 14px;">

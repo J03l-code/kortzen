@@ -106,11 +106,14 @@ try {
             exit;
 
         case 'completar':
-            if (!in_array($_SESSION['user_rol'], ['barbero', 'admin', 'admin_local'])) {
-                throw new Exception('No autorizado. Rol actual: ' . ($_SESSION['user_rol'] ?? 'ninguno'));
+            if (!in_array($_SESSION['user_rol'], ['admin', 'admin_local'])) {
+                throw new Exception('Acceso denegado. Solo la administración puede finalizar citas y registrar propinas.');
             }
 
             $id = intval($_POST['id'] ?? 0);
+            $propina = floatval($_POST['propina'] ?? 0.00);
+            if ($propina < 0) $propina = 0.00;
+
             // Array de materiales y cantidades
             $materiales = $_POST['materiales'] ?? [];
             $cantidades = $_POST['cantidades'] ?? [];
@@ -119,9 +122,13 @@ try {
                 throw new Exception('ID inválido');
             }
 
-            // 1. Marcar completada
-            $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada' WHERE id = ?");
-            $stmtComp->execute([$id]);
+            // 1. Marcar completada con propina
+            try {
+                $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
+            } catch (Exception $exP) {}
+
+            $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', propina = ? WHERE id = ?");
+            $stmtComp->execute([$propina, $id]);
 
             // Cargar puntos configurados
             $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
@@ -197,7 +204,11 @@ try {
                 registrarLog('UPDATE', 'inventario', $id, 'Materiales consumidos/vendidos en cita');
             }
 
-            header('Location: ' . $redirect_url . '?success=' . urlencode('Cita completada y stock actualizado.'));
+            $msgOk = 'Cita completada con éxito.';
+            if ($propina > 0) {
+                $msgOk .= ' Propina registrada para el barbero: $' . number_format($propina, 2);
+            }
+            header('Location: ' . $redirect_url . '?success=' . urlencode($msgOk));
             exit;
 
         case 'delete':

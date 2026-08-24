@@ -81,6 +81,11 @@ function getConnection()
 
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
 
+            // Auto-migración columna propina en citas
+            try {
+                $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
+            } catch (Exception $e_prop) {}
+
         } catch (PDOException $e) {
             // Log del error (en producción, usa error_log)
             error_log("Error de conexión a la base de datos: " . $e->getMessage());
