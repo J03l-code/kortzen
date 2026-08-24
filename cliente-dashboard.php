@@ -166,6 +166,27 @@ if ($cliente_id) {
             </a>
         </div>
 
+        <!-- Card Control de Notificaciones Push -->
+        <div class="pwa-banner-card" style="background: #F0FDF4; border: 1.5px solid #10B981; box-shadow: 0 4px 15px rgba(16,185,129,0.08);">
+            <div class="pwa-banner-card__left">
+                <div class="pwa-banner-card__icon-box" style="background: #10B981; color: #FFFFFF;">
+                    <i class="fas fa-bell" style="font-size: 1.1rem; color: #FFFFFF;"></i>
+                </div>
+                <div>
+                    <div class="pwa-banner-card__title" style="color: #047857; font-weight: 800;">Notificaciones de Citas</div>
+                    <div class="pwa-banner-card__desc" style="color: #065F46;">Recibe alertas 2 horas antes de tu corte.</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" onclick="activarNotificacionesPWA()" style="background: #10B981; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer;">
+                    Activar
+                </button>
+                <button type="button" onclick="probarNotificacionDirecta()" style="background: #111111; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer;">
+                    Probar en Teléfono
+                </button>
+            </div>
+        </div>
+
         <!-- Banner Card Código de Referido -->
         <?php
         $wa_share_dash = urlencode("¡Hola! Te regalo $" . $descuento_referido_amigo_cfg . " de descuento en tu corte de pelo en KORTZEN Barbería. Usa mi código " . $codigo_referido . " al reservar aquí: https://kortzen.com/reservar.php");
@@ -388,6 +409,41 @@ if ($cliente_id) {
                     }
                 } catch (e) {
                     alert('✓ Notificaciones activadas correctamente.');
+                }
+            }
+
+            async function probarNotificacionDirecta() {
+                if (!('Notification' in window)) {
+                    alert('Tu dispositivo no soporta notificaciones Web Push.');
+                    return;
+                }
+                if (Notification.permission !== 'granted') {
+                    const perm = await Notification.requestPermission();
+                    if (perm !== 'granted') {
+                        alert('⚠️ Las notificaciones están desactivadas en los ajustes de tu teléfono o navegador.');
+                        return;
+                    }
+                }
+                try {
+                    if ('serviceWorker' in navigator) {
+                        const reg = await navigator.serviceWorker.ready;
+                        reg.showNotification('✂️ KORTZEN Barbería - PRUEBA', {
+                            body: '¡Notificación Push recibida con éxito en la pantalla de tu teléfono!',
+                            icon: '/assets/icons/favicon.png',
+                            vibrate: [200, 100, 200],
+                            tag: 'test-kortzen-push',
+                            renotify: true,
+                            data: { url: 'cliente-dashboard.php' }
+                        });
+                    } else {
+                        new Notification('✂️ KORTZEN Barbería - PRUEBA', {
+                            body: '¡Notificación Push recibida con éxito en tu teléfono!',
+                            icon: '/assets/icons/favicon.png'
+                        });
+                    }
+                    alert('✓ Notificación de prueba despachada a tu teléfono.');
+                } catch (err) {
+                    alert('Notificación activada.');
                 }
             }
 
