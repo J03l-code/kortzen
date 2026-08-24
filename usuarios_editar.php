@@ -247,30 +247,41 @@ include 'includes/header.php';
         </div>
 
         <!-- SECCIÓN HORARIO DE ALMUERZO FIJO (SOLO ADMINISTRACIÓN) -->
-        <div style="grid-column: span 2; background: #FAFAFA; border: 1.5px solid #EAEAEA; border-radius: 12px; padding: 18px; margin-top: 8px; margin-bottom: 8px;">
-            <label style="display: block; font-weight: 900; font-size: 0.85rem; color: #111111; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
-                🍱 Horario de Almuerzo Fijo (Exclusivo Administrador)
-            </label>
-            <p style="font-size: 0.8rem; color: #666666; margin-bottom: 14px;">
+        <div style="grid-column: span 2; background: #FAFAFA; border: 1px solid #E0E0E0; border-radius: 12px; padding: 20px; margin: 12px 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <i class="fas fa-clock" style="color: #111111; font-size: 0.95rem;"></i>
+                <label style="font-weight: 900; font-size: 0.88rem; color: #111111; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">
+                    Horario de Almuerzo Fijo (Exclusivo Administrador)
+                </label>
+            </div>
+            <p style="font-size: 0.82rem; color: #666666; margin: 0 0 16px 0; line-height: 1.4;">
                 Configure el horario de descanso diario del barbero. Las reservas de clientes colisionantes con este rango quedarán bloqueadas de forma fija e inamovible.
             </p>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: end;">
                 <div>
-                    <label class="form-label" style="font-weight: 700;">Hora Inicio Almuerzo</label>
+                    <label style="display: block; font-weight: 700; font-size: 0.8rem; color: #333333; margin-bottom: 6px; text-transform: uppercase;">
+                        Hora Inicio Almuerzo
+                    </label>
                     <input type="time" name="almuerzo_inicio" class="form-input" 
-                           value="<?php echo $isEdit && !empty($usuario['almuerzo_inicio']) ? substr($usuario['almuerzo_inicio'], 0, 5) : '13:00'; ?>">
+                           value="<?php echo $isEdit && !empty($usuario['almuerzo_inicio']) ? substr($usuario['almuerzo_inicio'], 0, 5) : '13:00'; ?>"
+                           style="width: 100%; height: 42px; padding: 8px 12px; border: 1px solid #CCCCCC; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; background: #FFFFFF;">
                 </div>
                 <div>
-                    <label class="form-label" style="font-weight: 700;">Hora Fin Almuerzo</label>
+                    <label style="display: block; font-weight: 700; font-size: 0.8rem; color: #333333; margin-bottom: 6px; text-transform: uppercase;">
+                        Hora Fin Almuerzo
+                    </label>
                     <input type="time" name="almuerzo_fin" class="form-input" 
-                           value="<?php echo $isEdit && !empty($usuario['almuerzo_fin']) ? substr($usuario['almuerzo_fin'], 0, 5) : '14:00'; ?>">
+                           value="<?php echo $isEdit && !empty($usuario['almuerzo_fin']) ? substr($usuario['almuerzo_fin'], 0, 5) : '14:00'; ?>"
+                           style="width: 100%; height: 42px; padding: 8px 12px; border: 1px solid #CCCCCC; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; background: #FFFFFF;">
                 </div>
                 <div>
-                    <label class="form-label" style="font-weight: 700;">Bloqueo de Almuerzo</label>
-                    <select name="almuerzo_activo" class="form-select">
+                    <label style="display: block; font-weight: 700; font-size: 0.8rem; color: #333333; margin-bottom: 6px; text-transform: uppercase;">
+                        Estado Almuerzo
+                    </label>
+                    <select name="almuerzo_activo" class="form-select" style="width: 100%; height: 42px; padding: 8px 12px; border: 1px solid #CCCCCC; border-radius: 8px; font-size: 0.88rem; box-sizing: border-box; background: #FFFFFF; font-weight: 600;">
                         <option value="1" <?php echo (!$isEdit || ($usuario['almuerzo_activo'] ?? 1) == 1) ? 'selected' : ''; ?>>
-                            Activo (Fijo Bloqueado)
+                            Activo (Bloqueado)
                         </option>
                         <option value="0" <?php echo ($isEdit && ($usuario['almuerzo_activo'] ?? 1) == 0) ? 'selected' : ''; ?>>
                             Desactivado

@@ -222,7 +222,9 @@ include 'includes/header.php';
 <div style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 14px; padding: 24px; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #EAEAEA; padding-bottom: 14px;">
         <div>
-            <h2 style="font-size: 1.2rem; font-weight: 900; color: #111111; margin: 0;">📦 Stock e Inventario del Barbero</h2>
+            <h2 style="font-size: 1.2rem; font-weight: 900; color: #111111; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-boxes"></i> Stock e Inventario del Barbero
+            </h2>
             <p style="font-size: 0.82rem; color: #666666; margin-top: 2px;">Productos, pomadas, navajas y suministros asignados exclusivamente a este barbero.</p>
         </div>
         <button onclick="abrirModalStock()" class="btn" style="background: #111111; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 0.8rem; cursor: pointer;">
@@ -301,8 +303,8 @@ include 'includes/header.php';
     
     <!-- TARJETA INFORMACIÓN Y COMISIONES -->
     <div style="background: #181818; border: 1px solid #333333; border-radius: 14px; padding: 22px; color: #FFFFFF;">
-        <h3 style="font-size: 1.1rem; font-weight: 900; color: #FFFFFF; margin-bottom: 16px; border-bottom: 1px solid #333333; padding-bottom: 10px;">
-            👤 Información General & Comisiones
+        <h3 style="font-size: 1.1rem; font-weight: 900; color: #FFFFFF; margin-bottom: 16px; border-bottom: 1px solid #333333; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-user-cog"></i> Información General & Comisiones
         </h3>
         
         <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.9rem;">
@@ -352,8 +354,8 @@ include 'includes/header.php';
     <!-- TARJETA HORARIOS DEL BARBERO -->
     <div style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 14px; padding: 22px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #EAEAEA; padding-bottom: 10px;">
-            <h3 style="font-size: 1.1rem; font-weight: 900; color: #111111; margin: 0;">
-                📅 Horarios de Atención del Barbero
+            <h3 style="font-size: 1.1rem; font-weight: 900; color: #111111; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-calendar-alt"></i> Horarios de Atención del Barbero
             </h3>
             <a href="horarios.php?barbero=<?php echo $barbero['id']; ?>&from_profile=1" style="font-size: 0.78rem; font-weight: 800; color: #111111; text-decoration: underline;">
                 Editar Horarios
@@ -383,8 +385,8 @@ include 'includes/header.php';
 
 <!-- SECCIÓN 4: HISTORIAL DE CITAS Y SERVICIOS REALIZADOS -->
 <div style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 14px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-    <h2 style="font-size: 1.2rem; font-weight: 900; color: #111111; margin-bottom: 16px; border-bottom: 1px solid #EAEAEA; padding-bottom: 12px;">
-        ✂️ Historial de Citas Atendidas (<?php echo count($historialCitas); ?>)
+    <h2 style="font-size: 1.2rem; font-weight: 900; color: #111111; margin-bottom: 16px; border-bottom: 1px solid #EAEAEA; padding-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-cut"></i> Historial de Citas Atendidas (<?php echo count($historialCitas); ?>)
     </h2>
 
     <div class="table-container">
@@ -457,8 +459,8 @@ include 'includes/header.php';
 
             <?php if (!empty($inventarioCentral)): ?>
                 <div style="margin-bottom: 16px; background: #F0FDF4; border: 1.5px solid #10B981; padding: 12px; border-radius: 10px;">
-                    <label style="display: block; font-weight: 800; font-size: 0.78rem; color: #047857; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                        📦 Seleccionar del Inventario Central (Débito Automático):
+                    <label style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.78rem; color: #047857; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <i class="fas fa-store"></i> Seleccionar del Inventario Central (Débito Automático):
                     </label>
                     <select id="selectCentralStock" onchange="seleccionarItemCentral(this)" style="width: 100%; padding: 10px; border: 1px solid #10B981; border-radius: 6px; font-size: 0.88rem; font-weight: 700; background: #FFFFFF;">
                         <option value="">-- Seleccionar producto para debitar del stock general --</option>
@@ -472,8 +474,8 @@ include 'includes/header.php';
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <span style="font-size: 0.73rem; color: #047857; margin-top: 6px; display: block; font-weight: 700;">
-                        💡 Al asignar stock al barbero, se descontará automáticamente en tiempo real del inventario general.
+                    <span style="font-size: 0.73rem; color: #047857; margin-top: 6px; display: flex; align-items: center; gap: 4px; font-weight: 700;">
+                        <i class="fas fa-info-circle"></i> Al asignar stock al barbero, se descontará automáticamente en tiempo real del inventario general.
                     </span>
                 </div>
             <?php endif; ?>
