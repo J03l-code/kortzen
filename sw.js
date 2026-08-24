@@ -1,19 +1,5 @@
-const CACHE_NAME = 'kortzen-v4';
+const CACHE_NAME = 'kortzen-v5';
 const ASSETS_TO_CACHE = [
-  '/pwa-entry.php',
-  '/cliente-dashboard.php',
-  '/pwa-servicios.php',
-  '/pwa-barberos.php',
-  '/reservar.php',
-  '/mis-citas.php',
-  '/mi-perfil.php',
-  '/cliente-login.php',
-  '/',
-  '/index.html',
-  '/servicios.html',
-  '/nosotros.html',
-  '/galeria.html',
-  '/contacto.html',
   '/css/variables.css',
   '/css/reset.css',
   '/css/base.css',
@@ -24,6 +10,7 @@ const ASSETS_TO_CACHE = [
   '/css/animations.css',
   '/js/calendar-helper.js',
   '/js/main.js',
+  '/js/pwa.js',
   '/assets/icons/favicon.png',
   '/manifest.json'
 ];
@@ -33,7 +20,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        return cache.addAll(ASSETS_TO_CACHE);
+        return cache.addAll(ASSETS_TO_CACHE).catch(() => {});
       })
       .then(() => self.skipWaiting())
   );
@@ -54,10 +41,15 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch Event - Stale-while-revalidate strategy for static resources
+// Fetch Event - Never intercept document navigation or PHP requests to prevent Safari redirection errors
 self.addEventListener('fetch', event => {
-  // Exclude API requests and non-GET requests from caching
-  if (event.request.url.includes('/api/') || event.request.method !== 'GET') {
+  // Exclude page navigations, PHP files, API requests and non-GET requests from SW interception
+  if (
+    event.request.mode === 'navigate' ||
+    event.request.url.includes('.php') ||
+    event.request.url.includes('/api/') ||
+    event.request.method !== 'GET'
+  ) {
     return;
   }
 
@@ -65,9 +57,8 @@ self.addEventListener('fetch', event => {
     caches.match(event.request)
       .then(cachedResponse => {
         if (cachedResponse) {
-          // Fetch new version in background to update cache
           fetch(event.request).then(networkResponse => {
-            if (networkResponse.status === 200) {
+            if (networkResponse.status === 200 && networkResponse.type === 'basic') {
               caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse));
             }
           }).catch(() => {});
@@ -75,7 +66,6 @@ self.addEventListener('fetch', event => {
         }
 
         return fetch(event.request).then(networkResponse => {
-          // Cache newly fetched assets if valid
           if (networkResponse.status === 200 && networkResponse.type === 'basic') {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then(cache => {
