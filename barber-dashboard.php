@@ -595,8 +595,8 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                 <!-- Tarjeta de Preferencias del Cliente (3 preguntas respondidas) -->
                 <?php if (!empty($proximo['estilo_buscado']) || !empty($proximo['ambiente_preferido']) || !empty($proximo['bebida_preferida'])): ?>
                     <div style="background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-                        <div style="font-size: 0.72rem; font-weight: 900; color: #111111; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                            💡 PREFERENCIAS DEL CLIENTE:
+                        <div style="font-size: 0.72rem; font-weight: 900; color: #111111; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                            PREFERENCIAS DEL CLIENTE:
                         </div>
                         <?php if (!empty($proximo['estilo_buscado'])): ?>
                             <div style="font-size: 0.82rem; color: #444444; margin-bottom: 4px;">
