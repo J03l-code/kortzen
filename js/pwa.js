@@ -3,11 +3,12 @@
  * Handles Service Worker registration, custom install prompts for Android/iOS, and notifications
  */
 
-// Register Service Worker
+// Register Service Worker & Auto-Update
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('/sw.js?v=100')
       .then(registration => {
+        registration.update();
         console.log('Service Worker registrado con éxito:', registration.scope);
       })
       .catch(error => {

@@ -1,32 +1,21 @@
-const CACHE_NAME = 'kortzen-v6';
+const CACHE_NAME = 'kortzen-v100';
 const ASSETS_TO_CACHE = [
-  '/css/variables.css',
-  '/css/reset.css',
-  '/css/base.css',
-  '/css/pwa-native.css',
-  '/css/components.css',
-  '/css/layout.css',
-  '/css/pages.css',
-  '/css/animations.css',
-  '/js/calendar-helper.js',
-  '/js/main.js',
-  '/js/pwa.js',
   '/assets/icons/favicon.png',
   '/manifest.json'
 ];
 
-// Install Event - Caching basic resources
+// Install Event - Skip waiting immediately
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         return cache.addAll(ASSETS_TO_CACHE).catch(() => {});
       })
-      .then(() => self.skipWaiting())
   );
 });
 
-// Activate Event - Clean old caches
+// Activate Event - Clean all old caches and claim clients immediately
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -41,7 +30,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch Event - Never intercept document navigation or PHP requests to prevent Safari redirection errors
+// Fetch Event - Network First strategy for CSS, JS, and HTML so changes reflect instantly
 self.addEventListener('fetch', event => {
   // Exclude page navigations, PHP files, API requests and non-GET requests from SW interception
   if (
@@ -53,27 +42,20 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Network First for JS, CSS, and dynamic assets
   event.respondWith(
-    caches.match(event.request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          fetch(event.request).then(networkResponse => {
-            if (networkResponse.status === 200 && networkResponse.type === 'basic') {
-              caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse));
-            }
-          }).catch(() => {});
-          return cachedResponse;
+    fetch(event.request)
+      .then(networkResponse => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
         }
-
-        return fetch(event.request).then(networkResponse => {
-          if (networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        });
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request);
       })
   );
 });
