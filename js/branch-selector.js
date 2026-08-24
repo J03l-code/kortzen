@@ -236,18 +236,19 @@ function updateBranchInfoBar() {
         <div class="branch-info-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: #FFFFFF; color: #111111; border-bottom: 1px solid rgba(0, 0, 0, 0.08); height: 42px; display: flex; align-items: center; backdrop-filter: blur(10px); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;">
             <div class="branch-info-bar__content" style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
                 
-                <!-- SUCURSAL SELECTOR (CON BOTÓN CAMBIAR CLARO Y VISIBLE) -->
+                <!-- SUCURSAL SELECTOR (BOTÓN ULTRA LUXURY Y MINIMALISTA) -->
                 <div onclick="window.KortzenBranches.showSelector()" 
-                     style="display: flex; align-items: center; gap: 0.5rem; color: #111111; cursor: pointer; user-select: none; transition: opacity 0.2s ease;"
-                     onmouseover="this.style.opacity='0.8'" 
-                     onmouseout="this.style.opacity='1'">
+                     style="display: flex; align-items: center; gap: 0.4rem; color: #111111; cursor: pointer; user-select: none;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                         <circle cx="12" cy="10" r="3"></circle>
                     </svg>
                     <span style="font-weight: 700; letter-spacing: -0.2px;">${branch.name}</span>
-                    <span style="background: #111111; color: #FFFFFF; padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Cambiar ▾
+                    <span style="border: 1px solid rgba(0, 0, 0, 0.22); background: transparent; color: #111111; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; padding: 2px 8px; border-radius: 4px; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px; transition: all 0.25s ease;"
+                          onmouseover="this.style.background='#111111'; this.style.color='#FFFFFF'; this.style.borderColor='#111111';"
+                          onmouseout="this.style.background='transparent'; this.style.color='#111111'; this.style.borderColor='rgba(0, 0, 0, 0.22)';">
+                        <span>CAMBIAR</span>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </span>
                 </div>
 
