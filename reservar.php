@@ -241,19 +241,22 @@ $pageTitle = 'Reservar Cita';
         }
 
         .option-card:hover {
-            border-color: var(--gold);
+            border-color: #FFFFFF;
             background: rgba(255, 255, 255, 0.05);
         }
 
         .option-card.selected {
-            background: var(--gold);
-            border-color: var(--gold);
+            background: #181818 !important;
+            border: 2.5px solid #FFFFFF !important;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.35), inset 0 0 10px rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
         }
 
         .option-card.selected h3,
         .option-card.selected p,
         .option-card.selected .price {
-            color: #000;
+            color: #FFFFFF !important;
+            font-weight: 800 !important;
         }
 
         .option-card h3 {
@@ -284,7 +287,7 @@ $pageTitle = 'Reservar Cita';
             margin: 0 auto 15px;
             background-size: cover;
             background-position: center;
-            border: 2px solid var(--gold);
+            border: 2px solid #FFFFFF;
         }
 
         /* Date & Time */
@@ -320,14 +323,15 @@ $pageTitle = 'Reservar Cita';
         }
 
         .time-slot:hover:not(.disabled) {
-            border-color: var(--gold);
+            border-color: #FFFFFF;
         }
 
         .time-slot.selected {
-            background: var(--gold);
-            color: #000;
-            border-color: var(--gold);
-            font-weight: bold;
+            background: #181818 !important;
+            color: #FFFFFF !important;
+            border: 2.5px solid #FFFFFF !important;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            font-weight: 800 !important;
         }
 
         .time-slot.disabled {
