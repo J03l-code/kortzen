@@ -119,14 +119,19 @@ try {
             }
         }
 
-        // 2. Notificación Push Web / PWA
-        $stmtPush = $pdo->prepare("SELECT * FROM push_subscriptions WHERE cliente_id = ? OR cliente_id IS NULL");
-        $stmtPush->execute([$clienteId]);
-        $subscriptions = $stmtPush->fetchAll(PDO::FETCH_ASSOC);
+        // 2. Notificación Push Web / PWA a Teléfono
+        try {
+            $stmtNotifPwa = $pdo->prepare("
+                INSERT INTO notificaciones_pwa (cliente_id, cita_id, titulo, mensaje, url) 
+                VALUES (?, ?, ?, ?, ?)
+            ");
+            $tituloPush = "✂️ Confirmar Asistencia: Tu cita es en 2 horas";
+            $msgPush = "¡Hola {$cita['cliente_nombre']}! Recuerda que a las {$horaFormateada} tienes tu cita de {$cita['servicio_nombre']} con {$cita['barbero_nombre']}. Toca aquí para confirmar tu asistencia.";
+            $urlPush = "/cliente-dashboard.php?confirmar_cita={$citaId}";
 
-        if (!empty($subscriptions)) {
-            $enviadosPush += count($subscriptions);
-        }
+            $stmtNotifPwa->execute([$clienteId, $citaId, $tituloPush, $msgPush, $urlPush]);
+            $enviadosPush++;
+        } catch (Exception $ePwa) {}
 
         $detallesResumen[] = [
             'cita_id' => $citaId,

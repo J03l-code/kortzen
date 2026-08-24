@@ -388,6 +388,34 @@ if ($cliente_id) {
                     alert('✓ Notificaciones activadas correctamente.');
                 }
             }
+
+            async function checkPendingNotifications() {
+                try {
+                    const res = await fetch('api/check_pending_pwa_notifications.php');
+                    const data = await res.json();
+                    if (data.pending && data.notification) {
+                        const n = data.notification;
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            if ('serviceWorker' in navigator) {
+                                const reg = await navigator.serviceWorker.ready;
+                                reg.showNotification(n.title, {
+                                    body: n.body,
+                                    icon: n.icon || '/assets/icons/favicon.png',
+                                    vibrate: [200, 100, 200],
+                                    data: { url: n.url }
+                                });
+                            } else {
+                                new Notification(n.title, { body: n.body, icon: n.icon });
+                            }
+                        }
+                    }
+                } catch (err) {}
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                checkPendingNotifications();
+                setInterval(checkPendingNotifications, 15000);
+            });
         </script>
 
         <!-- Botón negro de Reserva flotante -->
