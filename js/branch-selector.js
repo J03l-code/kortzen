@@ -188,6 +188,7 @@ function selectBranchFromModal(branchId) {
  * Cerrar modal de sucursal
  */
 function closeBranchModal() {
+    sessionStorage.setItem('kortzen_branch_dismissed', 'true');
     const modal = document.getElementById('branch-modal');
     if (modal) modal.remove();
 }
@@ -280,21 +281,19 @@ function updateBranchInfoBar() {
 async function initBranchSelector() {
     await fetchBranches();
     
-    // Obtener la sucursal activa
+    // Obtener sucursal activa
     getSelectedBranch();
 
-    // Abrir el popup selector de sucursales automáticamente si es la primera visita de la sesión
-    const hasChosenThisSession = sessionStorage.getItem('kortzen_branch_modal_shown');
     const isDashboardPage = window.location.pathname.includes('barber-dashboard') || document.body.classList.contains('pwa-app-mode');
 
-    if (!hasChosenThisSession && !isDashboardPage) {
-        sessionStorage.setItem('kortzen_branch_modal_shown', 'true');
+    // Desplegar modal automáticamente al cargar la página si no se ha seleccionado en esta sesión
+    if (!isDashboardPage && !sessionStorage.getItem('kortzen_branch_dismissed')) {
         setTimeout(() => {
             createBranchSelectorModal();
-        }, 400);
+        }, 300);
     }
 
-    // Si no estamos en el panel de barbero, actualizar barra superior
+    // Actualizar la barra superior informativa
     if (!isDashboardPage) {
         updateBranchInfoBar();
     }
