@@ -54,8 +54,8 @@ try {
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
             $comision_fin_semana = floatval($_POST['comision_fin_semana'] ?? 50.00);
             $comision_productos = floatval($_POST['comision_productos'] ?? 10.00);
-            $almuerzo_inicio = trim($_POST['almuerzo_inicio'] ?? '14:00');
-            $almuerzo_fin = trim($_POST['almuerzo_fin'] ?? '15:00');
+            $almuerzo_inicio = trim($_POST['almuerzo_inicio'] ?? '13:00');
+            $almuerzo_fin = trim($_POST['almuerzo_fin'] ?? '14:00');
             $almuerzo_activo = intval($_POST['almuerzo_activo'] ?? 1);
 
             // Validaciones
@@ -104,8 +104,8 @@ try {
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
             $comision_fin_semana = floatval($_POST['comision_fin_semana'] ?? 50.00);
             $comision_productos = floatval($_POST['comision_productos'] ?? 10.00);
-            $almuerzo_inicio = trim($_POST['almuerzo_inicio'] ?? '14:00');
-            $almuerzo_fin = trim($_POST['almuerzo_fin'] ?? '15:00');
+            $almuerzo_inicio = trim($_POST['almuerzo_inicio'] ?? '13:00');
+            $almuerzo_fin = trim($_POST['almuerzo_fin'] ?? '14:00');
             $almuerzo_activo = intval($_POST['almuerzo_activo'] ?? 1);
 
             if ($id <= 0) {

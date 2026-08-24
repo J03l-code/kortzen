@@ -334,7 +334,7 @@ include 'includes/header.php';
                 <span style="color: #AAAAAA;">Almuerzo Fijo (Admin):</span>
                 <strong style="color: #F59E0B;">
                     <?php if (($barbero['almuerzo_activo'] ?? 1) == 1): ?>
-                        <?php echo substr($barbero['almuerzo_inicio'] ?? '14:00', 0, 5); ?> - <?php echo substr($barbero['almuerzo_fin'] ?? '15:00', 0, 5); ?> (Bloqueado)
+                        <?php echo substr($barbero['almuerzo_inicio'] ?? '13:00', 0, 5); ?> - <?php echo substr($barbero['almuerzo_fin'] ?? '14:00', 0, 5); ?> (Bloqueado)
                     <?php else: ?>
                         Desactivado
                     <?php endif; ?>

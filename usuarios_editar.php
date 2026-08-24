@@ -259,12 +259,12 @@ include 'includes/header.php';
                 <div>
                     <label class="form-label" style="font-weight: 700;">Hora Inicio Almuerzo</label>
                     <input type="time" name="almuerzo_inicio" class="form-input" 
-                           value="<?php echo $isEdit && !empty($usuario['almuerzo_inicio']) ? substr($usuario['almuerzo_inicio'], 0, 5) : '14:00'; ?>">
+                           value="<?php echo $isEdit && !empty($usuario['almuerzo_inicio']) ? substr($usuario['almuerzo_inicio'], 0, 5) : '13:00'; ?>">
                 </div>
                 <div>
                     <label class="form-label" style="font-weight: 700;">Hora Fin Almuerzo</label>
                     <input type="time" name="almuerzo_fin" class="form-input" 
-                           value="<?php echo $isEdit && !empty($usuario['almuerzo_fin']) ? substr($usuario['almuerzo_fin'], 0, 5) : '15:00'; ?>">
+                           value="<?php echo $isEdit && !empty($usuario['almuerzo_fin']) ? substr($usuario['almuerzo_fin'], 0, 5) : '14:00'; ?>">
                 </div>
                 <div>
                     <label class="form-label" style="font-weight: 700;">Bloqueo de Almuerzo</label>

@@ -104,10 +104,14 @@ function getConnection()
                 ");
             } catch (Exception $e_invb) {}
 
-            // Auto-migración columnas de horario de almuerzo fijo en usuarios
+            // Auto-migración columnas de horario de almuerzo fijo en usuarios (Por defecto 13:00 a 14:00 para todos)
             try {
-                $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '15:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1");
+                $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '13:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1");
             } catch (Exception $e_almuerzo) {}
+
+            try {
+                $pdo->exec("UPDATE usuarios SET almuerzo_inicio = '13:00:00', almuerzo_fin = '14:00:00' WHERE almuerzo_inicio = '14:00:00' OR almuerzo_inicio IS NULL");
+            } catch (Exception $e_updalm) {}
 
         } catch (PDOException $e) {
             // Log del error (en producción, usa error_log)
