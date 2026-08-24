@@ -246,7 +246,7 @@ function updateBranchInfoBar() {
                         <circle cx="12" cy="10" r="3"></circle>
                     </svg>
                     <span class="branch-info-bar__name" style="font-weight: 700; letter-spacing: -0.2px; white-space: nowrap !important; display: inline-block; max-width: ${isMobile ? '120px' : 'none'}; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;">${branch.name}</span>
-                    <span class="branch-info-bar__btn" style="border: 1px solid rgba(0, 0, 0, 0.22); background: transparent; color: #111111; font-size: ${isMobile ? '0.58rem' : '0.66rem'}; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 2px 6px; border-radius: 4px; margin-left: 2px; display: inline-flex; align-items: center; gap: 2px; transition: all 0.25s ease; white-space: nowrap; flex-shrink: 0;"
+                    <span class="branch-info-bar__btn" style="border: 1px solid rgba(0, 0, 0, 0.22); background: transparent; color: #111111; font-size: ${isMobile ? '0.58rem' : '0.66rem'}; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; display: inline-flex; align-items: center; gap: 2px; transition: all 0.25s ease; white-space: nowrap; flex-shrink: 0;"
                           onmouseover="this.style.background='#111111'; this.style.color='#FFFFFF'; this.style.borderColor='#111111';"
                           onmouseout="this.style.background='transparent'; this.style.color='#111111'; this.style.borderColor='rgba(0, 0, 0, 0.22)';">
                         <span>CAMBIAR</span>
