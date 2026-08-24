@@ -288,15 +288,16 @@ function updateBranchInfoBar() {
     fetch('/api/get_client_profile.php')
         .then(r => r.json())
         .then(res => {
-            const badges = document.querySelectorAll('#header-user-profile-badge');
-            if (!badges || badges.length === 0) return;
-
-            // Eliminar cualquier duplicado en el DOM si existiese más de uno
-            badges.forEach((b, idx) => {
+            // Eliminar cualquier elemento de perfil previo o duplicado en la barra
+            document.querySelectorAll('.branch-info-bar a[href*="cliente-dashboard"], .branch-info-bar a[href*="cliente-login"]').forEach(el => el.remove());
+            document.querySelectorAll('#header-user-profile-badge').forEach((b, idx) => {
                 if (idx > 0) b.remove();
             });
 
-            const badge = badges[0];
+            const badge = document.getElementById('header-user-profile-badge');
+            if (!badge) return;
+
+            badge.innerHTML = ''; // Limpieza total de HTML previo
 
             if (res.success && res.cliente) {
                 const firstName = res.cliente.nombre.split(' ')[0];
@@ -308,7 +309,7 @@ function updateBranchInfoBar() {
 
                 badge.innerHTML = `
                     <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px; flex-shrink: 0;"></span>
-                    <a href="cliente-dashboard.php" onclick="event.preventDefault(); window.location.href='cliente-dashboard.php';" 
+                    <a href="cliente-dashboard.php" class="single-user-profile-link" onclick="event.preventDefault(); window.location.href='cliente-dashboard.php';" 
                        style="display:inline-flex; align-items:center; gap:6px; color:#111111 !important; text-decoration:none; font-weight:800; font-size:0.8rem; white-space:nowrap; cursor:pointer !important; z-index:100002; pointer-events:auto !important; position:relative;">
                         ${fotoHtml}
                         <span style="color:#111111 !important; font-weight:800 !important;">${firstName}</span>
@@ -318,7 +319,7 @@ function updateBranchInfoBar() {
                 // NO LOGUEADO: Mostrar botón "Mi Perfil" redirigiendo a cliente-login.php
                 badge.innerHTML = `
                     <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px; flex-shrink: 0;"></span>
-                    <a href="cliente-login.php" onclick="event.preventDefault(); window.location.href='cliente-login.php';" 
+                    <a href="cliente-login.php" class="single-user-profile-link" onclick="event.preventDefault(); window.location.href='cliente-login.php';" 
                        style="display:inline-flex; align-items:center; gap:5px; color:#111111 !important; text-decoration:none; font-weight:800; font-size:0.75rem; border:1.5px solid #111111; padding:3px 9px; border-radius:20px; transition:all 0.2s ease; white-space:nowrap; cursor:pointer !important; z-index:100002; pointer-events:auto !important; position:relative;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         <span style="color:#111111 !important; font-weight:800 !important;">Mi Perfil</span>
@@ -326,11 +327,12 @@ function updateBranchInfoBar() {
                 `;
             }
         }).catch(() => {
+            document.querySelectorAll('.branch-info-bar a[href*="cliente-dashboard"], .branch-info-bar a[href*="cliente-login"]').forEach(el => el.remove());
             const badge = document.getElementById('header-user-profile-badge');
             if (badge) {
                 badge.innerHTML = `
                     <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px; flex-shrink: 0;"></span>
-                    <a href="cliente-login.php" onclick="event.preventDefault(); window.location.href='cliente-login.php';" 
+                    <a href="cliente-login.php" class="single-user-profile-link" onclick="event.preventDefault(); window.location.href='cliente-login.php';" 
                        style="display:inline-flex; align-items:center; gap:5px; color:#111111 !important; text-decoration:none; font-weight:800; font-size:0.75rem; border:1.5px solid #111111; padding:3px 9px; border-radius:20px; transition:all 0.2s ease; white-space:nowrap; cursor:pointer !important; z-index:100002; pointer-events:auto !important; position:relative;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         <span style="color:#111111 !important; font-weight:800 !important;">Mi Perfil</span>

@@ -56,8 +56,12 @@
     }
 }
 
-/* Purga estricta en CSS para evitar barras secundarias duplicadas en la UI */
-.branch-info-bar ~ .branch-info-bar {
+/* Purga estricta en CSS para evitar barras o elementos de perfil secundarios duplicados */
+.branch-info-bar ~ .branch-info-bar,
+.branch-info-bar__details .single-user-profile-link ~ .single-user-profile-link,
+.branch-info-bar__details a[href*="cliente-dashboard"] ~ a[href*="cliente-dashboard"],
+.branch-info-bar__details a[href*="cliente-login"] ~ a[href*="cliente-login"],
+.branch-info-bar__details #header-user-profile-badge ~ #header-user-profile-badge {
     display: none !important;
 }
 
