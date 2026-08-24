@@ -111,6 +111,10 @@ try {
             if (preg_match('/^(https?:|\/\/)/i', $redirect)) {
                 $redirect = '../clientes.php';
             }
+            if (strpos($redirect, '/') !== 0 && strpos($redirect, '../') !== 0) {
+                $redirect = '../' . ltrim($redirect, '/');
+            }
+
             header('Location: ' . $redirect . (strpos($redirect, '?') !== false ? '&' : '?') . 'success=' . urlencode('Puntos KORTZEN actualizados a ' . number_format($puntos) . ' pts'));
             exit;
 
