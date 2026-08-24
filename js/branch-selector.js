@@ -299,19 +299,21 @@ function updateBranchInfoBar() {
                     `<div style="width:22px; height:22px; border-radius:50%; background:#111111; color:#FFFFFF; font-size:0.68rem; font-weight:800; display:flex; align-items:center; justify-content:center;">${initial}</div>`;
 
                 badge.innerHTML = `
-                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px;"></span>
-                    <a href="/cliente-dashboard.php" style="display:inline-flex; align-items:center; gap:6px; color:#111111; text-decoration:none; font-weight:800; font-size:0.8rem; white-space:nowrap;">
+                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px; flex-shrink: 0;"></span>
+                    <a href="cliente-dashboard.php" onclick="event.preventDefault(); window.location.href='cliente-dashboard.php';" 
+                       style="display:inline-flex; align-items:center; gap:6px; color:#111111 !important; text-decoration:none; font-weight:800; font-size:0.8rem; white-space:nowrap; cursor:pointer !important; z-index:100002; pointer-events:auto !important; position:relative;">
                         ${fotoHtml}
-                        <span>${firstName}</span>
+                        <span style="color:#111111 !important; font-weight:800 !important;">${firstName}</span>
                     </a>
                 `;
             } else {
                 // NO LOGUEADO: Mostrar botón "Mi Perfil" redirigiendo a cliente-login.php
                 badge.innerHTML = `
-                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px;"></span>
-                    <a href="/cliente-login.php" style="display:inline-flex; align-items:center; gap:5px; color:#111111; text-decoration:none; font-weight:800; font-size:0.75rem; border:1.5px solid #111111; padding:3px 9px; border-radius:20px; transition:all 0.2s ease; white-space:nowrap;">
+                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px; flex-shrink: 0;"></span>
+                    <a href="cliente-login.php" onclick="event.preventDefault(); window.location.href='cliente-login.php';" 
+                       style="display:inline-flex; align-items:center; gap:5px; color:#111111 !important; text-decoration:none; font-weight:800; font-size:0.75rem; border:1.5px solid #111111; padding:3px 9px; border-radius:20px; transition:all 0.2s ease; white-space:nowrap; cursor:pointer !important; z-index:100002; pointer-events:auto !important; position:relative;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        <span>Mi Perfil</span>
+                        <span style="color:#111111 !important; font-weight:800 !important;">Mi Perfil</span>
                     </a>
                 `;
             }
@@ -319,10 +321,11 @@ function updateBranchInfoBar() {
             const badge = document.getElementById('header-user-profile-badge');
             if (badge) {
                 badge.innerHTML = `
-                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px;"></span>
-                    <a href="/cliente-login.php" style="display:inline-flex; align-items:center; gap:5px; color:#111111; text-decoration:none; font-weight:800; font-size:0.75rem; border:1.5px solid #111111; padding:3px 9px; border-radius:20px; transition:all 0.2s ease; white-space:nowrap;">
+                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px; flex-shrink: 0;"></span>
+                    <a href="cliente-login.php" onclick="event.preventDefault(); window.location.href='cliente-login.php';" 
+                       style="display:inline-flex; align-items:center; gap:5px; color:#111111 !important; text-decoration:none; font-weight:800; font-size:0.75rem; border:1.5px solid #111111; padding:3px 9px; border-radius:20px; transition:all 0.2s ease; white-space:nowrap; cursor:pointer !important; z-index:100002; pointer-events:auto !important; position:relative;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        <span>Mi Perfil</span>
+                        <span style="color:#111111 !important; font-weight:800 !important;">Mi Perfil</span>
                     </a>
                 `;
             }
