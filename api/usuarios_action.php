@@ -54,6 +54,9 @@ try {
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
             $comision_fin_semana = floatval($_POST['comision_fin_semana'] ?? 50.00);
             $comision_productos = floatval($_POST['comision_productos'] ?? 10.00);
+            $almuerzo_inicio = trim($_POST['almuerzo_inicio'] ?? '14:00');
+            $almuerzo_fin = trim($_POST['almuerzo_fin'] ?? '15:00');
+            $almuerzo_activo = intval($_POST['almuerzo_activo'] ?? 1);
 
             // Validaciones
             if (empty($nombre) || empty($email) || empty($password)) {
@@ -77,12 +80,13 @@ try {
             // Hash de contraseña con BCRYPT
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-            // Asegurar columna comision_productos
+            // Asegurar columnas
             try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_productos DECIMAL(5,2) DEFAULT 10.00 AFTER comision_fin_semana"); } catch (Exception $ex) {}
+            try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '15:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1"); } catch (Exception $ex_a) {}
 
-            $sql = "INSERT INTO usuarios (nombre, email, password, rol, sucursal_id, biografia, especialidades, foto_url, telefono, comision_porcentaje, comision_fin_semana, comision_productos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO usuarios (nombre, email, password, rol, sucursal_id, biografia, especialidades, foto_url, telefono, comision_porcentaje, comision_fin_semana, comision_productos, almuerzo_inicio, almuerzo_fin, almuerzo_activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos]);
+            $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo]);
 
             header('Location: ../usuarios.php?success=Usuario creado exitosamente');
             exit;
@@ -100,6 +104,9 @@ try {
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
             $comision_fin_semana = floatval($_POST['comision_fin_semana'] ?? 50.00);
             $comision_productos = floatval($_POST['comision_productos'] ?? 10.00);
+            $almuerzo_inicio = trim($_POST['almuerzo_inicio'] ?? '14:00');
+            $almuerzo_fin = trim($_POST['almuerzo_fin'] ?? '15:00');
+            $almuerzo_activo = intval($_POST['almuerzo_activo'] ?? 1);
 
             if ($id <= 0) {
                 throw new Exception('ID de usuario inválido.');
@@ -119,8 +126,9 @@ try {
                 throw new Exception('El email ya está registrado por otro usuario.');
             }
 
-            // Asegurar columna comision_productos
+            // Asegurar columnas
             try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_productos DECIMAL(5,2) DEFAULT 10.00 AFTER comision_fin_semana"); } catch (Exception $ex) {}
+            try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '15:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1"); } catch (Exception $ex_a) {}
 
             // Si se proporcionó contraseña, actualizarla
             if (!empty($password)) {
@@ -128,14 +136,14 @@ try {
                     throw new Exception('La contraseña debe tener al menos 6 caracteres.');
                 }
                 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-                $sql = "UPDATE usuarios SET nombre = ?, email = ?, password = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ?, comision_fin_semana = ?, comision_productos = ? WHERE id = ?";
+                $sql = "UPDATE usuarios SET nombre = ?, email = ?, password = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ?, comision_fin_semana = ?, comision_productos = ?, almuerzo_inicio = ?, almuerzo_fin = ?, almuerzo_activo = ? WHERE id = ?";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $id]);
+                $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo, $id]);
             } else {
                 // No actualizar contraseña
-                $sql = "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ?, comision_fin_semana = ?, comision_productos = ? WHERE id = ?";
+                $sql = "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ?, comision_fin_semana = ?, comision_productos = ?, almuerzo_inicio = ?, almuerzo_fin = ?, almuerzo_activo = ? WHERE id = ?";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$nombre, $email, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $id]);
+                $stmt->execute([$nombre, $email, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo, $id]);
             }
 
             header('Location: ../usuarios.php?success=Usuario actualizado exitosamente');

@@ -49,7 +49,19 @@ try {
     // 3.5. Obtener bloqueos por horas (NUEVO)
     $stmtBloqueoHoras = $pdo->prepare("SELECT hora_inicio, hora_fin FROM bloqueos_horas WHERE barbero_id = ? AND fecha = ?");
     $stmtBloqueoHoras->execute([$barberoId, $fecha]);
-    $bloqueosParciales = $stmtBloqueoHoras->fetchAll();
+    $bloqueosParciales = $stmtBloqueoHoras->fetchAll(PDO::FETCH_ASSOC);
+
+    // 3.6. Incluir Horario de Almuerzo Fijo del Barbero (Gestionado por Administrador)
+    $stmtBarberUser = $pdo->prepare("SELECT almuerzo_inicio, almuerzo_fin, almuerzo_activo FROM usuarios WHERE id = ?");
+    $stmtBarberUser->execute([$barberoId]);
+    $barberUser = $stmtBarberUser->fetch(PDO::FETCH_ASSOC);
+
+    if ($barberUser && ($barberUser['almuerzo_activo'] ?? 1) == 1 && !empty($barberUser['almuerzo_inicio']) && !empty($barberUser['almuerzo_fin'])) {
+        $bloqueosParciales[] = [
+            'hora_inicio' => $barberUser['almuerzo_inicio'],
+            'hora_fin' => $barberUser['almuerzo_fin']
+        ];
+    }
 
     // Definir límites del día
     $horaInicioStr = $horarioBase['hora_inicio']; // Ej: "10:00:00"

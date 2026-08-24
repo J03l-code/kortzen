@@ -246,6 +246,40 @@ include 'includes/header.php';
             <small style="color: var(--text-muted); font-size: 0.8em;">Porcentaje exclusivo asignado por venta de productos</small>
         </div>
 
+        <!-- SECCIÓN HORARIO DE ALMUERZO FIJO (SOLO ADMINISTRACIÓN) -->
+        <div style="grid-column: span 2; background: #FAFAFA; border: 1.5px solid #EAEAEA; border-radius: 12px; padding: 18px; margin-top: 8px; margin-bottom: 8px;">
+            <label style="display: block; font-weight: 900; font-size: 0.85rem; color: #111111; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                🍱 Horario de Almuerzo Fijo (Exclusivo Administrador)
+            </label>
+            <p style="font-size: 0.8rem; color: #666666; margin-bottom: 14px;">
+                Configure el horario de descanso diario del barbero. Las reservas de clientes colisionantes con este rango quedarán bloqueadas de forma fija e inamovible.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                <div>
+                    <label class="form-label" style="font-weight: 700;">Hora Inicio Almuerzo</label>
+                    <input type="time" name="almuerzo_inicio" class="form-input" 
+                           value="<?php echo $isEdit && !empty($usuario['almuerzo_inicio']) ? substr($usuario['almuerzo_inicio'], 0, 5) : '14:00'; ?>">
+                </div>
+                <div>
+                    <label class="form-label" style="font-weight: 700;">Hora Fin Almuerzo</label>
+                    <input type="time" name="almuerzo_fin" class="form-input" 
+                           value="<?php echo $isEdit && !empty($usuario['almuerzo_fin']) ? substr($usuario['almuerzo_fin'], 0, 5) : '15:00'; ?>">
+                </div>
+                <div>
+                    <label class="form-label" style="font-weight: 700;">Bloqueo de Almuerzo</label>
+                    <select name="almuerzo_activo" class="form-select">
+                        <option value="1" <?php echo (!$isEdit || ($usuario['almuerzo_activo'] ?? 1) == 1) ? 'selected' : ''; ?>>
+                            Activo (Fijo Bloqueado)
+                        </option>
+                        <option value="0" <?php echo ($isEdit && ($usuario['almuerzo_activo'] ?? 1) == 0) ? 'selected' : ''; ?>>
+                            Desactivado
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div class="form-group">
             <label class="form-label">Sucursal</label>
             <select name="sucursal_id" class="form-select">

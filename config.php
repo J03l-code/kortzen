@@ -104,6 +104,11 @@ function getConnection()
                 ");
             } catch (Exception $e_invb) {}
 
+            // Auto-migración columnas de horario de almuerzo fijo en usuarios
+            try {
+                $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '15:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1");
+            } catch (Exception $e_almuerzo) {}
+
         } catch (PDOException $e) {
             // Log del error (en producción, usa error_log)
             error_log("Error de conexión a la base de datos: " . $e->getMessage());

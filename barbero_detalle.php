@@ -330,6 +330,16 @@ include 'includes/header.php';
                 <span style="color: #AAAAAA;">Comisión Venta Productos:</span>
                 <strong style="color: #10B981;"><?php echo number_format($com_productos, 1); ?>%</strong>
             </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #282828; padding-bottom: 8px;">
+                <span style="color: #AAAAAA;">Almuerzo Fijo (Admin):</span>
+                <strong style="color: #F59E0B;">
+                    <?php if (($barbero['almuerzo_activo'] ?? 1) == 1): ?>
+                        <?php echo substr($barbero['almuerzo_inicio'] ?? '14:00', 0, 5); ?> - <?php echo substr($barbero['almuerzo_fin'] ?? '15:00', 0, 5); ?> (Bloqueado)
+                    <?php else: ?>
+                        Desactivado
+                    <?php endif; ?>
+                </strong>
+            </div>
         </div>
 
         <div style="margin-top: 18px; text-align: right;">

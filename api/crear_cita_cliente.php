@@ -68,6 +68,21 @@ try {
     $sucursalId = $barberoData['sucursal_id'] ?? 1;
     $nombreBarbero = $barberoData['nombre'];
 
+    // Validar si el horario solicitado colisiona con el Horario de Almuerzo Fijo del Barbero
+    $stmtAlmuerzo = $pdo->prepare("SELECT almuerzo_inicio, almuerzo_fin, almuerzo_activo FROM usuarios WHERE id = ?");
+    $stmtAlmuerzo->execute([$barberoId]);
+    $barberLunch = $stmtAlmuerzo->fetch(PDO::FETCH_ASSOC);
+
+    if ($barberLunch && ($barberLunch['almuerzo_activo'] ?? 1) == 1 && !empty($barberLunch['almuerzo_inicio']) && !empty($barberLunch['almuerzo_fin'])) {
+        $cSlotStart = strtotime($fechaHora);
+        $cLunchStart = strtotime("$fecha " . $barberLunch['almuerzo_inicio']);
+        $cLunchEnd = strtotime("$fecha " . $barberLunch['almuerzo_fin']);
+
+        if ($cSlotStart >= $cLunchStart && $cSlotStart < $cLunchEnd) {
+            throw new Exception('El barbero se encuentra en su horario de almuerzo a esa hora. Por favor selecciona otro horario.');
+        }
+    }
+
     // 3. Obtener precio y nombre servicio
     $stmtServicio = $pdo->prepare("SELECT nombre, precio FROM servicios WHERE id = ?");
     $stmtServicio->execute([$servicioId]);
