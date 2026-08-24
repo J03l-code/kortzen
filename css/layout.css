@@ -203,6 +203,16 @@ body.nav-open .header .header__logo-text,
     .header__cta {
         display: none !important;
     }
+
+    .header .nav,
+    .header nav.nav,
+    header .nav,
+    .nav {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
 }
 
 /* Mobile Navigation Overlay */

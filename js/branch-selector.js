@@ -288,8 +288,15 @@ function updateBranchInfoBar() {
     fetch('/api/get_client_profile.php')
         .then(r => r.json())
         .then(res => {
-            const badge = document.getElementById('header-user-profile-badge');
-            if (!badge) return;
+            const badges = document.querySelectorAll('#header-user-profile-badge');
+            if (!badges || badges.length === 0) return;
+
+            // Eliminar cualquier duplicado en el DOM si existiese más de uno
+            badges.forEach((b, idx) => {
+                if (idx > 0) b.remove();
+            });
+
+            const badge = badges[0];
 
             if (res.success && res.cliente) {
                 const firstName = res.cliente.nombre.split(' ')[0];
