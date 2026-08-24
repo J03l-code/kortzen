@@ -284,29 +284,49 @@ function updateBranchInfoBar() {
         header.style.top = '42px';
     }
 
-    // Auto-cargar perfil del usuario si está iniciada la sesión
+    // Auto-cargar perfil del usuario si está iniciada la sesión (O mostrar Mi Perfil si es invitado)
     fetch('/api/get_client_profile.php')
         .then(r => r.json())
         .then(res => {
-            if (res.success && res.cliente) {
-                const badge = document.getElementById('header-user-profile-badge');
-                if (badge) {
-                    const firstName = res.cliente.nombre.split(' ')[0];
-                    const initial = firstName.charAt(0).toUpperCase();
-                    const fotoHtml = res.cliente.foto ? 
-                        `<img src="${res.cliente.foto}" style="width:22px; height:22px; border-radius:50%; object-fit:cover;" alt="Avatar">` :
-                        `<div style="width:22px; height:22px; border-radius:50%; background:#111; color:#fff; font-size:0.68rem; font-weight:800; display:flex; align-items:center; justify-content:center;">${initial}</div>`;
+            const badge = document.getElementById('header-user-profile-badge');
+            if (!badge) return;
 
-                    badge.innerHTML = `
-                        <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 4px;"></span>
-                        <div style="display:flex; align-items:center; gap:6px; color:#111; font-weight:700;">
-                            ${fotoHtml}
-                            <span>${firstName}</span>
-                        </div>
-                    `;
-                }
+            if (res.success && res.cliente) {
+                const firstName = res.cliente.nombre.split(' ')[0];
+                const initial = firstName.charAt(0).toUpperCase();
+                const fotoHtml = res.cliente.foto ? 
+                    `<img src="${res.cliente.foto}" style="width:22px; height:22px; border-radius:50%; object-fit:cover; border: 1px solid #111;" alt="Avatar">` :
+                    `<div style="width:22px; height:22px; border-radius:50%; background:#111111; color:#FFFFFF; font-size:0.68rem; font-weight:800; display:flex; align-items:center; justify-content:center;">${initial}</div>`;
+
+                badge.innerHTML = `
+                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px;"></span>
+                    <a href="/cliente-dashboard.php" style="display:inline-flex; align-items:center; gap:6px; color:#111111; text-decoration:none; font-weight:800; font-size:0.8rem; white-space:nowrap;">
+                        ${fotoHtml}
+                        <span>${firstName}</span>
+                    </a>
+                `;
+            } else {
+                // NO LOGUEADO: Mostrar botón "Mi Perfil" redirigiendo a cliente-login.php
+                badge.innerHTML = `
+                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px;"></span>
+                    <a href="/cliente-login.php" style="display:inline-flex; align-items:center; gap:5px; color:#111111; text-decoration:none; font-weight:800; font-size:0.75rem; border:1.5px solid #111111; padding:3px 9px; border-radius:20px; transition:all 0.2s ease; white-space:nowrap;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span>Mi Perfil</span>
+                    </a>
+                `;
             }
-        }).catch(() => {});
+        }).catch(() => {
+            const badge = document.getElementById('header-user-profile-badge');
+            if (badge) {
+                badge.innerHTML = `
+                    <span style="border-left: 1px solid rgba(0,0,0,0.12); height: 16px; margin: 0 2px;"></span>
+                    <a href="/cliente-login.php" style="display:inline-flex; align-items:center; gap:5px; color:#111111; text-decoration:none; font-weight:800; font-size:0.75rem; border:1.5px solid #111111; padding:3px 9px; border-radius:20px; transition:all 0.2s ease; white-space:nowrap;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span>Mi Perfil</span>
+                    </a>
+                `;
+            }
+        });
 }
 
 /**

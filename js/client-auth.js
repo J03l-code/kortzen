@@ -57,37 +57,8 @@
      * Agrega indicador de usuario en la barra de sucursal
      */
     function addUserIndicator(user) {
-        const branchBar = document.querySelector('.branch-info-bar__content');
-        if (!branchBar) return;
-
-        // Verificar si ya existe el indicador
-        if (branchBar.querySelector('.user-indicator')) return;
-
-        const indicator = document.createElement('div');
-        indicator.className = 'user-indicator';
-        indicator.style.cssText = `
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-left: 1rem;
-            padding-left: 1rem;
-            border-left: 1px solid rgba(192, 160, 98, 0.3);
-        `;
-
-        indicator.innerHTML = `
-            <a href="/cliente-dashboard.php" style="display: flex; align-items: center; gap: 0.5rem; color: #111111; text-decoration: none; font-size: 0.85rem; font-weight: 700;">
-                ${user.foto
-                ? `<img src="${user.foto}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #111111;">`
-                : `<span style="width: 24px; height: 24px; border-radius: 50%; background: #111111; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">${user.inicial}</span>`
-            }
-                <span style="color: #111111 !important; font-weight: 700 !important;">${user.nombre.split(' ')[0]}</span>
-            </a>
-        `;
-
-        const details = branchBar.querySelector('.branch-info-bar__details');
-        if (details) {
-            details.appendChild(indicator);
-        }
+        // Manejado de forma unificada en branch-selector.js updateBranchInfoBar
+        return;
     }
 
     /**
