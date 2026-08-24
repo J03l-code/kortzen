@@ -97,19 +97,32 @@ include 'includes/header.php';
     }
 
     .filter-select {
-        padding: 10px 16px;
-        background: rgba(15, 15, 15, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
-        color: var(--text-primary);
+        padding: 11px 16px;
+        background: #1F1F1F !important;
+        border: 1px solid #333333 !important;
+        border-radius: 8px;
+        color: #FFFFFF !important;
         font-size: 14px;
+        font-weight: 700;
         cursor: pointer;
-        min-width: 180px;
+        min-width: 200px;
+        outline: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
     }
 
-    .filter-select:focus {
-        outline: none;
-        border-color: rgba(201, 169, 110, 0.5);
+    .filter-select option {
+        background: #1A1A1A !important;
+        color: #FFFFFF !important;
+        padding: 10px;
+        font-weight: 600;
+    }
+
+    .filter-select:focus,
+    .filter-select:hover {
+        border-color: #C0A062 !important;
+        background: #282828 !important;
+        box-shadow: 0 0 10px rgba(192, 160, 98, 0.3);
     }
 
     .btn-secondary {
