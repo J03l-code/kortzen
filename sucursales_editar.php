@@ -156,12 +156,41 @@ include 'includes/header.php';
             <label class="form-label">Teléfono</label>
             <input type="tel" name="telefono" class="form-input"
                 value="<?php echo $isEdit ? htmlspecialchars($sucursal['telefono']) : ''; ?>"
-                placeholder="+34 91 123 45 67" required>
+                placeholder="+593 98 842 2770" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Estado de la Sucursal</label>
+            <select name="estado" class="form-input" style="background:#fff;">
+                <option value="activo" <?php echo ($isEdit && ($sucursal['estado'] ?? '') === 'activo') ? 'selected' : ''; ?>>🟢 ACTIVA (Disponible para Reservas)</option>
+                <option value="proximamente" <?php echo ($isEdit && ($sucursal['estado'] ?? '') === 'proximamente') ? 'selected' : ''; ?>>⏳ PRÓXIMAMENTE / INACTIVA POR EL MOMENTO (En selector como Próximamente)</option>
+                <option value="inactivo" <?php echo ($isEdit && ($sucursal['estado'] ?? '') === 'inactivo') ? 'selected' : ''; ?>>🔴 INACTIVA (Oculta por completo)</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+                <label class="form-label">Apertura</label>
+                <input type="time" name="horario_apertura" class="form-input"
+                    value="<?php echo $isEdit ? htmlspecialchars($sucursal['horario_apertura'] ?? '10:00') : '10:00'; ?>">
+            </div>
+            <div>
+                <label class="form-label">Cierre</label>
+                <input type="time" name="horario_cierre" class="form-input"
+                    value="<?php echo $isEdit ? htmlspecialchars($sucursal['horario_cierre'] ?? '20:00') : '20:00'; ?>">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">URL de Google Maps (Iframe / Enlace)</label>
+            <input type="text" name="mapa_url" class="form-input"
+                value="<?php echo $isEdit ? htmlspecialchars($sucursal['mapa_url'] ?? '') : ''; ?>"
+                placeholder="https://maps.google.com/...">
         </div>
 
         <div class="form-actions">
             <a href="sucursales.php" class="btn-cancel">Cancelar</a>
-            <button type="submit" class="btn-confirm">Confirmar</button>
+            <button type="submit" class="btn-confirm">Guardar Cambios</button>
         </div>
     </form>
 </div>
