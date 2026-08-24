@@ -148,20 +148,11 @@ try {
                 'url' => "/cliente-dashboard.php?confirmar_cita={$citaId}"
             ]);
 
+            require_once __DIR__ . '/../includes/webpush_helper.php';
+
             foreach ($subscriptions as $sub) {
                 if (!empty($sub['endpoint'])) {
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, $sub['endpoint']);
-                    curl_setopt($ch, CURLOPT_POST, true);
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $payloadPush);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                        'Content-Type: application/json',
-                        'TTL: 86400'
-                    ]);
-                    @curl_exec($ch);
-                    @curl_close($ch);
+                    enviarWebPushVapid($sub, $payloadPush);
                     $enviadosPush++;
                     $countDispositivos++;
                 }
