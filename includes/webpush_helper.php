@@ -1,7 +1,9 @@
 <?php
 /**
- * KORTZEN - WebPush VAPID Dispatcher Helper
+ * KORTZEN - WebPush VAPID Dispatcher Helper with RFC 8291 Encryption
  */
+
+require_once __DIR__ . '/webpush_encrypt.php';
 
 define('VAPID_PUBLIC_KEY', 'BN3FX2wXwG5gj_QlNIm0OZuDaQj37jelLWAZHsjGpu86iIlFkIvcylgw9rimD6APwtzJOzYiIbC_V3qiaTZ6Z8U');
 define('VAPID_PRIVATE_KEY', 'O9mKeqQcXT9n-9wt_Jc3ypub6GrlV9av9rPQb2lVxDc');
@@ -58,7 +60,7 @@ function generarVapidAuthHeader($endpoint, $vapidPublic = VAPID_PUBLIC_KEY, $vap
 }
 
 /**
- * Despachar Notificación Push con firma VAPID autenticada a Google FCM / Apple APNs
+ * Despachar Notificación Push con Cifrado RFC 8291 (aes128gcm) a Apple APNs (iPhone 16 Pro Max) / Google FCM
  */
 function enviarWebPushVapid($subscription, $payload) {
     $endpoint = is_array($subscription) ? ($subscription['endpoint'] ?? '') : $subscription;
@@ -66,23 +68,37 @@ function enviarWebPushVapid($subscription, $payload) {
         return false;
     }
 
-    $jsonPayload = is_string($payload) ? $payload : json_encode($payload);
+    $p256dh = is_array($subscription) ? ($subscription['p256dh'] ?? '') : '';
+    $authSecret = is_array($subscription) ? ($subscription['auth'] ?? '') : '';
+
     $authHeader = generarVapidAuthHeader($endpoint);
 
-    $headers = [
-        'Content-Type: application/json',
-        'TTL: 86400',
-        'Urgency: high'
-    ];
+    // Intentar cifrado RFC 8291 aes128gcm para Apple APNs (iOS Safari)
+    $encryptedBody = null;
+    if (!empty($p256dh) && !empty($authSecret) && $p256dh !== 'granted') {
+        $encryptedBody = encryptWebPushPayload($payload, $p256dh, $authSecret);
+    }
 
+    $headers = [];
     if ($authHeader) {
         $headers[] = 'Authorization: ' . $authHeader;
+    }
+    $headers[] = 'TTL: 86400';
+    $headers[] = 'Urgency: high';
+
+    if ($encryptedBody !== false && $encryptedBody !== null) {
+        $headers[] = 'Content-Type: application/octet-stream';
+        $headers[] = 'Content-Encoding: aes128gcm';
+        $postData = $encryptedBody;
+    } else {
+        $headers[] = 'Content-Type: application/json';
+        $postData = is_string($payload) ? $payload : json_encode($payload);
     }
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $endpoint);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 6);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
