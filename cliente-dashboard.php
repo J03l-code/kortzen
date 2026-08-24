@@ -397,6 +397,21 @@ if ($cliente_id) {
                     const data = await res.json();
                     if (data.pending && data.notification) {
                         const n = data.notification;
+                        
+                        // 1. Desplegar Banner Flotante dentro de la PWA (Garantizado)
+                        const bTitle = document.getElementById('pwaNotifTitle');
+                        const bBody = document.getElementById('pwaNotifBody');
+                        const bLink = document.getElementById('pwaNotifLink');
+                        const bBanner = document.getElementById('pwaNotifBanner');
+
+                        if (bTitle && bBody && bLink && bBanner) {
+                            bTitle.innerText = n.title;
+                            bBody.innerText = n.body;
+                            bLink.href = n.url || 'cliente-dashboard.php';
+                            bBanner.style.display = 'block';
+                        }
+
+                        // 2. Disparar Notificación Nativa de Sistema si el navegador lo permite
                         if ('Notification' in window && Notification.permission === 'granted') {
                             if ('serviceWorker' in navigator) {
                                 const reg = await navigator.serviceWorker.ready;
@@ -414,11 +429,30 @@ if ($cliente_id) {
                 } catch (err) {}
             }
 
+            function cerrarPwaNotifBanner() {
+                const b = document.getElementById('pwaNotifBanner');
+                if (b) b.style.display = 'none';
+            }
+
             document.addEventListener('DOMContentLoaded', () => {
                 checkPendingNotifications();
-                setInterval(checkPendingNotifications, 15000);
+                setInterval(checkPendingNotifications, 10000);
             });
         </script>
+
+        <!-- BANNER FLOTANTE PWA PARA NOTIFICACIONES -->
+        <div id="pwaNotifBanner" style="display: none; position: fixed; top: 16px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 440px; background: #111111; color: #FFFFFF; border-radius: 14px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 99999; border: 1.5px solid #10B981;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; color: #10B981;">
+                    <i class="fas fa-bell"></i> <span id="pwaNotifTitle">Recordatorio de Cita</span>
+                </div>
+                <button onclick="cerrarPwaNotifBanner()" style="background: none; border: none; color: #AAAAAA; font-size: 1.3rem; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
+            </div>
+            <div id="pwaNotifBody" style="font-size: 0.85rem; color: #EEEEEE; margin-bottom: 12px; line-height: 1.4;"></div>
+            <a id="pwaNotifLink" href="cliente-dashboard.php" class="btn" style="display: block; width: 100%; text-align: center; background: #10B981; color: #FFFFFF; font-weight: 800; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 0.82rem; box-sizing: border-box;">
+                CONFIRMAR ASISTENCIA →
+            </a>
+        </div>
 
         <!-- Botón negro de Reserva flotante -->
         <a href="reservar.php" class="pwa-btn-black">
