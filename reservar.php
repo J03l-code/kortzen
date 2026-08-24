@@ -23,7 +23,6 @@ $pageTitle = 'Reservar Cita';
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/pwa-native.css?v=50">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 
     <!-- Favicon & Touch Icons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon.png?v=10">
@@ -38,49 +37,77 @@ $pageTitle = 'Reservar Cita';
             touch-action: manipulation;
         }
 
-        /* FLATPICKR LUXURY DARK STYLES */
+        /* FLATPICKR LUXURY CLEAN DARK THEME OVERRIDES */
         .flatpickr-calendar {
             background: #141416 !important;
             border: 2px solid #C0A062 !important;
             box-shadow: 0 15px 45px rgba(0, 0, 0, 0.95) !important;
             border-radius: 16px !important;
-            padding: 8px !important;
+            padding: 10px !important;
+        }
+        .flatpickr-months {
+            background: #141416 !important;
+            border-bottom: 1px solid #28282C !important;
+        }
+        .flatpickr-months .flatpickr-month {
+            background: #141416 !important;
+            color: #FFFFFF !important;
+            font-weight: 800 !important;
+            fill: #FFFFFF !important;
+        }
+        .flatpickr-current-month .flatpickr-monthDropdown-months,
+        .flatpickr-current-month input.cur-year {
+            background: #141416 !important;
+            color: #FFFFFF !important;
+            font-weight: 800 !important;
+            font-size: 1.1rem !important;
+            border: none !important;
+            padding: 2px 6px !important;
+            border-radius: 6px !important;
+        }
+        .flatpickr-current-month .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
+            background: #141416 !important;
+            color: #FFFFFF !important;
+        }
+        .flatpickr-weekdays {
+            background: #141416 !important;
+        }
+        span.flatpickr-weekday {
+            background: #141416 !important;
+            color: #C0A062 !important;
+            font-weight: 800 !important;
+            font-size: 0.85rem !important;
+        }
+        .flatpickr-day {
+            color: #FFFFFF !important;
+            font-weight: 700 !important;
+            border-radius: 8px !important;
         }
         .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.selected:focus, .flatpickr-day.selected:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.selected.nextMonthDay {
             background: #C0A062 !important;
             border-color: #C0A062 !important;
             color: #000000 !important;
             font-weight: 800 !important;
-            border-radius: 10px !important;
         }
         .flatpickr-day:hover {
-            background: rgba(192, 160, 98, 0.25) !important;
+            background: rgba(192, 160, 98, 0.3) !important;
             border-color: #C0A062 !important;
             color: #FFFFFF !important;
-            border-radius: 10px !important;
         }
         .flatpickr-day.today {
             border-color: #C0A062 !important;
             font-weight: 800 !important;
         }
-        .flatpickr-months .flatpickr-month {
-            background: #141416 !important;
-            color: #FFFFFF !important;
-            font-weight: 800 !important;
-        }
-        .flatpickr-current-month .flatpickr-monthDropdown-months {
-            font-weight: 800 !important;
-        }
-        .flatpickr-weekday {
-            color: #C0A062 !important;
-            font-weight: 800 !important;
-        }
-        .flatpickr-day.disabled, .flatpickr-day.disabled:hover {
+        .flatpickr-day.disabled, .flatpickr-day.disabled:hover, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
             color: #444444 !important;
         }
-    <style>
+        .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month {
+            color: #C0A062 !important;
+            fill: #C0A062 !important;
+        }
+
         :root {
-            --gold: #FFFFFF;
+            --gold: #C0A062;
             --dark-bg: #050505;
             --card-bg: #111111;
             --text-primary: #F5F5F5;
@@ -122,46 +149,55 @@ $pageTitle = 'Reservar Cita';
         .steps-progress {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 24px;
+            align-items: center;
+            margin-bottom: 28px;
             position: relative;
+            padding: 0 10px;
         }
 
         .steps-progress::before {
             content: '';
             position: absolute;
             top: 50%;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #333;
+            left: 20px;
+            right: 20px;
+            transform: translateY(-50%);
+            height: 3px;
+            background: #2A2A2D;
             z-index: 1;
         }
 
         .step-dot {
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            background: #EEEEEE;
-            color: #999;
+            background: #1C1C1E;
+            color: #888888;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            font-weight: 800;
+            font-size: 0.95rem;
             position: relative;
-            z-index: 2;
-            border: 2px solid var(--dark-bg);
-            transition: all 0.3s ease;
+            z-index: 5;
+            border: 2px solid #333333;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-sizing: border-box;
         }
 
         .step-dot.active {
-            background: var(--gold);
-            color: #000;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            background: #000000 !important;
+            color: #FFFFFF !important;
+            border: 3px solid #C0A062 !important;
+            box-shadow: 0 0 15px rgba(192, 160, 98, 0.7), inset 0 0 5px rgba(192, 160, 98, 0.4);
+            transform: scale(1.15);
         }
 
         .step-dot.completed {
-            background: var(--gold);
-            color: #000;
+            background: #C0A062 !important;
+            color: #000000 !important;
+            border: 2px solid #C0A062 !important;
+            font-weight: 800;
         }
 
         /* Wizard Sections */
@@ -395,17 +431,22 @@ $pageTitle = 'Reservar Cita';
 
         <!-- Step 3: Date & Time -->
         <div class="wizard-step" id="step3">
-            <h2 style="margin-bottom: 20px;">Elige Fecha y Hora</h2>
+            <h2 style="margin-bottom: 20px; font-weight: 800;">Elige Fecha y Hora</h2>
             <div class="datetime-wrapper">
-                <div style="margin-bottom: 20px;">
-                    <label style="display:flex; align-items:center; gap:8px; margin-bottom:10px; color:var(--text-secondary); font-weight:600;">
-                        <i class="fas fa-calendar-alt" style="color:var(--gold, #C0A062);"></i> Selecciona el día
-                    </label>
+                <div style="background: #161618; border: 1.5px solid #C0A062; border-radius: 14px; padding: 18px; margin-bottom: 22px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                        <label style="display:flex; align-items:center; gap:8px; color:#FFFFFF; font-weight:800; font-size:1.05rem; margin:0;">
+                            <i class="fas fa-calendar-alt" style="color:#C0A062; font-size:1.2rem;"></i> Selecciona el día de tu cita
+                        </label>
+                        <span style="background: #C0A062; color: #000000; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="fas fa-hand-pointer"></i> TOCA AQUÍ PARA ELEGIR
+                        </span>
+                    </div>
                     <div style="position: relative; width: 100%;">
-                        <i class="fas fa-calendar-day" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #888; font-size: 1.1rem; pointer-events: none; z-index: 2;"></i>
-                        <input type="text" id="datePicker" placeholder="Seleccionar fecha" readonly
-                            style="width: 100%; padding: 15px 40px 15px 45px; background: #1A1A1A; border: 1px solid #333; color: #FFFFFF; font-weight: 600; font-size: 16px !important; border-radius: 8px; cursor: pointer; box-sizing: border-box;">
-                        <i class="fas fa-chevron-down" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #888; font-size: 0.9rem; pointer-events: none; z-index: 2;"></i>
+                        <i class="fas fa-calendar-day" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #C0A062; font-size: 1.2rem; pointer-events: none; z-index: 2;"></i>
+                        <input type="text" id="datePicker" placeholder="Haz clic aquí para abrir el calendario..." readonly
+                            style="width: 100%; padding: 16px 40px 16px 48px; background: #08080A; border: 1px solid #C0A062; color: #FFFFFF; font-weight: 800; font-size: 16px !important; border-radius: 10px; cursor: pointer; box-shadow: 0 0 12px rgba(192, 160, 98, 0.2); transition: all 0.3s ease; box-sizing: border-box;">
+                        <i class="fas fa-chevron-down" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #C0A062; font-size: 1rem; pointer-events: none; z-index: 2;"></i>
                     </div>
                 </div>
 
@@ -425,7 +466,7 @@ $pageTitle = 'Reservar Cita';
                         </div>
                     </div>
                     <div id="slotsGrid" class="slots-grid">
-                        <p style="color:#666; grid-column: 1/-1;">Selecciona una fecha primero</p>
+                        <p style="color:#666; grid-column: 1/-1;">Selecciona una fecha arriba para ver los turnos disponibles</p>
                     </div>
                 </div>
             </div>
