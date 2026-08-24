@@ -165,7 +165,7 @@ include 'includes/header.php';
             <div>
                 <label class="form-label">Apertura</label>
                 <input type="time" name="horario_apertura" class="form-input"
-                    value="<?php echo $isEdit ? htmlspecialchars($sucursal['horario_apertura'] ?? '09:00') : '09:00'; ?>">
+                    value="<?php echo $isEdit ? htmlspecialchars($sucursal['horario_apertura'] ?? '10:00') : '10:00'; ?>">
             </div>
             <div>
                 <label class="form-label">Cierre</label>

@@ -32,7 +32,7 @@ async function fetchBranches() {
             name: "KORTZEN Llano Chico",
             address: "Calle 17 de septiembre, frente a la casa de colchon, Llano Chico, Quito",
             phone: "+593 098 842 2770",
-            openTime: "09:00",
+            openTime: "10:00",
             closeTime: "20:00",
             isProximamente: false,
             estado: "activo"

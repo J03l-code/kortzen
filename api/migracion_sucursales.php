@@ -58,15 +58,21 @@ try {
             'KORTZEN Llano Chico',
             'Calle 17 de septiembre, frente a la casa de colchon, Llano Chico, Quito',
             '+593 098 842 2770',
-            '09:00:00',
+            '10:00:00',
             '20:00:00',
             'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.8071991201023!2d-78.44604192503535!3d-0.13528119986338483!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fc52de96153%3A0x35f5708deeee0cf7!2sKORTZEN!5e0!3m2!1sen!2sec!4v1786588668585!5m2!1sen!2sec'
         ]);
     }
 
+    // 8. Forzar horario 10:00 - 20:00 en todas las sucursales y barberos
+    $pdo->exec("UPDATE sucursales SET horario_apertura = '10:00:00', horario_cierre = '20:00:00'");
+    try {
+        $pdo->exec("UPDATE horarios_barberos SET hora_inicio = '10:00:00', hora_fin = '20:00:00', activo = 1");
+    } catch (Exception $e) {}
+
     echo json_encode([
         'success' => true,
-        'message' => 'Migración de sucursales completada con éxito.'
+        'message' => 'Migración de sucursales completada con éxito. Horario global: 10:00 - 20:00 (Lunes a Domingo).'
     ]);
 
 } catch (Exception $e) {

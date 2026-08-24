@@ -93,25 +93,13 @@
         "dayOfWeek": [
           "Monday",
           "Tuesday",
-          "Thursday",
-          "Friday"
-        ],
-        "opens": "14:00",
-        "closes": "21:00"
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
           "Wednesday",
-          "Saturday"
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
         ],
         "opens": "10:00",
-        "closes": "21:00"
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": "Sunday",
-        "opens": "14:00",
         "closes": "20:00"
       }
     ],
@@ -178,7 +166,7 @@
         </div>
         <div class="mobile-nav__meta-item">
           <span class="mobile-nav__meta-label">Horarios</span>
-          <span class="mobile-nav__meta-value">Lun - Sáb: 10:00 AM - 09:00 PM</span>
+          <span class="mobile-nav__meta-value">Lun - Dom: 10:00 AM - 08:00 PM</span>
         </div>
         <div class="mobile-nav__meta-item">
           <span class="mobile-nav__meta-label">Contacto</span>
@@ -598,16 +586,8 @@
           <h4 class="footer__title">Horario de Atención</h4>
           <div class="footer__schedule">
             <div class="footer__schedule-item">
-              <span class="footer__schedule-day">Lun - Mar - Jue - Vie</span>
-              <span class="footer__schedule-time">02:00 PM - 09:00 PM</span>
-            </div>
-            <div class="footer__schedule-item">
-              <span class="footer__schedule-day">Miércoles y Sábado</span>
-              <span class="footer__schedule-time">10:00 AM - 09:00 PM</span>
-            </div>
-            <div class="footer__schedule-item">
-              <span class="footer__schedule-day">Domingo</span>
-              <span class="footer__schedule-time">02:00 PM - 08:00 PM</span>
+              <span class="footer__schedule-day">Lunes a Domingo</span>
+              <span class="footer__schedule-time">10:00 AM - 08:00 PM</span>
             </div>
           </div>
         </div>
@@ -753,7 +733,7 @@
 
   <!-- JavaScript -->
   <script src="/js/api-service.js"></script> <!-- API Service (antes de auth) -->
-  <script src="/js/branch-selector.js?v=105"></script>
+  <script src="/js/branch-selector.js?v=106"></script>
   <script src="/js/preloader.js"></script> <!-- Preloader -->
   <script src="/js/auth.js"></script> <!-- Auth Simulation -->
   <script src="/js/booking-data.js"></script> <!-- Mock Data -->

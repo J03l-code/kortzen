@@ -426,9 +426,9 @@ input:focus + .slider {
                         $horarioDia = array_filter($horarios, fn($h) => $h['dia_semana'] == $numDia);
                         $horarioDia = !empty($horarioDia) ? array_values($horarioDia)[0] : null;
                         
-                        // LOGICA ACTUALIZADA: Default 08:00 si no existe horario previo
-                        $activo = $horarioDia ? $horarioDia['activo'] : ($numDia != 0);
-                        $horaInicio = $horarioDia ? substr($horarioDia['hora_inicio'], 0, 5) : '08:00'; 
+                        // LOGICA ACTUALIZADA: Default 10:00 a 20:00 (Lunes a Domingo)
+                        $activo = $horarioDia ? $horarioDia['activo'] : 1;
+                        $horaInicio = $horarioDia ? substr($horarioDia['hora_inicio'], 0, 5) : '10:00'; 
                         $horaFin = $horarioDia ? substr($horarioDia['hora_fin'], 0, 5) : '20:00';
                     ?>
                     <div class="horario-dia <?php echo $activo ? 'activo-row' : 'inactivo'; ?>">

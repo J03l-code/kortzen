@@ -14,7 +14,7 @@ try {
     try {
         $stmt = $pdo->prepare("
             SELECT id, nombre, direccion, telefono, 
-                   DATE_FORMAT(COALESCE(horario_apertura, '09:00:00'), '%H:%i') as horario_apertura, 
+                   DATE_FORMAT(COALESCE(horario_apertura, '10:00:00'), '%H:%i') as horario_apertura, 
                    DATE_FORMAT(COALESCE(horario_cierre, '20:00:00'), '%H:%i') as horario_cierre, 
                    COALESCE(estado, 'activo') as estado,
                    imagen_url, mapa_url
@@ -42,7 +42,7 @@ try {
             'name' => $s['nombre'],
             'address' => $s['direccion'] ?: 'Quito',
             'phone' => $s['telefono'] ?: '',
-            'openTime' => !empty($s['horario_apertura']) ? date('H:i', strtotime($s['horario_apertura'])) : '09:00',
+            'openTime' => !empty($s['horario_apertura']) ? date('H:i', strtotime($s['horario_apertura'])) : '10:00',
             'closeTime' => !empty($s['horario_cierre']) ? date('H:i', strtotime($s['horario_cierre'])) : '20:00',
             'estado' => $estado,
             'isProximamente' => ($estado === 'proximamente'),
