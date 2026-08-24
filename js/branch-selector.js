@@ -11,14 +11,18 @@ let currentSelectedBranch = null;
  */
 async function fetchBranches() {
     try {
-        const response = await fetch('/api/get_sucursales.php');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+        const response = await fetch('/api/get_sucursales.php', { signal: controller.signal });
+        clearTimeout(timeoutId);
         const json = await response.json();
         if (json.success && json.data && json.data.length > 0) {
             cachedBranches = json.data;
             return cachedBranches;
         }
     } catch (e) {
-        console.warn('Error al cargar sucursales desde la API:', e);
+        console.warn('Error o timeout al cargar sucursales:', e);
     }
 
     // Fallback por defecto si no hay conexión
