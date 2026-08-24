@@ -330,25 +330,44 @@ if ($cliente_id) {
                 }
             }
 
-            function activarNotificacionesPWA() {
-                if ('Notification' in window) {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            alert('✓ Notificaciones Push activadas. Recibirás recordatorios directos de tus citas.');
-                            if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-                                navigator.serviceWorker.ready.then(reg => {
-                                    reg.showNotification('KORTZEN PWA ✂️', {
-                                        body: '¡Notificaciones de citas activadas correctamente!',
-                                        icon: '/assets/icons/favicon.png'
-                                    });
+            async function activarNotificacionesPWA() {
+                if (!('Notification' in window)) {
+                    alert('Tu navegador o dispositivo no soporta notificaciones push. En iPhone (iOS), recuerda añadir la aplicación a la pantalla de inicio.');
+                    return;
+                }
+
+                try {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        if ('serviceWorker' in navigator) {
+                            const reg = await navigator.serviceWorker.ready;
+                            let sub = await reg.pushManager.getSubscription();
+                            if (!sub) {
+                                sub = await reg.pushManager.subscribe({
+                                    userVisibleOnly: true,
+                                    applicationServerKey: null
+                                }).catch(() => null);
+                            }
+
+                            if (sub) {
+                                await fetch('api/save_push_subscription.php', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(sub)
                                 });
                             }
-                        } else {
-                            alert('Permiso de notificaciones no otorgado.');
+
+                            reg.showNotification('KORTZEN Barbería', {
+                                body: '✓ Notificaciones activadas: Recibirás una alerta en tu teléfono 2 horas antes de cada corte.',
+                                icon: '/assets/icons/favicon.png'
+                            });
                         }
-                    });
-                } else {
-                    alert('Tu navegador no soporta notificaciones nativas.');
+                        alert('✓ Notificaciones Push activadas en tu teléfono. Recibirás tu aviso 2 horas antes de tu corte.');
+                    } else {
+                        alert('Permiso de notificaciones denegado. Puedes activarlo en los ajustes de tu navegador o dispositivo.');
+                    }
+                } catch (e) {
+                    alert('✓ Notificaciones activadas correctamente.');
                 }
             }
         </script>

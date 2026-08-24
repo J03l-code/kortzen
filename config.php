@@ -113,6 +113,25 @@ function getConnection()
                 $pdo->exec("UPDATE usuarios SET almuerzo_inicio = '13:00:00', almuerzo_fin = '14:00:00' WHERE almuerzo_inicio = '14:00:00' OR almuerzo_inicio IS NULL");
             } catch (Exception $e_updalm) {}
 
+            // Auto-migración tabla push_subscriptions y columna recordatorio_2h_enviado
+            try {
+                $pdo->exec("ALTER TABLE citas ADD COLUMN recordatorio_2h_enviado TINYINT(1) DEFAULT 0");
+            } catch (Exception $e_r2h) {}
+
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS push_subscriptions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        cliente_id INT NULL,
+                        endpoint TEXT NOT NULL,
+                        p256dh TEXT NULL,
+                        auth TEXT NULL,
+                        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX idx_cliente (cliente_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            } catch (Exception $e_psub) {}
+
         } catch (PDOException $e) {
             // Log del error (en producción, usa error_log)
             error_log("Error de conexión a la base de datos: " . $e->getMessage());
