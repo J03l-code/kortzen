@@ -113,10 +113,14 @@ function getConnection()
                 $pdo->exec("UPDATE usuarios SET almuerzo_inicio = '13:00:00', almuerzo_fin = '14:00:00' WHERE almuerzo_inicio = '14:00:00' OR almuerzo_inicio IS NULL");
             } catch (Exception $e_updalm) {}
 
-            // Auto-migración tabla push_subscriptions y columna recordatorio_2h_enviado
+            // Auto-migración tabla push_subscriptions y columnas recordatorio_2h_enviado, asistencia_confirmada
             try {
                 $pdo->exec("ALTER TABLE citas ADD COLUMN recordatorio_2h_enviado TINYINT(1) DEFAULT 0");
             } catch (Exception $e_r2h) {}
+
+            try {
+                $pdo->exec("ALTER TABLE citas ADD COLUMN asistencia_confirmada TINYINT(1) DEFAULT 0");
+            } catch (Exception $e_asist) {}
 
             try {
                 $pdo->exec("

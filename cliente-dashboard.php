@@ -255,8 +255,26 @@ if ($cliente_id) {
 
             <?php 
                 $horasFaltantes = ($ts_cita - time()) / 3600;
+                $isConfirmada = !empty($proxima_cita['asistencia_confirmada']);
             ?>
-            <div style="display: flex; gap: 0.6rem; margin-top: 0.8rem; align-items: center;">
+
+            <!-- SECCIÓN CONFIRMACIÓN DE ASISTENCIA (INTEGRACIÓN PUSH) -->
+            <div style="margin-top: 0.8rem;">
+                <?php if ($isConfirmada): ?>
+                    <div style="background: #ECFDF5; border: 1.5px solid #10B981; color: #047857; padding: 10px 14px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fas fa-check-circle" style="font-size: 1rem; color: #10B981;"></i> ASISTENCIA CONFIRMADA (¡Te esperamos!)
+                    </div>
+                <?php else: ?>
+                    <form action="api/confirmar_asistencia.php" method="POST" style="margin-bottom: 8px;">
+                        <input type="hidden" name="cita_id" value="<?php echo $proxima_cita['id']; ?>">
+                        <button type="submit" class="btn" style="width: 100%; background: #10B981; color: #FFFFFF; border: none; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                            <i class="fas fa-check"></i> CONFIRMAR ASISTENCIA
+                        </button>
+                    </form>
+                <?php endif; ?>
+            </div>
+
+            <div style="display: flex; gap: 0.6rem; margin-top: 0.6rem; align-items: center;">
                 <?php if ($horasFaltantes >= 2): ?>
                     <a href="reservar.php?reagendar_id=<?php echo $proxima_cita['id']; ?>" class="pwa-btn-secondary" style="flex: 1; text-align: center; text-decoration: none; font-size: 0.8rem; font-weight: 800; padding: 10px;">REAGENDAR</a>
                     

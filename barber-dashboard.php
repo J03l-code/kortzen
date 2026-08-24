@@ -603,11 +603,20 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                     </div>
                 </div>
 
-                <div style="border-top: 1px solid #EAEAEA; padding-top: 14px; margin-bottom: 14px;">
+                <div style="border-top: 1px solid #EAEAEA; padding-top: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <div>
                         <span style="font-size: 0.8rem; color: #666666;">Cliente:</span>
                         <strong style="color: #111111; font-size: 0.95rem; margin-left: 4px;"><?php echo htmlspecialchars($proximo['cliente'] ?? 'Cliente'); ?></strong>
                     </div>
+                    <?php if (!empty($proximo['asistencia_confirmada'])): ?>
+                        <div style="background: #ECFDF5; border: 1.5px solid #10B981; color: #047857; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-check-circle" style="color: #10B981;"></i> CLIENTE CONFIRMÓ ASISTENCIA
+                        </div>
+                    <?php else: ?>
+                        <div style="background: #FFFBEB; border: 1px solid #F59E0B; color: #B45309; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.72rem;">
+                            Pendiente confirmación de cliente
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Tarjeta de Preferencias del Cliente (3 preguntas respondidas) -->
@@ -796,8 +805,13 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                                 <div style="font-weight: 800; font-size: 0.9rem; color: #111111; margin-bottom: 2px;">
                                     <?php echo htmlspecialchars($t['servicio'] ?? 'Corte'); ?>
                                 </div>
-                                <div style="font-size: 0.8rem; color: #666666;">
-                                    Cliente: <strong style="color: #111111;"><?php echo htmlspecialchars($t['cliente'] ?? 'Cliente'); ?></strong>
+                                <div style="font-size: 0.8rem; color: #666666; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px;">
+                                    <span>Cliente: <strong style="color: #111111;"><?php echo htmlspecialchars($t['cliente'] ?? 'Cliente'); ?></strong></span>
+                                    <?php if (!empty($t['asistencia_confirmada'])): ?>
+                                        <span style="background: #ECFDF5; color: #047857; border: 1px solid #10B981; font-weight: 800; font-size: 0.68rem; padding: 2px 7px; border-radius: 4px;">
+                                            ✓ CONFIRMADO
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <div>
