@@ -369,12 +369,27 @@ if ($cliente_id) {
                 }
             }
 
+            const VAPID_PUBLIC_KEY = 'BN3FX2wXwG5gj_QlNIm0OZuDaQj37jelLWAZHsjGpu86iIlFkIvcylgw9rimD6APwtzJOzYiIbC_V3qiaTZ6Z8U';
+
+            function urlBase64ToUint8Array(base64String) {
+                const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                const base64 = (base64String + padding)
+                    .replace(/\-/g, '+')
+                    .replace(/_/g, '/');
+                const rawData = window.atob(base64);
+                const outputArray = new Uint8Array(rawData.length);
+                for (let i = 0; i < rawData.length; ++i) {
+                    outputArray[i] = rawData.charCodeAt(i);
+                }
+                return outputArray;
+            }
+
             async function getSWRegistration() {
                 if (!('serviceWorker' in navigator)) return null;
                 try {
                     return await Promise.race([
                         navigator.serviceWorker.ready,
-                        new Promise(resolve => setTimeout(() => resolve(null), 600))
+                        new Promise(resolve => setTimeout(() => resolve(null), 800))
                     ]);
                 } catch (e) {
                     return null;
@@ -396,15 +411,25 @@ if ($cliente_id) {
                         };
 
                         const reg = await getSWRegistration();
-                        if (reg && reg.showNotification) {
+                        if (reg && reg.pushManager) {
                             let sub = await reg.pushManager.getSubscription().catch(() => null);
+                            if (!sub) {
+                                sub = await reg.pushManager.subscribe({
+                                    userVisibleOnly: true,
+                                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                                }).catch(() => null);
+                            }
+
                             if (sub) {
                                 subData = JSON.parse(JSON.stringify(sub));
                             }
-                            reg.showNotification('KORTZEN Barbería', {
-                                body: '✓ Notificaciones activadas: Recibirás una alerta en tu teléfono 2 horas antes de cada corte.',
-                                icon: '/assets/icons/favicon.png'
-                            });
+
+                            if (reg.showNotification) {
+                                reg.showNotification('KORTZEN Barbería', {
+                                    body: '✓ Notificaciones activadas: Recibirás una alerta en tu teléfono 2 horas antes de cada corte.',
+                                    icon: '/assets/icons/favicon.png'
+                                });
+                            }
                         } else if ('Notification' in window) {
                             new Notification('KORTZEN Barbería', {
                                 body: '✓ Notificaciones activadas: Recibirás una alerta en tu teléfono 2 horas antes de cada corte.',
@@ -413,7 +438,7 @@ if ($cliente_id) {
                         }
 
                         // Enviar registro al servidor obligatoriamente
-                        fetch('api/save_push_subscription.php', {
+                        await fetch('api/save_push_subscription.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(subData)
