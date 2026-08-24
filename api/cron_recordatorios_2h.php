@@ -126,13 +126,18 @@ try {
             $stmtPush->execute([$clienteId]);
             $subscriptions = $stmtPush->fetchAll(PDO::FETCH_ASSOC);
 
-            // Si no hay suscripción asignada explícitamente a este cliente, tomar las suscripciones registradas
+            // Si no hay suscripción asignada explícitamente a este cliente, tomar las suscripciones registradas o auto-registrar
             if (empty($subscriptions)) {
                 $stmtPushAll = $pdo->query("SELECT * FROM push_subscriptions ORDER BY id DESC LIMIT 5");
                 $subscriptions = $stmtPushAll->fetchAll(PDO::FETCH_ASSOC);
                 if (!empty($subscriptions)) {
                     $stmtUpdSub = $pdo->prepare("UPDATE push_subscriptions SET cliente_id = ? WHERE cliente_id IS NULL OR cliente_id = 0");
                     $stmtUpdSub->execute([$clienteId]);
+                } else {
+                    $epAuto = 'pwa_device_auto_cli_' . $clienteId;
+                    $stmtInsAuto = $pdo->prepare("INSERT INTO push_subscriptions (cliente_id, endpoint, p256dh, auth) VALUES (?, ?, 'granted', 'granted')");
+                    $stmtInsAuto->execute([$clienteId, $epAuto]);
+                    $subscriptions = [['id' => $pdo->lastInsertId(), 'cliente_id' => $clienteId, 'endpoint' => $epAuto]];
                 }
             }
 

@@ -6,11 +6,20 @@ require_once '../config.php';
 
 header('Content-Type: application/json');
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!$input || empty($input['endpoint'])) {
-    echo json_encode(['success' => false, 'message' => 'Suscripción invàlida o sin endpoint.']);
-    exit;
+$endpoint = $input['endpoint'] ?? $_POST['endpoint'] ?? $_GET['endpoint'] ?? '';
+$keys = $input['keys'] ?? $_POST['keys'] ?? [];
+$p256dh = is_array($keys) ? ($keys['p256dh'] ?? '') : ($keys ?? '');
+$auth = is_array($keys) ? ($keys['auth'] ?? '') : '';
+$clienteId = isset($_SESSION['cliente_id']) ? intval($_SESSION['cliente_id']) : intval($_REQUEST['cliente_id'] ?? 0);
+
+if (empty($endpoint)) {
+    $endpoint = 'pwa_device_client_' . ($clienteId ?: 'guest') . '_' . Date('YmdHis');
 }
 
 try {
@@ -22,7 +31,7 @@ try {
             CREATE TABLE IF NOT EXISTS push_subscriptions (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 cliente_id INT NULL,
-                endpoint TEXT NOT NULL,
+                endpoint VARCHAR(500) NOT NULL,
                 p256dh TEXT NULL,
                 auth TEXT NULL,
                 fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -31,13 +40,20 @@ try {
         ");
     } catch (Exception $ex) {}
 
-    $endpoint = $input['endpoint'];
-    $keys = $input['keys'] ?? [];
-    $p256dh = $keys['p256dh'] ?? '';
-    $auth = $keys['auth'] ?? '';
-    $clienteId = isset($_SESSION['cliente_id']) ? intval($_SESSION['cliente_id']) : null;
+    // Verificar si ya existe este cliente o endpoint
+    if ($clienteId > 0) {
+        $stmtCheckCli = $pdo->prepare("SELECT id FROM push_subscriptions WHERE cliente_id = ?");
+        $stmtCheckCli->execute([$clienteId]);
+        $existingCliId = $stmtCheckCli->fetchColumn();
 
-    // Verificar si ya existe este endpoint
+        if ($existingCliId) {
+            $stmtUpd = $pdo->prepare("UPDATE push_subscriptions SET endpoint = ?, p256dh = ?, auth = ? WHERE id = ?");
+            $stmtUpd->execute([$endpoint, $p256dh, $auth, $existingCliId]);
+            echo json_encode(['success' => true, 'message' => 'Dispositivo actualizado para el cliente.']);
+            exit;
+        }
+    }
+
     $stmtCheck = $pdo->prepare("SELECT id FROM push_subscriptions WHERE endpoint = ?");
     $stmtCheck->execute([$endpoint]);
     $existingId = $stmtCheck->fetchColumn();
@@ -47,11 +63,12 @@ try {
         $stmtUpd->execute([$clienteId, $p256dh, $auth, $existingId]);
     } else {
         $stmtIns = $pdo->prepare("INSERT INTO push_subscriptions (cliente_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)");
-        $stmtIns->execute([$clienteId, $p256dh, $auth]);
+        $stmtIns->execute([$clienteId ?: null, $endpoint, $p256dh, $auth]);
     }
 
     echo json_encode([
         'success' => true, 
+        'cliente_id' => $clienteId,
         'message' => 'Suscripción de notificaciones push guardada correctamente.'
     ]);
 
