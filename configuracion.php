@@ -444,4 +444,51 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- Tarjeta de Gestión de Sucursales y Próxima Apertura -->
+<div class="config-card" style="margin-top: 32px; background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 16px; padding: 32px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <h3 class="config-card-header" style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 800;">
+            <svg class="config-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            Gestión de Sucursales & Próximas Aperturas
+        </h3>
+        <a href="sucursales_crear.php" style="background: #111111; color: #FFFFFF; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+            + AÑADIR SUCURSAL
+        </a>
+    </div>
+    <p style="color: #666666; font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5;">
+        Configura los locales activos de KORTZEN donde los clientes pueden agendar sus citas, o crea sucursales en estado <strong>"PRÓXIMAMENTE"</strong> para mostrar futuras aperturas de forma visible pero deshabilitada en el selector inicial.
+    </p>
+
+    <?php
+    $sucursalesList = query("SELECT * FROM sucursales ORDER BY id ASC");
+    ?>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+        <?php foreach ($sucursalesList as $suc): ?>
+            <div style="background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #111111;"><?php echo htmlspecialchars($suc['nombre']); ?></h4>
+                        <?php 
+                        $st = $suc['estado'] ?? 'activo';
+                        if ($st === 'activo'): ?>
+                            <span style="background: #e8f8f0; color: #2ecc71; font-size: 0.68rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid #a3e9c4;">🟢 ACTIVA</span>
+                        <?php elseif ($st === 'proximamente'): ?>
+                            <span style="background: #fffde7; color: #d4ac0d; font-size: 0.68rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid #f9e79f;">⏳ PRÓXIMAMENTE</span>
+                        <?php else: ?>
+                            <span style="background: #f2f4f4; color: #7f8c8d; font-size: 0.68rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid #bdc3c7;">🔴 INACTIVA</span>
+                        <?php endif; ?>
+                    </div>
+                    <p style="margin: 0 0 6px 0; font-size: 0.82rem; color: #666666;">📍 <?php echo htmlspecialchars($suc['direccion']); ?></p>
+                    <p style="margin: 0; font-size: 0.78rem; color: #888888;">🕒 Horario: <?php echo date('H:i', strtotime($suc['horario_apertura'] ?? '09:00')); ?> - <?php echo date('H:i', strtotime($suc['horario_cierre'] ?? '20:00')); ?></p>
+                </div>
+                <div style="margin-top: 14px; pt: 12px; border-top: 1px solid #EEEEEE; display: flex; justify-content: flex-end;">
+                    <a href="sucursales_editar.php?id=<?php echo $suc['id']; ?>" style="color: #111111; font-size: 0.78rem; font-weight: 800; text-decoration: underline;">
+                        Editar Sucursal & Estado →
+                    </a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
 <?php include 'includes/footer.php'; ?>

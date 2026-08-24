@@ -18,14 +18,27 @@ try {
             $nombre = trim($_POST['nombre'] ?? '');
             $direccion = trim($_POST['direccion'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
+            $estado = in_array($_POST['estado'] ?? '', ['activo', 'proximamente', 'inactivo']) ? $_POST['estado'] : 'activo';
+            $horario_apertura = !empty($_POST['horario_apertura']) ? $_POST['horario_apertura'] : '09:00:00';
+            $horario_cierre = !empty($_POST['horario_cierre']) ? $_POST['horario_cierre'] : '20:00:00';
+            $mapa_url = trim($_POST['mapa_url'] ?? '');
 
             if (empty($nombre)) {
                 throw new Exception('El nombre de la sucursal es obligatorio.');
             }
 
-            $sql = "INSERT INTO sucursales (nombre, direccion, telefono) VALUES (?, ?, ?)";
+            try {
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN estado VARCHAR(50) DEFAULT 'activo' AFTER telefono");
+            } catch (Exception $ex) {}
+            try {
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN horario_apertura TIME DEFAULT '09:00:00'");
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN horario_cierre TIME DEFAULT '20:00:00'");
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN mapa_url TEXT NULL");
+            } catch (Exception $ex2) {}
+
+            $sql = "INSERT INTO sucursales (nombre, direccion, telefono, estado, horario_apertura, horario_cierre, mapa_url) VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$nombre, $direccion, $telefono]);
+            $stmt->execute([$nombre, $direccion, $telefono, $estado, $horario_apertura, $horario_cierre, $mapa_url]);
 
             header('Location: ../sucursales.php?success=Sucursal creada exitosamente');
             exit;
@@ -35,6 +48,10 @@ try {
             $nombre = trim($_POST['nombre'] ?? '');
             $direccion = trim($_POST['direccion'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
+            $estado = in_array($_POST['estado'] ?? '', ['activo', 'proximamente', 'inactivo']) ? $_POST['estado'] : 'activo';
+            $horario_apertura = !empty($_POST['horario_apertura']) ? $_POST['horario_apertura'] : '09:00:00';
+            $horario_cierre = !empty($_POST['horario_cierre']) ? $_POST['horario_cierre'] : '20:00:00';
+            $mapa_url = trim($_POST['mapa_url'] ?? '');
 
             if ($id <= 0) {
                 throw new Exception('ID de sucursal inválido.');
@@ -44,9 +61,13 @@ try {
                 throw new Exception('El nombre de la sucursal es obligatorio.');
             }
 
-            $sql = "UPDATE sucursales SET nombre = ?, direccion = ?, telefono = ? WHERE id = ?";
+            try {
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN estado VARCHAR(50) DEFAULT 'activo' AFTER telefono");
+            } catch (Exception $ex) {}
+
+            $sql = "UPDATE sucursales SET nombre = ?, direccion = ?, telefono = ?, estado = ?, horario_apertura = ?, horario_cierre = ?, mapa_url = ? WHERE id = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$nombre, $direccion, $telefono, $id]);
+            $stmt->execute([$nombre, $direccion, $telefono, $estado, $horario_apertura, $horario_cierre, $mapa_url, $id]);
 
             header('Location: ../sucursales.php?success=Sucursal actualizada exitosamente');
             exit;

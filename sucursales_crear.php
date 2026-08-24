@@ -153,10 +153,32 @@ include 'includes/header.php';
         </div>
 
         <div class="form-group">
-            <label class="form-label">Teléfono</label>
-            <input type="tel" name="telefono" class="form-input"
-                value="<?php echo $isEdit ? htmlspecialchars($sucursal['telefono']) : ''; ?>"
-                placeholder="+34 91 123 45 67" required>
+            <label class="form-label">Estado de la Sucursal</label>
+            <select name="estado" class="form-input" style="background:#fff;">
+                <option value="activo" <?php echo ($isEdit && ($sucursal['estado'] ?? '') === 'activo') ? 'selected' : ''; ?>>🟢 ACTIVA (Disponible para Reservas)</option>
+                <option value="proximamente" <?php echo ($isEdit && ($sucursal['estado'] ?? '') === 'proximamente') ? 'selected' : ''; ?>>⏳ PRÓXIMAMENTE (Visible pero no clickeable)</option>
+                <option value="inactivo" <?php echo ($isEdit && ($sucursal['estado'] ?? '') === 'inactivo') ? 'selected' : ''; ?>>🔴 INACTIVA (Oculta)</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+                <label class="form-label">Apertura</label>
+                <input type="time" name="horario_apertura" class="form-input"
+                    value="<?php echo $isEdit ? htmlspecialchars($sucursal['horario_apertura'] ?? '09:00') : '09:00'; ?>">
+            </div>
+            <div>
+                <label class="form-label">Cierre</label>
+                <input type="time" name="horario_cierre" class="form-input"
+                    value="<?php echo $isEdit ? htmlspecialchars($sucursal['horario_cierre'] ?? '20:00') : '20:00'; ?>">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">URL de Google Maps (Iframe / Enlace)</label>
+            <input type="text" name="mapa_url" class="form-input"
+                value="<?php echo $isEdit ? htmlspecialchars($sucursal['mapa_url'] ?? '') : ''; ?>"
+                placeholder="https://maps.google.com/...">
         </div>
 
         <div class="form-actions">

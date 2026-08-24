@@ -528,6 +528,18 @@ $pageTitle = 'Reservar Cita';
             updateNavButtons();
         });
 
+        // Escuchar cambios de sucursal en tiempo real
+        window.addEventListener('kortzen:branchChanged', async (e) => {
+            const newBranch = e.detail;
+            if (newBranch && newBranch.id) {
+                bookingData.serviceId = null;
+                bookingData.barberId = null;
+                await loadServices(newBranch.id);
+                await loadBarbers(newBranch.id);
+                updateNavButtons();
+            }
+        });
+
         // --- API Calls ---
 
         async function loadServices(branchId = 1) {

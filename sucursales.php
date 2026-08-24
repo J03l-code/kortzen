@@ -120,7 +120,15 @@ include 'includes/header.php';
                             ?>
                         </td>
                         <td>
-                            <span class="status-badge status-active">ACTIVO</span>
+                            <?php 
+                            $est = $sucursal['estado'] ?? 'activo';
+                            if ($est === 'activo'): ?>
+                                <span class="status-badge status-active">🟢 ACTIVA</span>
+                            <?php elseif ($est === 'proximamente'): ?>
+                                <span class="status-badge" style="background: rgba(241, 196, 15, 0.15); color: #D4AC0D; border: 1px solid rgba(241, 196, 15, 0.3);">⏳ PRÓXIMAMENTE</span>
+                            <?php else: ?>
+                                <span class="status-badge" style="background: rgba(149, 165, 166, 0.15); color: #7F8C8D; border: 1px solid rgba(149, 165, 166, 0.3);">🔴 INACTIVA</span>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <div class="actions-cell">
