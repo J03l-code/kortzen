@@ -75,9 +75,10 @@ function setSelectedBranch(branchId) {
     currentSelectedBranch = branch;
     localStorage.setItem(BRANCH_STORAGE_KEY, branch.id);
     updateBranchInfoBar();
+    updateGlobalFooter(branch);
 
-    // Emitir evento personalizado para recalcular barberos y servicios en reservar.php
-    window.dispatchEvent(new CustomEvent('kortzen:branchChanged', { detail: branch }));
+    // Emitir evento personalizado para recalcular barberos y servicios en reservar.php / nosotros.html
+    window.dispatchEvent(new CustomEvent('kortzen:branchChanged', { detail: branch, branchId: branch.id }));
     return true;
 }
 
@@ -343,13 +344,62 @@ function updateBranchInfoBar() {
 }
 
 /**
+ * Actualiza el Footer global en todas las páginas según la sucursal seleccionada
+ */
+function updateGlobalFooter(branch) {
+    if (!branch) return;
+
+    // 1. Dirección en Footer
+    const addressElems = document.querySelectorAll('[data-branch-dynamic="address"], .footer__branch-address');
+    addressElems.forEach(el => {
+        el.textContent = branch.address || branch.direccion || 'Llano Chico, Quito, Ecuador';
+    });
+
+    // 2. Teléfono / WhatsApp en Footer
+    const phoneElems = document.querySelectorAll('[data-branch-dynamic="phone"], .footer__branch-phone');
+    phoneElems.forEach(el => {
+        const phoneVal = branch.phone || branch.telefono || '+593 98 842 2770';
+        el.textContent = phoneVal;
+        if (el.tagName === 'A') {
+            const cleanDigits = phoneVal.replace(/\D/g, '');
+            el.href = cleanDigits ? `tel:+${cleanDigits}` : '#';
+        }
+    });
+
+    // 3. Horarios en Footer
+    const hoursElems = document.querySelectorAll('[data-branch-dynamic="hours"], .footer__schedule-time, .footer__branch-hours');
+    hoursElems.forEach(el => {
+        const open = branch.openTime || '10:00';
+        const close = branch.closeTime || '20:00';
+        el.textContent = `Lun - Dom: ${open} - ${close}`;
+    });
+
+    // 4. Mapa Google Maps en Footer
+    const mapIframe = document.getElementById('footer-map-iframe') || document.querySelector('[data-branch-dynamic="map"]');
+    if (mapIframe) {
+        if (branch.mapa_url && branch.mapa_url.length > 10) {
+            mapIframe.src = branch.mapa_url;
+            const container = mapIframe.closest('.footer__map-section') || mapIframe.parentElement;
+            if (container) container.style.display = 'block';
+        } else if (branch.id == 1) {
+            mapIframe.src = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.8071991201023!2d-78.44604192503535!3d-0.13528119986338483!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fc52de96153%3A0x35f5708deeee0cf7!2sKORTZEN!5e0!3m2!1sen!2sec!4v1786588668585!5m2!1sen!2sec";
+            const container = mapIframe.closest('.footer__map-section') || mapIframe.parentElement;
+            if (container) container.style.display = 'block';
+        } else {
+            const container = mapIframe.closest('.footer__map-section') || mapIframe.parentElement;
+            if (container) container.style.display = 'none';
+        }
+    }
+}
+
+/**
  * Inicializar selector de sucursales
  */
 async function initBranchSelector() {
     await fetchBranches();
     
     // Obtener sucursal activa
-    getSelectedBranch();
+    const selected = getSelectedBranch();
 
     const isDashboardPage = window.location.pathname.includes('barber-dashboard') || document.body.classList.contains('pwa-app-mode');
 
@@ -360,9 +410,10 @@ async function initBranchSelector() {
         }, 300);
     }
 
-    // Actualizar la barra superior informativa
+    // Actualizar la barra superior e información del footer
     if (!isDashboardPage) {
         updateBranchInfoBar();
+        if (selected) updateGlobalFooter(selected);
     }
 }
 
@@ -375,7 +426,8 @@ window.KortzenBranches = {
     getSelected: getSelectedBranch,
     setSelected: setSelectedBranch,
     loadAll: function() { return cachedBranches; },
-    updateInfoBar: updateBranchInfoBar
+    updateInfoBar: updateBranchInfoBar,
+    updateFooter: updateGlobalFooter
 };
 
 // Iniciar al cargar el DOM

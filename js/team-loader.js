@@ -65,12 +65,17 @@ const TeamLoader = {
             const response = await fetch(`/api/get_barberos.php?sucursal_id=${branchId}`);
             const data = await response.json();
 
-            if (data.success && data.data.length > 0) {
+            if (data.success && data.data && data.data.length > 0) {
                 this.renderTeam(data.data);
             } else {
                 grid.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; color: var(--color-gray); padding: 3rem; background: var(--color-charcoal); border: 1px solid var(--color-charcoal-light); border-radius: var(--border-radius-lg);">
-                        <p>No hay barberos registrados en esta sucursal actualmente.</p>
+                    <div style="grid-column: 1/-1; text-align: center; color: #FFFFFF; padding: 3.5rem 1.5rem; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: var(--radius-lg, 16px); box-sizing: border-box;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.5" style="margin-bottom: 1rem; opacity: 0.85;">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; color: #FFFFFF; margin: 0 0 0.4rem 0; font-family: var(--font-display);">No hay barberos registrados en esta sucursal</h3>
+                        <p style="font-size: 0.88rem; color: #888888; max-width: 420px; margin: 0 auto; line-height: 1.5;">Actualmente estamos configurando el equipo de profesionales para esta ubicación.</p>
                     </div>
                 `;
             }
