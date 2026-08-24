@@ -158,18 +158,26 @@
 
 .gallery-item__label {
     position: absolute;
-    bottom: var(--space-4);
-    left: var(--space-4);
-    font-size: var(--text-sm);
-    color: var(--color-white-off);
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all var(--transition-base);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 20px 12px 12px 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.6) 65%, transparent 100%);
+    font-size: var(--text-base, 1rem);
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    text-align: center !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+    opacity: 1 !important;
+    transform: none !important;
+    z-index: 5;
+    box-sizing: border-box;
 }
 
 .gallery-item:hover .gallery-item__label {
-    opacity: 1;
-    transform: translateY(0);
+    opacity: 1 !important;
+    transform: none !important;
 }
 
 /* Lightbox */

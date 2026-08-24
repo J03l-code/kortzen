@@ -151,17 +151,23 @@ include 'includes/header.php';
 
     .card-body {
         padding: 15px;
+        text-align: center;
     }
 
     .card-title-text {
-        font-weight: bold;
-        color: white;
+        font-weight: 800 !important;
+        color: #FFFFFF !important;
         margin-bottom: 5px;
+        font-size: 1.05rem;
+        text-align: center;
     }
 
     .card-desc {
-        font-size: 12px;
-        color: #888;
+        font-size: 13px;
+        font-weight: 700 !important;
+        color: #FFFFFF !important;
+        text-align: center;
+        opacity: 0.95;
     }
 
     .btn-delete-float {
