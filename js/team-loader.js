@@ -70,13 +70,9 @@ const TeamLoader = {
                 this.renderTeam(data.data);
             } else {
                 grid.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; color: #FFFFFF; padding: 3.5rem 1.5rem; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: var(--radius-lg, 16px); box-sizing: border-box;">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.5" style="margin-bottom: 1rem; opacity: 0.85;">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                        </svg>
-                        <h3 style="font-size: 1.2rem; font-weight: 700; color: #FFFFFF; margin: 0 0 0.4rem 0; font-family: var(--font-display);">No hay barberos registrados en esta sucursal</h3>
-                        <p style="font-size: 0.88rem; color: #888888; max-width: 420px; margin: 0 auto; line-height: 1.5;">Actualmente estamos configurando el equipo de profesionales para esta ubicación.</p>
+                    <div style="grid-column: 1/-1; text-align: center; color: #111111; padding: 3.5rem 1.5rem; background: #F9F9F9; border: 1px dashed #DDDDDD; border-radius: 16px; box-sizing: border-box; margin: 1rem 0;">
+                        <h3 style="font-size: 1.3rem; font-weight: 800; color: #111111 !important; margin: 0 0 0.5rem 0; font-family: var(--font-display, 'Playfair Display', serif);">No hay barberos registrados en esta sucursal</h3>
+                        <p style="font-size: 0.92rem; color: #555555 !important; max-width: 460px; margin: 0 auto; line-height: 1.5; font-weight: 500;">Actualmente estamos configurando el equipo de profesionales para esta ubicación.</p>
                     </div>
                 `;
             }
