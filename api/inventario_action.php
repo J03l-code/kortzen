@@ -44,7 +44,7 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$cantidad, $id]);
 
-            // (Opcional) Aquí se podría registrar en un log de movimientos si existiera la tabla
+            registrarLog('RETIRAR', 'inventario', $id, "Se retiraron $cantidad unidades de '$productName'");
 
             header('Location: ../inventario.php?success=Se retiraron ' . $cantidad . ' unidades de ' . urlencode($productName));
             exit;
@@ -86,6 +86,9 @@ try {
             $sql = "INSERT INTO inventario (producto, cantidad, precio, stock_minimo, sucursal_id) VALUES (?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$producto, $cantidad, $precio, $stock_minimo, $sucursal_id]);
+
+            $newInvId = $pdo->lastInsertId();
+            registrarLog('CREAR', 'inventario', $newInvId, "Producto '$producto' agregado al inventario ($cantidad unidades)");
 
             header('Location: ../inventario.php?success=Producto agregado exitosamente');
             exit;
@@ -132,6 +135,8 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$producto, $cantidad, $precio, $stock_minimo, $sucursal_id, $id]);
 
+            registrarLog('EDITAR', 'inventario', $id, "Producto '$producto' actualizado en inventario");
+
             header('Location: ../inventario.php?success=Producto actualizado exitosamente');
             exit;
 
@@ -151,6 +156,8 @@ try {
             $sql = "DELETE FROM inventario WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
+
+            registrarLog('ELIMINAR', 'inventario', $id, "Producto #$id eliminado del inventario");
 
             header('Location: ../inventario.php?success=Producto eliminado exitosamente');
             exit;

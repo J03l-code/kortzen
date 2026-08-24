@@ -32,13 +32,15 @@ try {
 
     $logs = query($sql, $params);
 
-    // Obtener usuarios para filtro
+    // Obtener usuarios y clientes para filtro
     $usuarios = query("SELECT id, nombre FROM usuarios ORDER BY nombre ASC");
+    $tablasDisponibles = query("SELECT DISTINCT tabla_afectada FROM logs_actividad WHERE tabla_afectada IS NOT NULL AND tabla_afectada != '' ORDER BY tabla_afectada ASC");
 
 } catch (PDOException $e) {
     error_log("Error al obtener logs: " . $e->getMessage());
     $logs = [];
     $usuarios = [];
+    $tablasDisponibles = [];
 }
 
 $pageTitle = 'Logs';
@@ -46,16 +48,15 @@ include 'includes/header.php';
 ?>
 
 <div class="page-header">
-    <h1 class="page-title">Registro de Actividad</h1>
-    <form method="GET" style="display: flex; gap: 12px;">
+    <h1 class="page-title">Registro de Actividad del Sistema</h1>
+    <form method="GET" style="display: flex; gap: 12px; flex-wrap: wrap;">
         <select name="tabla" class="filter-select" onchange="this.form.submit()">
-            <option value="">Todas las tablas</option>
-            <option value="usuarios" <?php echo $tabla_filter == 'usuarios' ? 'selected' : ''; ?>>Usuarios</option>
-            <option value="sucursales" <?php echo $tabla_filter == 'sucursales' ? 'selected' : ''; ?>>Sucursales</option>
-            <option value="inventario" <?php echo $tabla_filter == 'inventario' ? 'selected' : ''; ?>>Inventario</option>
-            <option value="servicios" <?php echo $tabla_filter == 'servicios' ? 'selected' : ''; ?>>Servicios</option>
-            <option value="citas" <?php echo $tabla_filter == 'citas' ? 'selected' : ''; ?>>Citas</option>
-            <option value="clientes" <?php echo $tabla_filter == 'clientes' ? 'selected' : ''; ?>>Clientes</option>
+            <option value="">Todas las áreas / tablas</option>
+            <?php foreach ($tablasDisponibles as $t): ?>
+                <option value="<?php echo htmlspecialchars($t['tabla_afectada']); ?>" <?php echo $tabla_filter == $t['tabla_afectada'] ? 'selected' : ''; ?>>
+                    <?php echo ucfirst(htmlspecialchars($t['tabla_afectada'])); ?>
+                </option>
+            <?php endforeach; ?>
         </select>
 
         <select name="usuario_id" class="filter-select" onchange="this.form.submit()">

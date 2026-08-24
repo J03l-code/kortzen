@@ -46,6 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     session_regenerate_id(true);
 
+                    registrarLog('LOGIN', 'usuarios', $user['id'], "Inicio de sesión exitoso de usuario '{$user['nombre']}' (Rol: {$user['rol']})");
+
                     if ($user['rol'] === 'barbero') {
                         header('Location: barber-dashboard.php');
                     } else {
