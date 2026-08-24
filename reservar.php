@@ -18,7 +18,7 @@ $pageTitle = 'Reservar Cita';
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reservar Cita - KORTZEN</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/pwa-native.css?v=50">
@@ -31,6 +31,53 @@ $pageTitle = 'Reservar Cita';
     <link rel="shortcut icon" href="/assets/icons/favicon.png?v=10">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/favicon.png?v=10">
     <script src="/js/pwa.js" defer></script>
+    <style>
+        /* ANTI-ZOOM MOBILE RULE */
+        input, select, textarea, .flatpickr-input {
+            font-size: 16px !important;
+            touch-action: manipulation;
+        }
+
+        /* FLATPICKR LUXURY DARK STYLES */
+        .flatpickr-calendar {
+            background: #141416 !important;
+            border: 2px solid #C0A062 !important;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.95) !important;
+            border-radius: 16px !important;
+            padding: 8px !important;
+        }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.selected:focus, .flatpickr-day.selected:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.selected.nextMonthDay {
+            background: #C0A062 !important;
+            border-color: #C0A062 !important;
+            color: #000000 !important;
+            font-weight: 800 !important;
+            border-radius: 10px !important;
+        }
+        .flatpickr-day:hover {
+            background: rgba(192, 160, 98, 0.25) !important;
+            border-color: #C0A062 !important;
+            color: #FFFFFF !important;
+            border-radius: 10px !important;
+        }
+        .flatpickr-day.today {
+            border-color: #C0A062 !important;
+            font-weight: 800 !important;
+        }
+        .flatpickr-months .flatpickr-month {
+            background: #141416 !important;
+            color: #FFFFFF !important;
+            font-weight: 800 !important;
+        }
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            font-weight: 800 !important;
+        }
+        .flatpickr-weekday {
+            color: #C0A062 !important;
+            font-weight: 800 !important;
+        }
+        .flatpickr-day.disabled, .flatpickr-day.disabled:hover {
+            color: #444444 !important;
+        }
     <style>
         :root {
             --gold: #FFFFFF;
@@ -348,31 +395,48 @@ $pageTitle = 'Reservar Cita';
 
         <!-- Step 3: Date & Time -->
         <div class="wizard-step" id="step3">
-            <h2 style="margin-bottom: 20px;">Elige Fecha y Hora</h2>
+            <h2 style="margin-bottom: 20px; font-weight:800;">Elige Fecha y Hora</h2>
             <div class="datetime-wrapper">
-                <div>
-                    <label style="display:block; margin-bottom:10px; color:var(--text-secondary);">Selecciona el
-                        día</label>
-                    <input type="text" id="datePicker" placeholder="Seleccionar fecha"
-                        style="width: 100%; padding: 15px; background: #1A1A1A; border: 1px solid #333; color: white; border-radius: 8px;">
+                <div class="date-picker-card" style="background: linear-gradient(135deg, #1C1C1E 0%, #121214 100%); border: 2px solid #C0A062; border-radius: 16px; padding: 20px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); position: relative; transition: all 0.3s ease;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; color: #FFFFFF; font-weight: 800; font-size: 1.05rem; margin: 0;">
+                            <i class="fas fa-calendar-alt" style="color: #C0A062; font-size: 1.3rem;"></i> Selecciona el día de tu cita
+                        </label>
+                        <span class="pulse-badge" style="background: rgba(192, 160, 98, 0.18); color: #C0A062; border: 1px solid #C0A062; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 10px rgba(192, 160, 98, 0.2);">
+                            <i class="fas fa-hand-pointer"></i> TOCA AQUÍ ABAJO
+                        </span>
+                    </div>
+
+                    <div style="position: relative; width: 100%;">
+                        <i class="fas fa-calendar-check" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #C0A062; font-size: 1.3rem; z-index: 2; pointer-events: none;"></i>
+                        <input type="text" id="datePicker" placeholder="📅 Toca aquí para elegir la fecha..." readonly
+                            style="width: 100%; padding: 18px 45px 18px 50px; background: #0A0A0B; border: 1.5px solid #C0A062; color: #FFFFFF; font-weight: 800; font-size: 16px !important; border-radius: 12px; cursor: pointer; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8), 0 0 15px rgba(192,160,98,0.25); transition: all 0.3s ease; box-sizing: border-box;">
+                        <i class="fas fa-chevron-down" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #C0A062; font-size: 1.1rem; z-index: 2; pointer-events: none;"></i>
+                    </div>
+                    <p style="font-size: 0.82rem; color: #B0B0B0; margin-top: 10px; margin-bottom: 0; display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-info-circle" style="color: #C0A062;"></i> Se desplegará el calendario interactivo al pulsar el recuadro.
+                    </p>
                 </div>
+
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <label style="color:var(--text-secondary); margin:0;">Horarios Disponibles</label>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                        <label style="color: #FFFFFF; font-weight: 800; font-size: 1.05rem; margin:0; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-clock" style="color:#C0A062;"></i> Horarios Disponibles
+                        </label>
                         <div style="display:flex; gap:6px;">
-                            <button type="button" class="slot-filter-btn active" onclick="filtrarHorarios('all', this)" style="padding:5px 12px; border-radius:20px; border:1px solid #111; background:#111; color:#fff; font-size:0.72rem; font-weight:800; cursor:pointer;">
+                            <button type="button" class="slot-filter-btn active" onclick="filtrarHorarios('all', this)" style="padding:6px 14px; border-radius:20px; border:1px solid #C0A062; background:#C0A062; color:#000; font-size:0.75rem; font-weight:800; cursor:pointer;">
                                 TODOS
                             </button>
-                            <button type="button" class="slot-filter-btn" onclick="filtrarHorarios('manana', this)" style="padding:5px 12px; border-radius:20px; border:1px solid #ddd; background:#fff; color:#111; font-size:0.72rem; font-weight:800; cursor:pointer;">
+                            <button type="button" class="slot-filter-btn" onclick="filtrarHorarios('manana', this)" style="padding:6px 14px; border-radius:20px; border:1px solid #333; background:#1C1C1E; color:#FFF; font-size:0.75rem; font-weight:800; cursor:pointer;">
                                 MAÑANA (9-13h)
                             </button>
-                            <button type="button" class="slot-filter-btn" onclick="filtrarHorarios('tarde', this)" style="padding:5px 12px; border-radius:20px; border:1px solid #ddd; background:#fff; color:#111; font-size:0.72rem; font-weight:800; cursor:pointer;">
+                            <button type="button" class="slot-filter-btn" onclick="filtrarHorarios('tarde', this)" style="padding:6px 14px; border-radius:20px; border:1px solid #333; background:#1C1C1E; color:#FFF; font-size:0.75rem; font-weight:800; cursor:pointer;">
                                 TARDE (14-20h)
                             </button>
                         </div>
                     </div>
                     <div id="slotsGrid" class="slots-grid">
-                        <p style="color:#666; grid-column: 1/-1;">Selecciona una fecha primero</p>
+                        <p style="color:#A0A0A0; grid-column: 1/-1; font-weight:600;">👈 Selecciona una fecha arriba para ver los turnos disponibles</p>
                     </div>
                 </div>
             </div>
@@ -853,6 +917,7 @@ $pageTitle = 'Reservar Cita';
                 locale: "es",
                 minDate: "today",
                 maxDate: new Date().fp_incr(30), // 30 días adelante
+                disableMobile: true, // 100% PREVIENE ZOOM Y PICKER NATIVO EN MÓVILES
                 disable: [
                     function (date) {
                         return (date.getDay() === 0); // Deshabilitar domingos si cerrados
