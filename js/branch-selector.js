@@ -103,10 +103,10 @@ function createBranchSelectorModal() {
                 </button>
 
                 <div style="text-align: center; margin-bottom: 2rem;">
-                    <div style="display: inline-block; padding: 5px 16px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #FFFFFF; margin-bottom: 14px;">
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.9;">
                         KORTZEN BARBERÍA
                     </div>
-                    <h2 style="font-size: 1.65rem; font-weight: 800; margin: 0 0 8px 0; color: #FFFFFF; letter-spacing: -0.5px; text-transform: uppercase;">
+                    <h2 style="font-size: 1.65rem; font-weight: 800; margin: 0 0 8px 0; color: #FFFFFF; letter-spacing: 1px; text-transform: uppercase;">
                         SELECCIONA TU SUCURSAL
                     </h2>
                     <p style="font-size: 0.88rem; color: #888888; margin: 0; line-height: 1.5;">
