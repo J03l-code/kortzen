@@ -267,6 +267,7 @@ include 'includes/header.php';
                     style="width:100%; padding:10px; background:#111; border:1px solid #333; color:white; border-radius:4px;">
                     <option value="corte">Cortes de Pelo</option>
                     <option value="barba">Barba y Afeitado</option>
+                    <option value="spa">Spa & Tratamientos Faciales</option>
                     <option value="espacio">Espacio / Local</option>
                     <option value="productos">Productos</option>
                 </select>
