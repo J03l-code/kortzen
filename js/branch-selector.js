@@ -91,54 +91,54 @@ function createBranchSelectorModal() {
     const proximamenteBranches = cachedBranches.filter(b => b.isProximamente || b.estado === 'proximamente');
 
     const modalHTML = `
-        <div id="branch-modal" class="branch-modal-overlay" style="position: fixed; inset: 0; z-index: 100000; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 1.5rem; animation: fadeIn 0.3s ease; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;">
-            <div class="branch-modal-card" style="background: #0D0D0D; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; color: #FFFFFF; padding: 2.25rem; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.95); position: relative;">
+        <div id="branch-modal" class="branch-modal-overlay" style="position: fixed; inset: 0; z-index: 100000; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 12px; animation: fadeIn 0.3s ease; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box;">
+            <div class="branch-modal-card" style="background: #0D0D0D; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; color: #FFFFFF; padding: 1.5rem 1.25rem; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.95); position: relative; box-sizing: border-box;">
                 
                 <!-- BOTÓN X PARA CERRAR -->
-                <button onclick="closeBranchModal()" aria-label="Cerrar" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #888888; cursor: pointer; padding: 8px; transition: color 0.2s ease;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='#888888'">
+                <button onclick="closeBranchModal()" aria-label="Cerrar" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: #888888; cursor: pointer; padding: 8px; transition: color 0.2s ease;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='#888888'">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
 
-                <div style="text-align: center; margin-bottom: 2rem;">
-                    <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.9;">
+                <div style="text-align: center; margin-bottom: 1.5rem; padding-top: 6px;">
+                    <div style="font-size: 0.8rem; font-weight: 700; color: #FFFFFF; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.9;">
                         KORTZEN BARBERÍA
                     </div>
-                    <h2 style="font-size: 1.65rem; font-weight: 800; margin: 0 0 8px 0; color: #FFFFFF; letter-spacing: 1px; text-transform: uppercase;">
+                    <h2 style="font-size: 1.4rem; font-weight: 800; margin: 0 0 6px 0; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
                         SELECCIONA TU SUCURSAL
                     </h2>
-                    <p style="font-size: 0.88rem; color: #888888; margin: 0; line-height: 1.5;">
+                    <p style="font-size: 0.82rem; color: #888888; margin: 0; line-height: 1.4;">
                         Selecciona el local donde deseas agendar tu próximo corte o servicio.
                     </p>
                 </div>
 
-                <div class="branch-list" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="branch-list" style="display: flex; flex-direction: column; gap: 14px; box-sizing: border-box;">
                     <!-- SUCURSALES ACTIVAS -->
                     ${activeBranches.map(branch => {
                         const isSelected = currentSelectedBranch && currentSelectedBranch.id == branch.id;
                         return `
                         <div class="branch-card ${isSelected ? 'is-selected' : ''}" 
                              onclick="selectBranchFromModal(${branch.id})"
-                             style="background: #141414; border: 2px solid ${isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 14px; padding: 1.35rem; cursor: pointer; transition: all 0.25s ease; position: relative;"
+                             style="background: #141414; border: 2px solid ${isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.12)'}; border-radius: 14px; padding: 1.1rem; cursor: pointer; transition: all 0.25s ease; position: relative; box-sizing: border-box;"
                              onmouseover="if(!${isSelected}) this.style.borderColor='rgba(255,255,255,0.4)'"
-                             onmouseout="if(!${isSelected}) this.style.borderColor='rgba(255,255,255,0.1)'">
+                             onmouseout="if(!${isSelected}) this.style.borderColor='rgba(255,255,255,0.12)'">
                             
-                            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
-                                <div style="flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                                        <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: #FFFFFF; letter-spacing: -0.2px;">${branch.name}</h3>
-                                        <span style="background: rgba(255, 255, 255, 0.1); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.62rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">ABIERTO</span>
+                            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 180px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+                                        <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0; color: #FFFFFF; letter-spacing: -0.2px; white-space: nowrap;">${branch.name}</h3>
+                                        <span style="background: rgba(255, 255, 255, 0.1); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.6rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">ABIERTO</span>
                                     </div>
-                                    <p style="font-size: 0.84rem; color: #CCCCCC; margin: 0 0 8px 0; line-height: 1.4; display: flex; align-items: center; gap: 6px;">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" style="flex-shrink:0;">
+                                    <p style="font-size: 0.8rem; color: #CCCCCC; margin: 0 0 6px 0; line-height: 1.35; display: flex; align-items: flex-start; gap: 6px;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" style="flex-shrink:0; margin-top:2px;">
                                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                             <circle cx="12" cy="10" r="3"></circle>
                                         </svg>
-                                        ${branch.address}
+                                        <span>${branch.address}</span>
                                     </p>
-                                    <div style="display: flex; align-items: center; gap: 12px; font-size: 0.78rem; color: #888888;">
+                                    <div style="display: flex; align-items: center; gap: 10px; font-size: 0.75rem; color: #888888; flex-wrap: wrap;">
                                         <span style="display: inline-flex; align-items: center; gap: 4px;">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                             ${branch.openTime} - ${branch.closeTime}
@@ -150,7 +150,7 @@ function createBranchSelectorModal() {
                                         </span>
                                     </div>
                                 </div>
-                                <button style="background: ${isSelected ? '#FFFFFF' : 'transparent'}; color: ${isSelected ? '#000000' : '#FFFFFF'}; border: 1px solid #FFFFFF; border-radius: 10px; padding: 10px 18px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; margin-top: 4px;">
+                                <button style="background: ${isSelected ? '#FFFFFF' : 'transparent'}; color: ${isSelected ? '#000000' : '#FFFFFF'}; border: 1px solid #FFFFFF; border-radius: 8px; padding: 8px 14px; font-size: 0.72rem; font-weight: 800; letter-spacing: 1px; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; align-self: center; flex-shrink: 0;">
                                     ${isSelected ? 'SELECCIONADO' : 'INGRESAR'}
                                 </button>
                             </div>
@@ -161,28 +161,28 @@ function createBranchSelectorModal() {
                     <!-- SUCURSALES PRÓXIMAMENTE (NEGRO Y BLANCO ELEGANTE) -->
                     ${proximamenteBranches.map(branch => `
                         <div class="branch-card is-disabled" 
-                             style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 1.35rem; opacity: 0.7; position: relative; cursor: not-allowed;">
+                             style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 1.1rem; opacity: 0.7; position: relative; cursor: not-allowed; box-sizing: border-box;">
                             
-                            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
-                                <div style="flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                                        <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0; color: #FFFFFF;">${branch.name}</h3>
-                                        <span style="background: rgba(255, 255, 255, 0.05); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.62rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 180px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+                                        <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0; color: #FFFFFF; white-space: nowrap;">${branch.name}</h3>
+                                        <span style="background: rgba(255, 255, 255, 0.05); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.6rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
                                             PRÓXIMAMENTE
                                         </span>
                                     </div>
-                                    <p style="font-size: 0.84rem; color: #888888; margin: 0 0 6px 0; line-height: 1.4; display: flex; align-items: center; gap: 6px;">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" style="flex-shrink:0;">
+                                    <p style="font-size: 0.8rem; color: #888888; margin: 0 0 4px 0; line-height: 1.35; display: flex; align-items: flex-start; gap: 6px;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" style="flex-shrink:0; margin-top:2px;">
                                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                             <circle cx="12" cy="10" r="3"></circle>
                                         </svg>
-                                        ${branch.address}
+                                        <span>${branch.address}</span>
                                     </p>
-                                    <p style="font-size: 0.78rem; color: #666666; margin: 0; font-style: italic;">
+                                    <p style="font-size: 0.75rem; color: #666666; margin: 0; font-style: italic;">
                                         Próximamente apertura de nueva sucursal. ¡Muy pronto cerca de ti!
                                     </p>
                                 </div>
-                                <button disabled style="background: rgba(255, 255, 255, 0.03); color: #555555; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 16px; font-size: 0.72rem; font-weight: 700; cursor: not-allowed; white-space: nowrap; margin-top: 4px;">
+                                <button disabled style="background: rgba(255, 255, 255, 0.03); color: #555555; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 8px 12px; font-size: 0.68rem; font-weight: 700; cursor: not-allowed; white-space: nowrap; align-self: center; flex-shrink: 0;">
                                     NO DISPONIBLE
                                 </button>
                             </div>
@@ -191,8 +191,8 @@ function createBranchSelectorModal() {
                 </div>
 
                 ${currentSelectedBranch ? `
-                    <div style="margin-top: 1.75rem; text-align: center;">
-                        <button onclick="closeBranchModal()" style="background: transparent; color: #777777; border: none; font-size: 0.82rem; cursor: pointer; text-decoration: underline; font-family: inherit; transition: color 0.2s ease;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='#777777'">
+                    <div style="margin-top: 1.5rem; text-align: center;">
+                        <button onclick="closeBranchModal()" style="background: transparent; color: #777777; border: none; font-size: 0.8rem; cursor: pointer; text-decoration: underline; font-family: inherit; transition: color 0.2s ease;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='#777777'">
                             Continuar navegación con ${currentSelectedBranch.name}
                         </button>
                     </div>
