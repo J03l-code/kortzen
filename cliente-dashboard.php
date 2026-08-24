@@ -166,6 +166,32 @@ if ($cliente_id) {
             </a>
         </div>
 
+        <!-- BANNER ALERTA CITA PRÓXIMA 2 HORAS -->
+        <?php if ($proxima_cita): 
+            $ts_proxima_chk = strtotime($proxima_cita['fecha_hora']);
+            $hrs_chk = ($ts_proxima_chk - time()) / 3600;
+            $is_conf_chk = !empty($proxima_cita['asistencia_confirmada']);
+            if ($hrs_chk <= 2.5 && $hrs_chk >= -0.5 && !$is_conf_chk):
+        ?>
+            <div style="background: #FFFBEB; border: 2px solid #F59E0B; border-radius: 14px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 1.3rem; color: #D97706;"></i>
+                    <div style="font-weight: 900; font-size: 1.05rem; color: #92400E;">
+                        ¡Tu cita es en menos de 2 horas!
+                    </div>
+                </div>
+                <p style="font-size: 0.85rem; color: #78350F; margin: 0 0 14px 0; line-height: 1.4;">
+                    Tienes agendado tu corte (<strong><?php echo htmlspecialchars($proxima_cita['servicio_nombre']); ?></strong>) hoy a las <strong><?php echo date('H:i', $ts_proxima_chk); ?></strong> con <strong><?php echo htmlspecialchars($proxima_cita['barbero_nombre']); ?></strong>.
+                </p>
+                <form action="api/confirmar_asistencia.php" method="POST" style="margin: 0;">
+                    <input type="hidden" name="cita_id" value="<?php echo $proxima_cita['id']; ?>">
+                    <button type="submit" class="btn" style="width: 100%; background: #10B981; color: #FFFFFF; border: none; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                        <i class="fas fa-check-circle"></i> CONFIRMAR MI ASISTENCIA AHORA
+                    </button>
+                </form>
+            </div>
+        <?php endif; endif; ?>
+
         <!-- Card Control de Notificaciones Push -->
         <div class="pwa-banner-card" style="background: #F0FDF4; border: 1.5px solid #10B981; box-shadow: 0 4px 15px rgba(16,185,129,0.08);">
             <div class="pwa-banner-card__left">
