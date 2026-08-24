@@ -8,26 +8,16 @@ $tabla_filter = $_GET['tabla'] ?? '';
 $usuario_filter = $_GET['usuario_id'] ?? '';
 
 // Obtener logs
+$db_error = null;
 try {
+    asegurarTablaLogs();
     $pdo = getConnection();
 
-    // Asegurar estructura de la tabla logs_actividad
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS logs_actividad (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            usuario_id INT NULL,
-            cliente_id INT NULL,
-            accion VARCHAR(50) NOT NULL,
-            tabla_afectada VARCHAR(50) NOT NULL,
-            registro_id INT NULL,
-            descripcion TEXT NOT NULL,
-            ip_address VARCHAR(45) NULL,
-            fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ");
-
-    try { $pdo->exec("ALTER TABLE logs_actividad ADD COLUMN cliente_id INT NULL AFTER usuario_id"); } catch (Exception $e1) {}
-    try { $pdo->exec("ALTER TABLE logs_actividad ADD COLUMN ip_address VARCHAR(45) NULL AFTER descripcion"); } catch (Exception $e2) {}
+    // Si la tabla está vacía, registrar un log inicial para verificar funcionamiento
+    $cntStmt = $pdo->query("SELECT COUNT(*) FROM logs_actividad");
+    if ($cntStmt && $cntStmt->fetchColumn() == 0) {
+        registrarLog('SISTEMA', 'logs', 0, 'Sistema de Registro de Actividad KORTZEN activado correctamente');
+    }
 
     $sql = "SELECT l.*, u.nombre as usuario_nombre, c.nombre as cliente_nombre 
             FROM logs_actividad l
@@ -58,6 +48,7 @@ try {
 
 } catch (Exception $e) {
     error_log("Error al obtener logs: " . $e->getMessage());
+    $db_error = $e->getMessage();
     $logs = [];
     $usuarios = [];
     $tablasDisponibles = [];
@@ -88,11 +79,14 @@ include 'includes/header.php';
             <?php endforeach; ?>
         </select>
 
-        <?php if ($tabla_filter || $usuario_filter): ?>
-            <a href="logs.php" class="btn btn-secondary">Limpiar</a>
-        <?php endif; ?>
     </form>
 </div>
+
+<?php if ($db_error): ?>
+    <div style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid #EF4444; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-weight: 700; font-size: 0.9rem;">
+        ⚠️ Error de Base de Datos al consultar logs: <?php echo htmlspecialchars($db_error); ?>
+    </div>
+<?php endif; ?>
 
 <style>
     .page-header {

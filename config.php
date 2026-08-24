@@ -307,21 +307,23 @@ function verifyCSRFToken($token)
 }
 
 /**
- * Registrar actividad en logs del sistema
+ * Asegurar que la tabla logs_actividad exista y tenga todas sus columnas
  */
-function registrarLog($accion, $tabla, $registro_id = 0, $descripcion = '')
+function asegurarTablaLogs()
 {
+    static $asegurado = false;
+    if ($asegurado) return;
+    $asegurado = true;
+
     try {
         $pdo = getConnection();
-
-        // Auto-migración tabla de logs si no existe
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS logs_actividad (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 usuario_id INT NULL,
                 cliente_id INT NULL,
-                accion VARCHAR(50) NOT NULL,
-                tabla_afectada VARCHAR(50) NOT NULL,
+                accion VARCHAR(50) NOT NULL DEFAULT 'INFO',
+                tabla_afectada VARCHAR(50) NOT NULL DEFAULT 'sistema',
                 registro_id INT NULL,
                 descripcion TEXT NOT NULL,
                 ip_address VARCHAR(45) NULL,
@@ -329,13 +331,46 @@ function registrarLog($accion, $tabla, $registro_id = 0, $descripcion = '')
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
 
-        // Agregar columna cliente_id si la tabla vieja no la tenía
-        try {
-            $pdo->exec("ALTER TABLE logs_actividad ADD COLUMN cliente_id INT NULL AFTER usuario_id");
-        } catch (Exception $eCol) {}
-        try {
-            $pdo->exec("ALTER TABLE logs_actividad ADD COLUMN ip_address VARCHAR(45) NULL AFTER descripcion");
-        } catch (Exception $eIp) {}
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM logs_actividad");
+        $cols = $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+
+        if (!in_array('usuario_id', $cols)) {
+            @$pdo->exec("ALTER TABLE logs_actividad ADD COLUMN usuario_id INT NULL");
+        }
+        if (!in_array('cliente_id', $cols)) {
+            @$pdo->exec("ALTER TABLE logs_actividad ADD COLUMN cliente_id INT NULL");
+        }
+        if (!in_array('accion', $cols)) {
+            @$pdo->exec("ALTER TABLE logs_actividad ADD COLUMN accion VARCHAR(50) NOT NULL DEFAULT 'INFO'");
+        }
+        if (!in_array('tabla_afectada', $cols)) {
+            @$pdo->exec("ALTER TABLE logs_actividad ADD COLUMN tabla_afectada VARCHAR(50) NOT NULL DEFAULT 'sistema'");
+        }
+        if (!in_array('registro_id', $cols)) {
+            @$pdo->exec("ALTER TABLE logs_actividad ADD COLUMN registro_id INT NULL");
+        }
+        if (!in_array('descripcion', $cols)) {
+            @$pdo->exec("ALTER TABLE logs_actividad ADD COLUMN descripcion TEXT NOT NULL");
+        }
+        if (!in_array('ip_address', $cols)) {
+            @$pdo->exec("ALTER TABLE logs_actividad ADD COLUMN ip_address VARCHAR(45) NULL");
+        }
+        if (!in_array('fecha_hora', $cols)) {
+            @$pdo->exec("ALTER TABLE logs_actividad ADD COLUMN fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP");
+        }
+    } catch (Exception $e) {
+        error_log("Error al asegurar tabla de logs: " . $e->getMessage());
+    }
+}
+
+/**
+ * Registrar actividad en logs del sistema
+ */
+function registrarLog($accion, $tabla, $registro_id = 0, $descripcion = '')
+{
+    try {
+        asegurarTablaLogs();
+        $pdo = getConnection();
 
         $userId = $_SESSION['user_id'] ?? null;
         $clienteId = $_SESSION['cliente_id'] ?? null;
