@@ -206,19 +206,19 @@ function updateBranchInfoBar() {
         <div class="branch-info-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: #FFFFFF; color: #111111; border-bottom: 1px solid rgba(0, 0, 0, 0.08); height: 42px; display: flex; align-items: center; backdrop-filter: blur(10px); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;">
             <div class="branch-info-bar__content" style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
                 
-                <!-- SUCURSAL SELECTOR (TEXTO LIMPIO E INTERACTIVO SIN BORDES NI CAJAS) -->
+                <!-- SUCURSAL SELECTOR (CON BOTÓN CAMBIAR CLARO Y VISIBLE) -->
                 <div onclick="window.KortzenBranches.showSelector()" 
-                     style="display: flex; align-items: center; gap: 0.4rem; color: #111111; cursor: pointer; user-select: none; transition: opacity 0.2s ease;"
-                     onmouseover="this.style.opacity='0.75'" 
+                     style="display: flex; align-items: center; gap: 0.5rem; color: #111111; cursor: pointer; user-select: none; transition: opacity 0.2s ease;"
+                     onmouseover="this.style.opacity='0.8'" 
                      onmouseout="this.style.opacity='1'">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                         <circle cx="12" cy="10" r="3"></circle>
                     </svg>
                     <span style="font-weight: 700; letter-spacing: -0.2px;">${branch.name}</span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left: 2px; opacity: 0.6;">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
+                    <span style="background: #111111; color: #FFFFFF; padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Cambiar ▾
+                    </span>
                 </div>
 
                 <!-- DETALLES: HORARIO, TELÉFONO Y USUARIO -->
@@ -279,18 +279,23 @@ function updateBranchInfoBar() {
  */
 async function initBranchSelector() {
     await fetchBranches();
-    const savedId = localStorage.getItem(BRANCH_STORAGE_KEY);
+    
+    // Obtener la sucursal activa
+    getSelectedBranch();
 
-    // Si es la primera visita o no hay sucursal guardada válida, abrir el modal selector automáticamente
-    if (!savedId || !cachedBranches.some(b => b.id == savedId && !b.isProximamente)) {
-        getSelectedBranch(); // Seleccionar por defecto pero mostrar modal
-        createBranchSelectorModal();
-    } else {
-        getSelectedBranch();
+    // Abrir el popup selector de sucursales automáticamente si es la primera visita de la sesión
+    const hasChosenThisSession = sessionStorage.getItem('kortzen_branch_modal_shown');
+    const isDashboardPage = window.location.pathname.includes('barber-dashboard') || document.body.classList.contains('pwa-app-mode');
+
+    if (!hasChosenThisSession && !isDashboardPage) {
+        sessionStorage.setItem('kortzen_branch_modal_shown', 'true');
+        setTimeout(() => {
+            createBranchSelectorModal();
+        }, 400);
     }
 
     // Si no estamos en el panel de barbero, actualizar barra superior
-    if (!window.location.pathname.includes('barber-dashboard') && !document.body.classList.contains('pwa-app-mode')) {
+    if (!isDashboardPage) {
         updateBranchInfoBar();
     }
 }
