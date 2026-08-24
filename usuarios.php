@@ -164,13 +164,15 @@ include 'includes/header.php';
                     ?>
                     <tr>
                         <td>
-                            <div class="user-cell">
-                                <div class="user-avatar"><?php echo $iniciales; ?></div>
-                                <div class="user-info">
-                                    <div class="user-name"><?php echo htmlspecialchars($usuario['nombre']); ?></div>
-                                    <div class="user-phone"><?php echo $telefono; ?></div>
+                            <a href="barbero_detalle.php?id=<?php echo $usuario['id']; ?>" style="text-decoration: none; color: inherit;" title="Ver perfil completo y stock">
+                                <div class="user-cell">
+                                    <div class="user-avatar"><?php echo $iniciales; ?></div>
+                                    <div class="user-info">
+                                        <div class="user-name" style="font-weight: 800; color: #111111;"><?php echo htmlspecialchars($usuario['nombre']); ?></div>
+                                        <div class="user-phone"><?php echo $telefono; ?></div>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </td>
                         <td><?php echo htmlspecialchars($usuario['email']); ?></td>
                         <td>
@@ -180,6 +182,7 @@ include 'includes/header.php';
                         </td>
                         <td>
                             <div class="actions-cell">
+                                <a href="barbero_detalle.php?id=<?php echo $usuario['id']; ?>" class="btn-action" style="background: #111111; color: #FFFFFF; border: none; font-weight: 800;">VER PERFIL & STOCK</a>
                                 <?php if (canManageUsers()): ?>
                                     <a href="usuarios_editar.php?id=<?php echo $usuario['id']; ?>" class="btn-action">EDITAR</a>
                                     <?php if ($usuario['id'] != $currentUser['id']): ?>

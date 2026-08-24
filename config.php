@@ -86,6 +86,24 @@ function getConnection()
                 $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
             } catch (Exception $e_prop) {}
 
+            // Auto-migración tabla inventario_barbero (Stock por Barbero)
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS inventario_barbero (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        barbero_id INT NOT NULL,
+                        sucursal_id INT DEFAULT NULL,
+                        producto VARCHAR(255) NOT NULL,
+                        cantidad DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                        unidad VARCHAR(50) DEFAULT 'unidades',
+                        precio DECIMAL(10,2) DEFAULT 0.00,
+                        descripcion TEXT NULL,
+                        fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX idx_barbero (barbero_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            } catch (Exception $e_invb) {}
+
         } catch (PDOException $e) {
             // Log del error (en producción, usa error_log)
             error_log("Error de conexión a la base de datos: " . $e->getMessage());

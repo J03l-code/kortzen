@@ -199,7 +199,7 @@ include 'includes/header.php';
     $ventaMes = query("SELECT SUM(precio_final) as total FROM citas WHERE estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$mesInicio, $mesFin])[0]['total'] ?? 0;
 
     // 2. Ranking Barberos Global (Mes)
-    $topBarberos = query("SELECT u.nombre, s.nombre as sucursal, COUNT(c.id) as citas, SUM(c.precio_final) as total
+    $topBarberos = query("SELECT u.id, u.nombre, s.nombre as sucursal, COUNT(c.id) as citas, SUM(c.precio_final) as total
                           FROM usuarios u
                           JOIN citas c ON u.id = c.barbero_id
                           LEFT JOIN sucursales s ON u.sucursal_id = s.id
@@ -448,7 +448,7 @@ include 'includes/header.php';
     $ventaMes = query("SELECT SUM(precio_final) as total FROM citas WHERE sucursal_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$sucursal_id, $mesInicio, $mesFin])[0]['total'] ?? 0;
 
     // 2. Ranking Barberos (Mes)
-    $topBarberos = query("SELECT u.nombre, COUNT(c.id) as citas, SUM(c.precio_final) as total
+    $topBarberos = query("SELECT u.id, u.nombre, COUNT(c.id) as citas, SUM(c.precio_final) as total
                           FROM usuarios u
                           JOIN citas c ON u.id = c.barbero_id
                           WHERE u.sucursal_id = ? AND c.estado = 'completada'
@@ -642,8 +642,10 @@ include 'includes/header.php';
                                 <?php foreach ($topBarberos as $b): ?>
                                     <tr>
                                         <td>
-                                            <div style="font-weight: bold;"><?php echo htmlspecialchars($b['nombre']); ?></div>
-                                            <div style="font-size: 10px; color: #888;"><?php echo $b['citas']; ?> citas</div>
+                                            <a href="barbero_detalle.php?id=<?php echo $b['id']; ?>" style="color: #FFFFFF; text-decoration: none; font-weight: 800;" title="Ver perfil completo y stock">
+                                                <div><?php echo htmlspecialchars($b['nombre']); ?></div>
+                                            </a>
+                                            <div style="font-size: 10px; color: #888;"><?php echo $b['citas']; ?> citas completadas</div>
                                         </td>
                                         <td style="text-align: right; color: var(--primary-gold); font-weight: bold;">
                                             $<?php echo number_format($b['total'], 0); ?>
@@ -660,10 +662,48 @@ include 'includes/header.php';
                 </div>
             </div>
 
+            <!-- Widget Stock por Barbero -->
+            <div class="card" style="margin-top: 24px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div class="card-title" style="margin: 0; color: #10B981;">📦 Stock por Barbero</div>
+                    <a href="usuarios.php" style="font-size: 11px; color: var(--primary-gold); text-decoration: none; font-weight: 700;">Ver Todos →</a>
+                </div>
+                <?php
+                $stockBarberosDash = query("
+                    SELECT ib.*, u.nombre as barbero_nombre, u.id as barbero_id_user
+                    FROM inventario_barbero ib
+                    JOIN usuarios u ON ib.barbero_id = u.id
+                    ORDER BY u.nombre ASC, ib.producto ASC
+                    LIMIT 6
+                ");
+                ?>
+                <?php if ($stockBarberosDash): ?>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <?php foreach ($stockBarberosDash as $sbd): ?>
+                            <li style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <div>
+                                    <a href="barbero_detalle.php?id=<?php echo $sbd['barbero_id_user']; ?>" style="color: #FFFFFF; font-weight: 800; text-decoration: none; font-size: 13px;">
+                                        <?php echo htmlspecialchars($sbd['barbero_nombre']); ?>
+                                    </a>
+                                    <span style="color: #888; font-size: 11px; display: block;">
+                                        <?php echo htmlspecialchars($sbd['producto']); ?>
+                                    </span>
+                                </div>
+                                <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; font-weight: 800; font-size: 12px; padding: 3px 8px; border-radius: 4px;">
+                                    <?php echo number_format($sbd['cantidad'], 1); ?> <?php echo htmlspecialchars($sbd['unidad']); ?>
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <div style="font-size: 12px; color: #888; text-align: center; padding: 12px;">No hay productos asignados a barberos aún.</div>
+                <?php endif; ?>
+            </div>
+
             <!-- Alerta Inventario -->
             <?php if ($lowStock): ?>
                 <div class="card" style="margin-top: 24px; border-left: 4px solid #E74C3C;">
-                    <div class="card-title" style="color: #E74C3C;">⚠️ Stock Bajo</div>
+                    <div class="card-title" style="color: #E74C3C;">Stock Bajo General</div>
                     <ul style="list-style: none; padding: 0; margin: 0;">
                         <?php foreach ($lowStock as $prod): ?>
                             <li
