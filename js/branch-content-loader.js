@@ -36,25 +36,11 @@ function updateTeamSection(teamMembers) {
 }
 
 /**
- * Carga el contenido de una sucursal específica
+ * Carga el contenido dinámico de una sucursal específica desde la base de datos
  */
 function loadBranchContent(branchId) {
-    if (!window.BRANCH_CONTENT) {
-        console.warn('⚠️ BRANCH_CONTENT not loaded');
-        return;
-    }
-
-    const content = window.BRANCH_CONTENT[branchId];
-    if (!content) {
-        console.warn(`⚠️ No content found for branch ${branchId}`);
-        return;
-    }
-
-    console.log(`✅ Loading content for: ${content.name}`);
-
-    // Actualizar equipo de barberos
-    if (content.team) {
-        updateTeamSection(content.team);
+    if (window.TeamLoader && typeof window.TeamLoader.loadTeam === 'function') {
+        window.TeamLoader.loadTeam(branchId);
     }
 }
 

@@ -18,7 +18,7 @@ try {
                 WHERE u.rol = 'barbero' AND u.activo = 1";
 
         if ($sucursalId > 0) {
-            $sql .= " AND (u.sucursal_id = $sucursalId OR u.sucursal_id IS NULL)";
+            $sql .= " AND u.sucursal_id = $sucursalId";
         }
 
         $data = query($sql);

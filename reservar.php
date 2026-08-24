@@ -772,30 +772,39 @@ $pageTitle = 'Reservar Cita';
                 const grid = document.getElementById('barbersGrid');
                 grid.innerHTML = '';
 
-                data.barberos.forEach(b => {
-                    const el = document.createElement('div');
-                    el.className = 'option-card';
-                    el.onclick = () => selectBarber(b.id, b.nombre, el);
-                    let avatarHtml = '';
-                    if (b.foto_perfil && b.foto_perfil.length > 5) {
-                        avatarHtml = `
-                        <div class="barber-avatar" style="width:60px; height:60px; border-radius:50%; background-image:url('${b.foto_perfil}'); background-size:cover; background-position:center; margin-bottom:10px; border:2px solid var(--color-gold);"></div>`;
-                    } else {
-                        avatarHtml = `
-                        <div class="barber-avatar" style="width:60px; height:60px; border-radius:50%; background:#333; color:white; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:10px; border:2px solid var(--color-gold);">
-                            ${b.nombre.charAt(0)}
-                        </div>`;
-                    }
+                if (data && data.barberos && data.barberos.length > 0) {
+                    data.barberos.forEach(b => {
+                        const el = document.createElement('div');
+                        el.className = 'option-card';
+                        el.onclick = () => selectBarber(b.id, b.nombre, el);
+                        let avatarHtml = '';
+                        if (b.foto_perfil && b.foto_perfil.length > 5) {
+                            avatarHtml = `
+                            <div class="barber-avatar" style="width:60px; height:60px; border-radius:50%; background-image:url('${b.foto_perfil}'); background-size:cover; background-position:center; margin-bottom:10px; border:2px solid var(--color-gold);"></div>`;
+                        } else {
+                            avatarHtml = `
+                            <div class="barber-avatar" style="width:60px; height:60px; border-radius:50%; background:#333; color:white; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:10px; border:2px solid var(--color-gold);">
+                                ${b.nombre.charAt(0)}
+                            </div>`;
+                        }
 
-                    el.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:center;">
-                        ${avatarHtml}
-                        <h3>${b.nombre}</h3>
-                        <p style="font-size:0.9rem; color:#666;">${b.sucursal_nombre || 'Kortzen'}</p>
-                    </div>
-                `;
-                    grid.appendChild(el);
-                });
+                        el.innerHTML = `
+                        <div style="display:flex; flex-direction:column; align-items:center;">
+                            ${avatarHtml}
+                            <h3>${b.nombre}</h3>
+                            <p style="font-size:0.9rem; color:#666;">${b.sucursal_nombre || 'Kortzen'}</p>
+                        </div>
+                    `;
+                        grid.appendChild(el);
+                    });
+                } else {
+                    grid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; color: #111111; padding: 2.5rem 1rem; background: #F9F9F9; border: 1px dashed #CCCCCC; border-radius: 12px; box-sizing: border-box;">
+                            <p style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.3rem;">No hay barberos disponibles en esta sucursal</p>
+                            <p style="font-size: 0.82rem; color: #666666; margin: 0;">Selecciona otra sucursal en el menú superior para agendar con barberos disponibles.</p>
+                        </div>
+                    `;
+                }
             } catch (e) {
                 console.error(e);
             }
