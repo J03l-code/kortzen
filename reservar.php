@@ -37,17 +37,33 @@ $pageTitle = 'Reservar Cita';
             touch-action: manipulation;
         }
 
-        /* FLATPICKR LUXURY CLEAN DARK THEME OVERRIDES */
+        /* FLATPICKR LUXURY CLEAN DARK THEME OVERRIDES WITH PERFECT 7-COLUMN RESPONSIVE LAYOUT */
         .flatpickr-calendar {
             background: #141416 !important;
             border: 2px solid #C0A062 !important;
             box-shadow: 0 15px 45px rgba(0, 0, 0, 0.95) !important;
             border-radius: 16px !important;
-            padding: 10px !important;
+            padding: 12px 10px !important;
+            width: 335px !important;
+            max-width: 95vw !important;
+            box-sizing: border-box !important;
         }
+
+        .flatpickr-innerContainer,
+        .flatpickr-rContainer,
+        .flatpickr-days,
+        .dayContainer {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            justify-content: space-around !important;
+        }
+
         .flatpickr-months {
             background: #141416 !important;
             border-bottom: 1px solid #28282C !important;
+            width: 100% !important;
         }
         .flatpickr-months .flatpickr-month {
             background: #141416 !important;
@@ -69,15 +85,33 @@ $pageTitle = 'Reservar Cita';
             background: #141416 !important;
             color: #FFFFFF !important;
         }
+
         .flatpickr-weekdays {
             background: #141416 !important;
+            width: 100% !important;
+            display: flex !important;
+            justify-content: space-around !important;
         }
         span.flatpickr-weekday {
             background: #141416 !important;
             color: #C0A062 !important;
             font-weight: 800 !important;
-            font-size: 0.85rem !important;
+            font-size: 0.82rem !important;
+            width: 14.28% !important;
+            max-width: 14.28% !important;
+            flex: 1 0 14.28% !important;
+            text-align: center !important;
         }
+
+        .flatpickr-day {
+            max-width: 38px !important;
+            height: 38px !important;
+            line-height: 36px !important;
+            flex-basis: 38px !important;
+            margin: 2px 1px !important;
+            box-sizing: border-box !important;
+        }
+
         /* 1. DIAS DISPONIBLES / SELECCIONABLES (DESTACADOS CON TEXTO BLANCO BRILLANTE Y ANILLO DORADO) */
         .flatpickr-day:not(.disabled):not(.prevMonthDay):not(.nextMonthDay) {
             color: #FFFFFF !important;
