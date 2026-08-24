@@ -132,6 +132,35 @@ try {
                 throw new Exception('El nombre del servicio es obligatorio.');
             }
 
+            // Obtener servicio anterior para comparar campo por campo (de anterior a nuevo)
+            $oldServ = query("SELECT * FROM servicios WHERE id = ?", [$id]);
+            $old = !empty($oldServ) ? $oldServ[0] : [];
+
+            $cambios = [];
+            if (!empty($old)) {
+                if (($old['nombre'] ?? '') !== $nombre) {
+                    $cambios[] = "Nombre: '" . ($old['nombre'] ?? '') . "' ➔ '$nombre'";
+                }
+                if (floatval($old['precio'] ?? 0) != $precio) {
+                    $oldP = number_format(floatval($old['precio'] ?? 0), 2);
+                    $newP = number_format($precio, 2);
+                    $cambios[] = "Precio: \$$oldP ➔ \$$newP";
+                }
+                if (intval($old['duracion_minutos'] ?? 0) != $duracion_minutos) {
+                    $oldD = intval($old['duracion_minutos'] ?? 0);
+                    $cambios[] = "Duración: {$oldD} min ➔ {$duracion_minutos} min";
+                }
+                if (($old['categoria'] ?? '') !== $categoria) {
+                    $oldCat = $old['categoria'] ?: 'General';
+                    $cambios[] = "Categoría: '$oldCat' ➔ '$categoria'";
+                }
+                if (intval($old['activo'] ?? 1) != $activo) {
+                    $oldEst = intval($old['activo'] ?? 1) == 1 ? 'Activo' : 'Inactivo';
+                    $newEst = $activo == 1 ? 'Activo' : 'Inactivo';
+                    $cambios[] = "Estado: '$oldEst' ➔ '$newEst'";
+                }
+            }
+
             $pdo->beginTransaction();
 
             try {
@@ -154,7 +183,8 @@ try {
                 }
 
                 $pdo->commit();
-                registrarLog('EDITAR', 'servicios', $id, "Servicio '$nombre' (#$id) actualizado (Precio: $$precio, Duración: $duracion_minutos min, Categoría: '$categoria')");
+                $descCambios = !empty($cambios) ? implode('; ', $cambios) : 'Guardado sin modificaciones de texto';
+                registrarLog('EDITAR', 'servicios', $id, "Servicio '$nombre' (#$id) actualizado. [$descCambios]");
                 header('Location: ../servicios.php?success=Servicio actualizado exitosamente');
             } catch (Exception $e) {
                 $pdo->rollBack();

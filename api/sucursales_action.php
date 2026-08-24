@@ -40,6 +40,9 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$nombre, $direccion, $telefono, $estado, $horario_apertura, $horario_cierre, $mapa_url]);
 
+            $newSucId = $pdo->lastInsertId();
+            registrarLog('CREAR', 'sucursales', $newSucId, "Nueva sucursal '$nombre' creada (Dirección: '$direccion', Teléfono: '$telefono', Estado: '$estado')");
+
             header('Location: ../sucursales.php?success=Sucursal creada exitosamente');
             exit;
 
@@ -65,9 +68,31 @@ try {
                 $pdo->exec("ALTER TABLE sucursales ADD COLUMN estado VARCHAR(50) DEFAULT 'activo' AFTER telefono");
             } catch (Exception $ex) {}
 
+            $oldS = query("SELECT * FROM sucursales WHERE id = ?", [$id]);
+            $old = !empty($oldS) ? $oldS[0] : [];
+
+            $cambios = [];
+            if (!empty($old)) {
+                if (($old['nombre'] ?? '') !== $nombre) {
+                    $cambios[] = "Nombre: '" . ($old['nombre'] ?? '') . "' ➔ '$nombre'";
+                }
+                if (($old['direccion'] ?? '') !== $direccion) {
+                    $cambios[] = "Dirección: '" . ($old['direccion'] ?? '') . "' ➔ '$direccion'";
+                }
+                if (($old['telefono'] ?? '') !== $telefono) {
+                    $cambios[] = "Teléfono: '" . ($old['telefono'] ?? '') . "' ➔ '$telefono'";
+                }
+                if (($old['estado'] ?? '') !== $estado) {
+                    $cambios[] = "Estado: '" . ($old['estado'] ?? '') . "' ➔ '$estado'";
+                }
+            }
+
             $sql = "UPDATE sucursales SET nombre = ?, direccion = ?, telefono = ?, estado = ?, horario_apertura = ?, horario_cierre = ?, mapa_url = ? WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$nombre, $direccion, $telefono, $estado, $horario_apertura, $horario_cierre, $mapa_url, $id]);
+
+            $descCambios = !empty($cambios) ? implode('; ', $cambios) : 'Guardado sin modificaciones de texto';
+            registrarLog('EDITAR', 'sucursales', $id, "Sucursal '$nombre' (#$id) actualizada. [$descCambios]");
 
             header('Location: ../sucursales.php?success=Sucursal actualizada exitosamente');
             exit;
@@ -85,10 +110,14 @@ try {
                 throw new Exception('La sucursal no existe.');
             }
 
-            // El ON DELETE CASCADE se encargará de eliminar el inventario automáticamente
+            $oldS = query("SELECT nombre FROM sucursales WHERE id = ?", [$id]);
+            $sucNom = !empty($oldS) ? $oldS[0]['nombre'] : "ID #$id";
+
             $sql = "DELETE FROM sucursales WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
+
+            registrarLog('ELIMINAR', 'sucursales', $id, "Sucursal '$sucNom' (#$id) fue eliminada del sistema");
 
             header('Location: ../sucursales.php?success=Sucursal eliminada exitosamente (incluido su inventario)');
             exit;
