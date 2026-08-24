@@ -119,7 +119,41 @@ try {
             }
         }
 
-        // 2. Notificación Push Web / PWA a Teléfono
+        // 2. Despachar Notificación Push al Sistema Operativo (Google FCM / Apple APNs) - Funciona con la App CERRADA
+        $countDispositivos = 0;
+        try {
+            $stmtPush = $pdo->prepare("SELECT * FROM push_subscriptions WHERE cliente_id = ? OR cliente_id IS NULL");
+            $stmtPush->execute([$clienteId]);
+            $subscriptions = $stmtPush->fetchAll(PDO::FETCH_ASSOC);
+
+            $payloadPush = json_encode([
+                'title' => "✂️ Confirmar Asistencia: Tu cita es en 2 horas",
+                'body' => "¡Hola {$cita['cliente_nombre']}! Recuerda que a las {$horaFormateada} tienes tu cita con {$cita['barbero_nombre']}. Toca aquí para confirmar.",
+                'icon' => '/assets/icons/favicon.png',
+                'url' => "/cliente-dashboard.php?confirmar_cita={$citaId}"
+            ]);
+
+            foreach ($subscriptions as $sub) {
+                if (!empty($sub['endpoint'])) {
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $sub['endpoint']);
+                    curl_setopt($ch, CURLOPT_POST, true);
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, $payloadPush);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                        'Content-Type: application/json',
+                        'TTL: 86400'
+                    ]);
+                    @curl_exec($ch);
+                    @curl_close($ch);
+                    $enviadosPush++;
+                    $countDispositivos++;
+                }
+            }
+        } catch (Exception $eSub) {}
+
+        // 3. Registrar Notificación PWA en base de datos para entrega garantizada al abrir la app
         try {
             $stmtNotifPwa = $pdo->prepare("
                 INSERT INTO notificaciones_pwa (cliente_id, cita_id, titulo, mensaje, url) 
@@ -130,7 +164,6 @@ try {
             $urlPush = "/cliente-dashboard.php?confirmar_cita={$citaId}";
 
             $stmtNotifPwa->execute([$clienteId, $citaId, $tituloPush, $msgPush, $urlPush]);
-            $enviadosPush++;
         } catch (Exception $ePwa) {}
 
         $detallesResumen[] = [
@@ -139,7 +172,7 @@ try {
             'email' => $cita['cliente_email'],
             'email_estado' => $emailEstado,
             'fecha_hora' => $cita['fecha_hora'],
-            'push_dispositivos' => count($subscriptions)
+            'push_dispositivos' => $countDispositivos
         ];
     }
 
