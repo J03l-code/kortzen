@@ -326,6 +326,17 @@ include 'includes/header.php';
                             <div class="actions-cell">
                                 <?php if ($currentUser['rol'] === 'admin' || $currentUser['rol'] === 'admin_local'): ?>
                                     <!-- ACCIONES ADMIN -->
+                                    <?php if (!empty($cita['cliente_telefono'])): 
+                                        $waPhone = formatPhoneForWhatsapp($cita['cliente_telefono']);
+                                        $waMsg = urlencode("Hola " . explode(' ', $cita['cliente_nombre'])[0] . ", te saludamos de Kortzen Barbería respecto a tu cita agendada.");
+                                    ?>
+                                        <a href="https://wa.me/<?php echo $waPhone; ?>?text=<?php echo $waMsg; ?>" 
+                                           target="_blank" 
+                                           class="btn-action" 
+                                           style="background: #25D366; color: #FFFFFF; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="fab fa-whatsapp"></i> WHATSAPP CLIENTE
+                                        </a>
+                                    <?php endif; ?>
                                     <?php if ($cita['estado'] !== 'completada' && $cita['estado'] !== 'cancelada'): ?>
                                         <button onclick="abrirModalTerminar(<?php echo $cita['id']; ?>)"
                                             class="btn-action btn-complete" style="background: #10B981; color: #FFFFFF; font-weight: 800;">FINALIZAR Y PROPINA</button>

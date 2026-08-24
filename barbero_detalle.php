@@ -399,12 +399,13 @@ include 'includes/header.php';
                     <th>PRECIO</th>
                     <th>PROPINA</th>
                     <th>ESTADO</th>
+                    <th>CONTACTO CLIENTE</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($historialCitas)): ?>
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 30px; color: #888888;">
+                        <td colspan="7" style="text-align: center; padding: 30px; color: #888888;">
                             Aún no hay citas registradas para este barbero.
                         </td>
                     </tr>
@@ -435,6 +436,20 @@ include 'includes/header.php';
                                 <span class="status-badge status-<?php echo $c['estado']; ?>">
                                     <?php echo strtoupper($c['estado']); ?>
                                 </span>
+                            </td>
+                            <td>
+                                <?php if (!empty($c['cliente_telefono'])): 
+                                    $waPhone = formatPhoneForWhatsapp($c['cliente_telefono']);
+                                    $waMsg = urlencode("Hola " . explode(' ', $c['cliente_nombre'])[0] . ", te escribo de Kortzen Barbería respecto a tu cita agendada.");
+                                ?>
+                                    <a href="https://wa.me/<?php echo $waPhone; ?>?text=<?php echo $waMsg; ?>" 
+                                       target="_blank" 
+                                       style="background: #25D366; color: #FFFFFF; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fab fa-whatsapp"></i> Contactar por WhatsApp
+                                    </a>
+                                <?php else: ?>
+                                    <span style="color: #888888; font-size: 0.78rem;">Sin teléfono</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
