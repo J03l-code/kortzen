@@ -56,6 +56,11 @@
     }
 }
 
+/* Purga estricta en CSS para evitar barras secundarias duplicadas en la UI */
+.branch-info-bar ~ .branch-info-bar {
+    display: none !important;
+}
+
 /* =================== HEADER & MOBILE NAV UNIVERSAL FIX =================== */
 
 .header {

@@ -229,8 +229,8 @@ function updateBranchInfoBar() {
     const branch = getSelectedBranch();
     if (!branch) return;
 
-    const existingBar = document.querySelector('.branch-info-bar');
-    if (existingBar) existingBar.remove();
+    // Purga estricta de cualquier barra previa en el DOM para evitar duplicados
+    document.querySelectorAll('.branch-info-bar').forEach(bar => bar.remove());
 
     const isMobile = window.innerWidth <= 768;
 
