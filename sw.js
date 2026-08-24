@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kortzen-v5';
+const CACHE_NAME = 'kortzen-v6';
 const ASSETS_TO_CACHE = [
   '/css/variables.css',
   '/css/reset.css',
@@ -80,26 +80,54 @@ self.addEventListener('fetch', event => {
 
 // Push Notification Event
 self.addEventListener('push', event => {
-  let data = { title: 'KORTZEN Barbería', body: 'Tienes un nuevo recordatorio de tu cita ✂️', icon: '/assets/icons/favicon.png' };
+  let data = { 
+    title: '✂️ KORTZEN Barbería: Recordatorio de Cita', 
+    body: 'Tienes un nuevo recordatorio de tu cita. Toca aquí para confirmar asistencia.', 
+    icon: '/assets/icons/favicon.png',
+    url: '/cliente-dashboard.php'
+  };
+
   if (event.data) {
     try {
       data = event.data.json();
     } catch (e) {
-      data.body = event.data.text();
+      if (event.data.text()) data.body = event.data.text();
     }
   }
 
-  const options = {
-    body: data.body,
-    icon: data.icon || '/assets/icons/favicon.png',
-    badge: '/assets/icons/favicon.png',
-    vibrate: [100, 50, 100],
-    data: { url: data.url || '/cliente-dashboard.php' }
-  };
+  const promiseFetchAndShow = fetch('/api/check_pending_pwa_notifications.php')
+    .then(res => res.json())
+    .then(resData => {
+      if (resData && resData.pending && resData.notification) {
+        const n = resData.notification;
+        return self.registration.showNotification(n.title || data.title, {
+          body: n.body || data.body,
+          icon: n.icon || data.icon,
+          badge: '/assets/icons/favicon.png',
+          vibrate: [200, 100, 200],
+          data: { url: n.url || data.url }
+        });
+      } else {
+        return self.registration.showNotification(data.title, {
+          body: data.body,
+          icon: data.icon,
+          badge: '/assets/icons/favicon.png',
+          vibrate: [200, 100, 200],
+          data: { url: data.url }
+        });
+      }
+    })
+    .catch(() => {
+      return self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: data.icon,
+        badge: '/assets/icons/favicon.png',
+        vibrate: [200, 100, 200],
+        data: { url: data.url }
+      });
+    });
 
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+  event.waitUntil(promiseFetchAndShow);
 });
 
 // Notification Click Event
