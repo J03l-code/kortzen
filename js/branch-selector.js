@@ -204,9 +204,6 @@ function createBranchSelectorModal() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
 /**
  * Seleccionar sucursal desde el modal
  */
