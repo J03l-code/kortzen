@@ -50,7 +50,10 @@ try {
             }
 
             registrarLog('UPDATE', 'horarios_barberos', $barberoId, 'Horarios actualizados');
-            header('Location: ../horarios.php?barbero=' . $barberoId . '&success=' . urlencode('Horarios guardados correctamente'));
+            $redirectTarget = (isset($_POST['from_profile']) && $_POST['from_profile'] == '1')
+                ? '../barbero_detalle.php?id=' . $barberoId . '&success=' . urlencode('Horarios del barbero guardados correctamente')
+                : '../horarios.php?barbero=' . $barberoId . '&success=' . urlencode('Horarios guardados correctamente');
+            header('Location: ' . $redirectTarget);
             exit;
 
         case 'agregar_bloqueo':

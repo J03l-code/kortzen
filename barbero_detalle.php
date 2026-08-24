@@ -345,7 +345,7 @@ include 'includes/header.php';
             <h3 style="font-size: 1.1rem; font-weight: 900; color: #111111; margin: 0;">
                 📅 Horarios de Atención del Barbero
             </h3>
-            <a href="horarios.php?barbero_id=<?php echo $barbero['id']; ?>" style="font-size: 0.78rem; font-weight: 800; color: #111111; text-decoration: underline;">
+            <a href="horarios.php?barbero=<?php echo $barbero['id']; ?>&from_profile=1" style="font-size: 0.78rem; font-weight: 800; color: #111111; text-decoration: underline;">
                 Editar Horarios
             </a>
         </div>

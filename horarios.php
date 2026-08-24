@@ -22,15 +22,18 @@ $diasSemana = [
     6 => 'Sábado'
 ];
 
-// Obtener barbero seleccionado
-$barberoId = isset($_GET['barbero']) ? intval($_GET['barbero']) : null;
+// Obtener barbero seleccionado (Acepta barbero, barbero_id o id)
+$barberoId = intval($_GET['barbero'] ?? $_GET['barbero_id'] ?? $_GET['id'] ?? 0);
+if ($barberoId <= 0) {
+    $barberoId = null;
+}
 $barberoSeleccionado = null;
 $horarios = [];
 $diasBloqueados = [];
 
 if ($barberoId) {
-    // Obtener datos del barbero
-    $result = query("SELECT * FROM usuarios WHERE id = ? AND rol = 'barbero'", [$barberoId]);
+    // Obtener datos del barbero o staff
+    $result = query("SELECT * FROM usuarios WHERE id = ?", [$barberoId]);
     if (!empty($result)) {
         $barberoSeleccionado = $result[0];
         
@@ -411,15 +414,21 @@ input:focus + .slider {
     <!-- Panel de Horarios -->
     <div class="horarios-panel">
         <?php if ($barberoSeleccionado): ?>
-            <div class="section-header">
-                <h2 class="section-title">Horario Semanal: <?php echo htmlspecialchars($barberoSeleccionado['nombre']); ?></h2>
-                <p class="section-desc">Define las horas de inicio y fin para cada día laboral.</p>
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                <div>
+                    <h2 class="section-title" style="margin: 0; font-size: 1.3rem; font-weight: 900;">Horario Semanal: <?php echo htmlspecialchars($barberoSeleccionado['nombre']); ?></h2>
+                    <p class="section-desc" style="margin-top: 4px; color: #666666;">Define las horas de inicio y fin para cada día laboral.</p>
+                </div>
+                <a href="barbero_detalle.php?id=<?php echo $barberoId; ?>" class="btn" style="background: #111111; color: #FFFFFF; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 0.8rem;">
+                    ← Volver al Perfil del Barbero
+                </a>
             </div>
 
             <!-- Horario Semanal -->
             <form id="formHorarios" method="POST" action="api/horarios_action.php">
                 <input type="hidden" name="action" value="guardar_horarios">
                 <input type="hidden" name="barbero_id" value="<?php echo $barberoId; ?>">
+                <input type="hidden" name="from_profile" value="<?php echo (isset($_GET['from_profile']) || isset($_POST['from_profile'])) ? '1' : '0'; ?>">
                 
                 <div class="horario-grid">
                     <?php foreach ($diasSemana as $numDia => $nombreDia): 
