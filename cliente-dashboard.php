@@ -65,17 +65,34 @@ if ($cliente_id) {
             $stmtUpdCod->execute([$codigo_referido, $cliente_id]);
         }
 
-        $stmt = $pdo->prepare("
-            SELECT c.*, s.nombre as servicio_nombre, b.nombre as barbero_nombre
+        // Obtener email y teléfono del cliente para vinculación garantizada
+        $stmtCliInfo = $pdo->prepare("SELECT email, telefono FROM clientes WHERE id = ?");
+        $stmtCliInfo->execute([$cliente_id]);
+        $cliInfo = $stmtCliInfo->fetch(PDO::FETCH_ASSOC);
+        $cliEmail = trim($cliInfo['email'] ?? '');
+        $cliTelefono = trim($cliInfo['telefono'] ?? '');
+
+        // Buscar TODAS las citas reservadas del cliente (activas, de hoy o futuras, por ID, email o teléfono)
+        $sqlCitasCli = "
+            SELECT c.*, s.nombre as servicio_nombre, b.nombre as barbero_nombre, suc.nombre as sucursal_nombre
             FROM citas c
             LEFT JOIN servicios s ON c.servicio_id = s.id
             LEFT JOIN usuarios b ON c.barbero_id = b.id
-            WHERE c.cliente_id = ? AND c.fecha_hora >= NOW() AND c.estado IN ('pendiente', 'confirmada')
+            LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
+            WHERE (
+                c.cliente_id = ? 
+                OR (? != '' AND c.cliente_id IN (SELECT id FROM clientes WHERE email = ? AND email != ''))
+                OR (? != '' AND c.cliente_id IN (SELECT id FROM clientes WHERE telefono = ? AND telefono != ''))
+            )
+            AND c.estado IN ('pendiente', 'confirmada')
+            AND (DATE(c.fecha_hora) >= CURDATE() OR c.fecha_hora >= DATE_SUB(NOW(), INTERVAL 4 HOUR))
             ORDER BY c.fecha_hora ASC
-            LIMIT 1
-        ");
-        $stmt->execute([$cliente_id]);
-        $proxima_cita = $stmt->fetch(PDO::FETCH_ASSOC);
+        ";
+        $stmtCitasCli = $pdo->prepare($sqlCitasCli);
+        $stmtCitasCli->execute([$cliente_id, $cliEmail, $cliEmail, $cliTelefono, $cliTelefono]);
+        $citas_reservadas_todas = $stmtCitasCli->fetchAll(PDO::FETCH_ASSOC);
+
+        $proxima_cita = !empty($citas_reservadas_todas) ? $citas_reservadas_todas[0] : null;
     } catch (Exception $e) {
         // Fallback silencioso
     }
@@ -337,6 +354,37 @@ if ($cliente_id) {
                 <?php endif; ?>
             </div>
         </div>
+        <?php endif; ?>
+
+        <!-- LISTA COMPLETA DE CITAS RESERVADAS ADICIONALES DEL CLIENTE -->
+        <?php if (!empty($citas_reservadas_todas) && count($citas_reservadas_todas) > 1): ?>
+            <div class="pwa-section-title" style="margin-top: 1.5rem;">Otras Citas Agendadas (<?php echo (count($citas_reservadas_todas) - 1); ?>)</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <?php foreach (array_slice($citas_reservadas_todas, 1) as $cRes): 
+                    $tsCR = strtotime($cRes['fecha_hora']);
+                ?>
+                    <div style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.9rem; color: #111111;"><?php echo htmlspecialchars($cRes['servicio_nombre'] ?? 'Corte'); ?></div>
+                            <div style="font-size: 0.78rem; color: #666666;">con <?php echo htmlspecialchars($cRes['barbero_nombre'] ?? 'Barbero'); ?></div>
+                            <div style="font-size: 0.78rem; color: #111111; font-weight: 700; margin-top: 3px;">
+                                📅 <?php echo date('d/m/Y H:i', $tsCR); ?>
+                            </div>
+                        </div>
+                        <div>
+                            <?php if (!empty($cRes['asistencia_confirmada'])): ?>
+                                <span style="background: #ECFDF5; color: #047857; border: 1px solid #10B981; font-weight: 800; font-size: 0.7rem; padding: 4px 8px; border-radius: 6px;">
+                                    ✓ CONFIRMADO
+                                </span>
+                            <?php else: ?>
+                                <span style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; font-weight: 700; font-size: 0.7rem; padding: 4px 8px; border-radius: 6px;">
+                                    PENDIENTE
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
 
         <!-- Calificar servicio (Reseña) Card -->
