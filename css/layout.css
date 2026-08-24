@@ -184,13 +184,27 @@ body.menu-open .menu-toggle__line {
     transform: translateY(-7px) rotate(-45deg) !important;
 }
 
-/* Header Active state when menu is open: Make entire KORTZEN logo SOLID BLACK (#000000) */
+/* Header Active state when menu is open: Bring header ABOVE mobile nav and make entire KORTZEN logo SOLID BLACK (#000000) */
 body.menu-open .header,
 body.nav-open .header,
+body.mobile-nav-open .header,
 body.has-menu-open .header,
+body:has(.mobile-nav--active) .header,
 .header:has(.menu-toggle--active),
 .header.header--menu-open {
     z-index: 10005 !important;
+}
+
+body.menu-open .header .header__logo,
+body.nav-open .header .header__logo,
+body.mobile-nav-open .header .header__logo,
+body:has(.mobile-nav--active) .header .header__logo,
+.header:has(.menu-toggle--active) .header__logo,
+.header.header--menu-open .header__logo {
+    z-index: 10006 !important;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
 }
 
 body.menu-open .header .header__logo-text,
@@ -199,14 +213,18 @@ body.menu-open .header .header__logo-text span,
 body.nav-open .header .header__logo-text,
 body.nav-open .header .header__logo-text *,
 body.nav-open .header .header__logo-text span,
+body.mobile-nav-open .header .header__logo-text,
+body.mobile-nav-open .header .header__logo-text *,
+body.mobile-nav-open .header .header__logo-text span,
+body:has(.mobile-nav--active) .header .header__logo-text,
+body:has(.mobile-nav--active) .header .header__logo-text *,
+body:has(.mobile-nav--active) .header .header__logo-text span,
 .header:has(.menu-toggle--active) .header__logo-text,
 .header:has(.menu-toggle--active) .header__logo-text *,
 .header:has(.menu-toggle--active) .header__logo-text span,
 .header.header--menu-open .header__logo-text,
 .header.header--menu-open .header__logo-text *,
-.header.header--menu-open .header__logo-text span,
-.mobile-nav--active ~ .header .header__logo-text,
-.mobile-nav--active ~ .header .header__logo-text * {
+.header.header--menu-open .header__logo-text span {
     color: #000000 !important;
 }
 
