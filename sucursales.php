@@ -5,7 +5,7 @@ $currentUser = getCurrentUser();
 
 // Obtener sucursales
 try {
-    $sucursales = query("SELECT * FROM sucursales ORDER BY fecha_creacion DESC");
+    $sucursales = query("SELECT * FROM sucursales ORDER BY id DESC");
 } catch (PDOException $e) {
     error_log("Error al obtener sucursales: " . $e->getMessage());
     $sucursales = [];
@@ -120,14 +120,22 @@ include 'includes/header.php';
                             ?>
                         </td>
                         <td>
-                            <?php 
-                            $est = $sucursal['estado'] ?? 'activo';
-                            if ($est === 'activo'): ?>
-                                <span class="status-badge status-active">🟢 ACTIVA</span>
-                            <?php elseif ($est === 'proximamente'): ?>
-                                <span class="status-badge" style="background: rgba(241, 196, 15, 0.15); color: #D4AC0D; border: 1px solid rgba(241, 196, 15, 0.3);">⏳ PRÓXIMAMENTE</span>
+                            <?php $est = $sucursal['estado'] ?? 'activo'; ?>
+                            <?php if (canManageBranches()): ?>
+                                <select onchange="cambiarEstadoSucursal(<?php echo $sucursal['id']; ?>, this.value)" 
+                                        style="padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; background: <?php echo ($est === 'activo' ? 'rgba(46, 204, 113, 0.15)' : ($est === 'proximamente' ? 'rgba(241, 196, 15, 0.15)' : 'rgba(149, 165, 166, 0.15)')); ?>; color: <?php echo ($est === 'activo' ? '#27ae60' : ($est === 'proximamente' ? '#d35400' : '#7f8c8d')); ?>; border: 1px solid currentColor; outline: none;">
+                                    <option value="activo" <?php echo $est === 'activo' ? 'selected' : ''; ?>>🟢 ACTIVA</option>
+                                    <option value="proximamente" <?php echo $est === 'proximamente' ? 'selected' : ''; ?>>⏳ PRÓXIMAMENTE</option>
+                                    <option value="inactivo" <?php echo $est === 'inactivo' ? 'selected' : ''; ?>>🔴 INACTIVA</option>
+                                </select>
                             <?php else: ?>
-                                <span class="status-badge" style="background: rgba(149, 165, 166, 0.15); color: #7F8C8D; border: 1px solid rgba(149, 165, 166, 0.3);">🔴 INACTIVA</span>
+                                <?php if ($est === 'activo'): ?>
+                                    <span class="status-badge status-active">🟢 ACTIVA</span>
+                                <?php elseif ($est === 'proximamente'): ?>
+                                    <span class="status-badge" style="background: rgba(241, 196, 15, 0.15); color: #D4AC0D; border: 1px solid rgba(241, 196, 15, 0.3);">⏳ PRÓXIMAMENTE</span>
+                                <?php else: ?>
+                                    <span class="status-badge" style="background: rgba(149, 165, 166, 0.15); color: #7F8C8D; border: 1px solid rgba(149, 165, 166, 0.3);">🔴 INACTIVA</span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                         <td>
@@ -156,6 +164,36 @@ include 'includes/header.php';
 </div>
 
 <script>
+    function cambiarEstadoSucursal(id, nuevoEstado) {
+        const formData = new FormData();
+        formData.append('action', 'change_status');
+        formData.append('id', id);
+        formData.append('estado', nuevoEstado);
+
+        fetch('api/sucursales_action.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error al actualizar el estado de la sucursal');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'api/sucursales_action.php';
+            form.innerHTML = `<input type="hidden" name="action" value="change_status"><input type="hidden" name="id" value="${id}"><input type="hidden" name="estado" value="${nuevoEstado}">`;
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+
     function confirmarEliminar(id, nombre) {
         if (confirm('¿Estás seguro de eliminar la sucursal "' + nombre + '"?\n\nEsto eliminará también todo el inventario asociado.')) {
             const form = document.createElement('form');

@@ -46,13 +46,40 @@ try {
             header('Location: ../sucursales.php?success=Sucursal creada exitosamente');
             exit;
 
+        case 'change_status':
+            $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
+            $estado = $_POST['estado'] ?? $_GET['estado'] ?? 'activo';
+            if (!in_array($estado, ['activo', 'proximamente', 'inactivo'])) $estado = 'activo';
+
+            if ($id <= 0) {
+                throw new Exception('ID de sucursal inválido.');
+            }
+
+            try {
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN estado VARCHAR(50) DEFAULT 'activo'");
+            } catch (Exception $ex) {}
+
+            $stmt = $pdo->prepare("UPDATE sucursales SET estado = ? WHERE id = ?");
+            $stmt->execute([$estado, $id]);
+
+            registrarLog('EDITAR', 'sucursales', $id, "Estado de sucursal #$id cambiado a '$estado'");
+
+            if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'estado' => $estado]);
+                exit;
+            }
+
+            header('Location: ../sucursales.php?success=Estado de sucursal actualizado');
+            exit;
+
         case 'update':
             $id = intval($_POST['id'] ?? 0);
             $nombre = trim($_POST['nombre'] ?? '');
             $direccion = trim($_POST['direccion'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
             $estado = in_array($_POST['estado'] ?? '', ['activo', 'proximamente', 'inactivo']) ? $_POST['estado'] : 'activo';
-            $horario_apertura = !empty($_POST['horario_apertura']) ? $_POST['horario_apertura'] : '09:00:00';
+            $horario_apertura = !empty($_POST['horario_apertura']) ? $_POST['horario_apertura'] : '10:00:00';
             $horario_cierre = !empty($_POST['horario_cierre']) ? $_POST['horario_cierre'] : '20:00:00';
             $mapa_url = trim($_POST['mapa_url'] ?? '');
 
@@ -65,8 +92,13 @@ try {
             }
 
             try {
-                $pdo->exec("ALTER TABLE sucursales ADD COLUMN estado VARCHAR(50) DEFAULT 'activo' AFTER telefono");
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN estado VARCHAR(50) DEFAULT 'activo'");
             } catch (Exception $ex) {}
+            try {
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN horario_apertura TIME DEFAULT '10:00:00'");
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN horario_cierre TIME DEFAULT '20:00:00'");
+                $pdo->exec("ALTER TABLE sucursales ADD COLUMN mapa_url TEXT NULL");
+            } catch (Exception $ex2) {}
 
             $oldS = query("SELECT * FROM sucursales WHERE id = ?", [$id]);
             $old = !empty($oldS) ? $oldS[0] : [];
