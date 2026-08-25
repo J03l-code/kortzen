@@ -272,6 +272,17 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
         color: var(--color-gold, #C0A062) !important;
         background: rgba(192, 160, 98, 0.08) !important;
     }
+
+    .header__cta,
+    .btn.header__cta {
+        padding: 7px 15px !important;
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.8px !important;
+        text-transform: uppercase !important;
+        border-radius: 5px !important;
+        line-height: 1.2 !important;
+    }
 }
 
 @media (max-width: 1023px) {
