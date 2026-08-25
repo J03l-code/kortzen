@@ -823,8 +823,10 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
     }
 }
 
-.hero__cta .btn {
-    padding: 8px 18px !important;
+.hero__cta .btn,
+.hero__cta .btn--lg,
+.hero__cta a {
+    padding: 7px 15px !important;
     font-size: 0.74rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.8px !important;
