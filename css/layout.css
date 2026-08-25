@@ -825,16 +825,17 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
 
 .hero__cta .btn,
 .hero__cta .btn--lg,
-.hero__cta a {
-    padding: 7px 15px !important;
-    font-size: 0.74rem !important;
+.hero__cta a,
+.btn--hero-lg {
+    padding: 15px 36px !important;
+    font-size: 0.92rem !important;
     font-weight: 700 !important;
-    letter-spacing: 0.8px !important;
+    letter-spacing: 1.5px !important;
     text-transform: uppercase !important;
-    border-radius: 5px !important;
-    line-height: 1.2 !important;
+    border-radius: 6px !important;
+    line-height: 1.3 !important;
     height: auto !important;
-    min-height: 0 !important;
+    min-height: 48px !important;
 }
 
 .hero__scroll {
