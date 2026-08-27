@@ -17,10 +17,38 @@ try {
         $pdo->exec("SET time_zone = '-05:00'");
     } catch (Exception $eTz) {}
 
-    // Auto-migración columna recordatorio_2h_enviado
+    // Auto-migración columnas y tablas requeridas para entregas garantizadas
     try {
         $pdo->exec("ALTER TABLE citas ADD COLUMN recordatorio_2h_enviado TINYINT(1) DEFAULT 0");
     } catch (Exception $e) {}
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cliente_id INT NULL,
+                endpoint VARCHAR(500) NOT NULL,
+                p256dh TEXT NULL,
+                auth TEXT NULL,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_cliente (cliente_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+    } catch (Exception $e_psub) {}
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS notificaciones_pwa (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cliente_id INT NOT NULL,
+                cita_id INT NULL,
+                titulo VARCHAR(255) NOT NULL,
+                mensaje TEXT NOT NULL,
+                url VARCHAR(500) NULL,
+                leido TINYINT(1) DEFAULT 0,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_cli_leido (cliente_id, leido)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+    } catch (Exception $e_pwanot) {}
 
     $citasPendientes = [];
 
