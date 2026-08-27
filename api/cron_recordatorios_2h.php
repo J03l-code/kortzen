@@ -13,6 +13,9 @@ $testCitaId = intval($_GET['id'] ?? 0);
 
 try {
     $pdo = getConnection();
+    try {
+        $pdo->exec("SET time_zone = '-05:00'");
+    } catch (Exception $eTz) {}
 
     // Auto-migración columna recordatorio_2h_enviado
     try {
@@ -61,7 +64,7 @@ try {
         $citasPendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } else {
-        // Modo Normal Cron: Citas confirmadas/pendientes en la ventana de las próximas 2.5 horas
+        // Modo Normal Cron: Citas confirmadas/pendientes en la ventana de las próximas 3 horas (180 min)
         $sql = "
             SELECT c.*, 
                    cli.nombre as cliente_nombre, cli.email as cliente_email, cli.telefono as cliente_telefono,
@@ -75,7 +78,10 @@ try {
             LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
             WHERE c.estado IN ('confirmada', 'pendiente')
               AND (c.recordatorio_2h_enviado IS NULL OR c.recordatorio_2h_enviado = 0)
-              AND TIMESTAMPDIFF(MINUTE, NOW(), c.fecha_hora) BETWEEN -15 AND 150
+              AND (
+                  (c.fecha_hora >= NOW() - INTERVAL 30 MINUTE AND c.fecha_hora <= NOW() + INTERVAL 180 MINUTE)
+                  OR (TIMESTAMPDIFF(MINUTE, NOW(), c.fecha_hora) BETWEEN -30 AND 180)
+              )
         ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();

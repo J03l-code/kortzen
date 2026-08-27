@@ -31,6 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Add scroll reveal animations
   initScrollReveal();
+
+  // Disparo automático de fondo de recordatorio de citas cada 2 minutos
+  fetch('/api/cron_recordatorios_2h.php').catch(() => {});
+  setInterval(() => {
+    fetch('/api/cron_recordatorios_2h.php').catch(() => {});
+  }, 120000);
 });
 
 /**

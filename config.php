@@ -81,6 +81,11 @@ function getConnection()
 
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
 
+            // Asegurar zona horaria Ecuador (-05:00) en MySQL
+            try {
+                $pdo->exec("SET time_zone = '-05:00'");
+            } catch (Exception $e_tz) {}
+
             // Auto-migración columna propina en citas
             try {
                 $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
@@ -141,7 +146,8 @@ function getConnection()
             error_log("Error de conexión a la base de datos: " . $e->getMessage());
 
             // Si es una petición API o AJAX, devolver JSON
-            $isApiResult = (strpos($_SERVER['REQUEST_URI'], '/api/') !== false) ||
+            $reqUri = $_SERVER['REQUEST_URI'] ?? '';
+            $isApiResult = (strpos($reqUri, '/api/') !== false) ||
                 (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
 
             if ($isApiResult) {
@@ -634,4 +640,39 @@ function formatPhoneForWhatsapp($phone)
     }
 
     return $clean;
+}
+
+/**
+ * Verificación y disparo automático asíncrono de recordatorios de citas 2h antes
+ * Se ejecuta de fondo máximo 1 vez cada 60 segundos por sesión.
+ */
+function checkCronRecordatorios2hAuto() {
+    if (defined('IS_CRON_EXECUTION') || (isset($_GET['action']) && $_GET['action'] === 'cron')) return;
+    
+    $lastCheck = $_SESSION['last_cron_check_2h'] ?? 0;
+    if (time() - $lastCheck < 60) return;
+    $_SESSION['last_cron_check_2h'] = time();
+
+    try {
+        $host = $_SERVER['HTTP_HOST'] ?? 'kortzen.com';
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
+        $port = $isHttps ? 443 : 80;
+        $scheme = $isHttps ? 'ssl://' : '';
+
+        $fp = @fsockopen($scheme . $host, $port, $errno, $errstr, 1);
+        if ($fp) {
+            stream_set_timeout($fp, 1);
+            $out = "GET /api/cron_recordatorios_2h.php HTTP/1.1\r\n";
+            $out .= "Host: {$host}\r\n";
+            $out .= "User-Agent: KortzenAutoCron/1.0\r\n";
+            $out .= "Connection: Close\r\n\r\n";
+            @fwrite($fp, $out);
+            @fclose($fp);
+        }
+    } catch (Exception $e) {}
+}
+
+// Auto-ejecución pasiva de fondo al cargar cualquier página
+if (!empty($_SERVER['HTTP_HOST'])) {
+    checkCronRecordatorios2hAuto();
 }
