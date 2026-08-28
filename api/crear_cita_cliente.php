@@ -202,18 +202,66 @@ try {
         }
     }
 
+    // 5.5. Crear Notificación PWA e Instant WebPush para la Confirmación de Reserva
+    $fechaLegible = date('d/m/Y', strtotime($fecha));
+
+    $stmtCInfo = $pdo->prepare("SELECT nombre, email FROM clientes WHERE id = ?");
+    $stmtCInfo->execute([$clienteId]);
+    $cInfo = $stmtCInfo->fetch(PDO::FETCH_ASSOC);
+
+    $finalEmail = !empty($cInfo['email']) ? $cInfo['email'] : ($_SESSION['cliente_email'] ?? '');
+    $finalNombre = !empty($cInfo['nombre']) ? $cInfo['nombre'] : ($_SESSION['cliente_nombre'] ?? 'Cliente');
+
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS notificaciones_pwa (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cliente_id INT NOT NULL,
+                cita_id INT NULL,
+                titulo VARCHAR(255) NOT NULL,
+                mensaje TEXT NOT NULL,
+                url VARCHAR(500) NULL,
+                leido TINYINT(1) DEFAULT 0,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_cli_leido (cliente_id, leido)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+
+        $tituloConf = "✂️ ¡Reserva Confirmada!";
+        $msgConf = "¡Hola {$finalNombre}! Tu cita de {$nombreServicio} con {$nombreBarbero} ha sido agendada para el {$fechaLegible} a las {$hora}.";
+        $urlConf = "/cliente-dashboard.php";
+
+        $stmtNotifPwa = $pdo->prepare("
+            INSERT INTO notificaciones_pwa (cliente_id, cita_id, titulo, mensaje, url) 
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        $stmtNotifPwa->execute([$clienteId, $citaId, $tituloConf, $msgConf, $urlConf]);
+
+        // Intentar Web Push directo si el cliente tiene suscripción push activa
+        try {
+            require_once '../includes/webpush_helper.php';
+            $stmtPush = $pdo->prepare("SELECT * FROM push_subscriptions WHERE cliente_id = ?");
+            $stmtPush->execute([$clienteId]);
+            $subs = $stmtPush->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($subs)) {
+                $payloadPush = json_encode([
+                    'title' => $tituloConf,
+                    'body' => $msgConf,
+                    'icon' => '/assets/icons/favicon.png',
+                    'url' => $urlConf
+                ]);
+                foreach ($subs as $sub) {
+                    if (!empty($sub['endpoint'])) {
+                        @enviarWebPushVapid($sub, $payloadPush);
+                    }
+                }
+            }
+        } catch (Exception $exPush) {}
+    } catch (Exception $exNotif) {}
+
     // 6. Enviar Correo (En segundo plano / Asíncrono para respuesta instantánea)
     try {
         require_once '../includes/email_helper.php';
-        $fechaLegible = date('d/m/Y', strtotime($fecha));
-
-        $stmtCInfo = $pdo->prepare("SELECT nombre, email FROM clientes WHERE id = ?");
-        $stmtCInfo->execute([$clienteId]);
-        $cInfo = $stmtCInfo->fetch(PDO::FETCH_ASSOC);
-
-        $finalEmail = !empty($cInfo['email']) ? $cInfo['email'] : ($_SESSION['cliente_email'] ?? '');
-        $finalNombre = !empty($cInfo['nombre']) ? $cInfo['nombre'] : ($_SESSION['cliente_nombre'] ?? 'Cliente');
-
         if (!empty($finalEmail)) {
             @enviarCorreoReserva($finalEmail, $finalNombre, [
                 'servicio' => $nombreServicio,

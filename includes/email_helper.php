@@ -8,24 +8,19 @@ require_once __DIR__ . '/../config.php';
 /**
  * Enviar correo a través de SMTP Sockets (Sin dependencias externas)
  */
-function enviarCorreoSMTPDirecto($toEmail, $subject, $htmlMessage, $smtpConfig) {
-    $host = $smtpConfig['smtp_host'] ?? 'smtp.hostinger.com';
-    $port = intval($smtpConfig['smtp_port'] ?? 465);
-    $username = $smtpConfig['smtp_user'] ?? 'info@kortzen.com';
-    $password = $smtpConfig['smtp_pass'] ?? 'Kortzen2026!';
+function _trySMTPSocketConnect($toEmail, $subject, $htmlMessage, $host, $port, $username, $password) {
     $fromName = "KORTZEN Barbería";
-
     $socketHost = ($port == 465) ? "ssl://{$host}" : $host;
-    $socket = @fsockopen($socketHost, $port, $errno, $errstr, 3);
+    $socket = @fsockopen($socketHost, $port, $errno, $errstr, 4);
 
     if (!$socket) {
         return false;
     }
-    stream_set_timeout($socket, 3);
+    stream_set_timeout($socket, 4);
 
     $read = function($socket) {
         $response = '';
-        while ($str = fgets($socket, 515)) {
+        while ($str = @fgets($socket, 515)) {
             $response .= $str;
             if (substr($str, 3, 1) == ' ') break;
         }
@@ -33,7 +28,7 @@ function enviarCorreoSMTPDirecto($toEmail, $subject, $htmlMessage, $smtpConfig) 
     };
 
     $send = function($socket, $cmd) use ($read) {
-        fputs($socket, $cmd . "\r\n");
+        @fputs($socket, $cmd . "\r\n");
         return $read($socket);
     };
 
@@ -42,16 +37,16 @@ function enviarCorreoSMTPDirecto($toEmail, $subject, $htmlMessage, $smtpConfig) 
 
     if ($port == 587) {
         $send($socket, "STARTTLS");
-        stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+        @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
         $send($socket, "EHLO " . gethostname());
     }
 
     $authRes = $send($socket, "AUTH LOGIN");
-    if (substr($authRes, 0, 3) != '334') { fclose($socket); return false; }
+    if (substr($authRes, 0, 3) != '334') { @fclose($socket); return false; }
 
     $send($socket, base64_encode($username));
     $passRes = $send($socket, base64_encode($password));
-    if (substr($passRes, 0, 3) != '235') { fclose($socket); return false; }
+    if (substr($passRes, 0, 3) != '235') { @fclose($socket); return false; }
 
     $send($socket, "MAIL FROM: <{$username}>");
     $send($socket, "RCPT TO: <{$toEmail}>");
@@ -68,9 +63,25 @@ function enviarCorreoSMTPDirecto($toEmail, $subject, $htmlMessage, $smtpConfig) 
     $dataRes = $send($socket, $messageData);
 
     $send($socket, "QUIT");
-    fclose($socket);
+    @fclose($socket);
 
     return (substr($dataRes, 0, 3) == '250');
+}
+
+/**
+ * Enviar correo a través de SMTP Sockets (Con Fallback Automático 465 SSL / 587 TLS)
+ */
+function enviarCorreoSMTPDirecto($toEmail, $subject, $htmlMessage, $smtpConfig) {
+    $host = $smtpConfig['smtp_host'] ?? 'smtp.hostinger.com';
+    $port = intval($smtpConfig['smtp_port'] ?? 465);
+    $username = $smtpConfig['smtp_user'] ?? 'info@kortzen.com';
+    $password = $smtpConfig['smtp_pass'] ?? 'Kortzen2026!';
+
+    $ok = _trySMTPSocketConnect($toEmail, $subject, $htmlMessage, $host, $port, $username, $password);
+    if ($ok) return true;
+
+    $fallbackPort = ($port == 465) ? 587 : 465;
+    return _trySMTPSocketConnect($toEmail, $subject, $htmlMessage, $host, $fallbackPort, $username, $password);
 }
 
 /**
