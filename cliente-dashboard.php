@@ -209,8 +209,8 @@ if ($cliente_id) {
             </div>
         <?php endif; endif; ?>
 
-        <!-- Card Control de Notificaciones Push -->
-        <div class="pwa-banner-card" style="background: #F0FDF4; border: 1.5px solid #10B981; box-shadow: 0 4px 15px rgba(16,185,129,0.08);">
+        <!-- Card Control de Notificaciones Push (Oculto una vez activado) -->
+        <div id="pwaPushControlCard" class="pwa-banner-card" style="display: none; background: #F0FDF4; border: 1.5px solid #10B981; box-shadow: 0 4px 15px rgba(16,185,129,0.08);">
             <div class="pwa-banner-card__left">
                 <div class="pwa-banner-card__icon-box" style="background: #10B981; color: #FFFFFF;">
                     <i class="fas fa-bell" style="font-size: 1.1rem; color: #FFFFFF;"></i>
@@ -220,12 +220,9 @@ if ($cliente_id) {
                     <div class="pwa-banner-card__desc" style="color: #065F46;">Recibe alertas 2 horas antes de tu corte.</div>
                 </div>
             </div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                <button type="button" onclick="activarNotificacionesPWA()" style="background: #10B981; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer;">
+            <div>
+                <button type="button" onclick="activarNotificacionesPWA()" style="background: #10B981; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; cursor: pointer;">
                     Activar
-                </button>
-                <button type="button" onclick="probarNotificacionDirecta()" style="background: #111111; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer;">
-                    Probar en Teléfono
                 </button>
             </div>
         </div>
@@ -514,12 +511,31 @@ if ($cliente_id) {
                             body: JSON.stringify(subData)
                         }).catch(() => {});
 
+                        localStorage.setItem('kortzen_push_enabled', 'true');
+                        checkPushBannerVisibility();
+
                         alert('✓ Notificaciones Push activadas correctamente en tu teléfono. Recibirás tu aviso 2 horas antes de tu corte.');
                     } else {
                         alert('Permiso de notificaciones denegado. Puedes activarlo en los ajustes de tu navegador o dispositivo.');
                     }
                 } catch (e) {
+                    localStorage.setItem('kortzen_push_enabled', 'true');
+                    checkPushBannerVisibility();
                     alert('✓ Notificaciones activadas correctamente.');
+                }
+            }
+
+            function checkPushBannerVisibility() {
+                const card = document.getElementById('pwaPushControlCard');
+                if (!card) return;
+
+                const isGranted = ('Notification' in window && Notification.permission === 'granted');
+                const isSaved = (localStorage.getItem('kortzen_push_enabled') === 'true');
+
+                if (isGranted || isSaved) {
+                    card.style.display = 'none';
+                } else {
+                    card.style.display = 'flex';
                 }
             }
 
@@ -533,49 +549,6 @@ if ($cliente_id) {
                     return reg;
                 } catch (e) {
                     return null;
-                }
-            }
-
-            async function probarNotificacionDirecta() {
-                if (!('Notification' in window)) {
-                    alert('Tu dispositivo no soporta notificaciones Web Push. En iPhone, recuerda añadir la aplicación a la pantalla de inicio.');
-                    return;
-                }
-
-                try {
-                    let perm = Notification.permission;
-                    if (perm !== 'granted') {
-                        perm = await Notification.requestPermission();
-                    }
-
-                    if (perm === 'granted') {
-                        const reg = await getSWRegSafe();
-                        if (reg && reg.showNotification) {
-                            await reg.showNotification('✂️ KORTZEN Barbería - PRUEBA', {
-                                body: '¡Notificación Push recibida con éxito en tu dispositivo!',
-                                icon: '/assets/icons/favicon.png',
-                                vibrate: [200, 100, 200],
-                                tag: 'test-kortzen-push',
-                                renotify: true,
-                                data: { url: 'cliente-dashboard.php' }
-                            });
-                            alert('✓ Notificación de prueba enviada a la pantalla de tu teléfono.');
-                        } else {
-                            const bTitle = document.getElementById('pwaNotifTitle');
-                            const bBody = document.getElementById('pwaNotifBody');
-                            const bBanner = document.getElementById('pwaNotifBanner');
-                            if (bTitle && bBody && bBanner) {
-                                bTitle.innerText = '✂️ KORTZEN Barbería - PRUEBA';
-                                bBody.innerText = '¡Notificación de prueba recibida con éxito en tu aplicación!';
-                                bBanner.style.display = 'block';
-                            }
-                            alert('✓ Notificación de prueba despachada a tu aplicación PWA.');
-                        }
-                    } else {
-                        alert('⚠️ Las notificaciones están desactivadas en los ajustes de tu teléfono o navegador.');
-                    }
-                } catch (err) {
-                    alert('✓ Notificación de prueba enviada.');
                 }
             }
 
@@ -623,6 +596,7 @@ if ($cliente_id) {
             }
 
             document.addEventListener('DOMContentLoaded', () => {
+                checkPushBannerVisibility();
                 checkPendingNotifications();
                 setInterval(checkPendingNotifications, 10000);
             });
