@@ -593,10 +593,10 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
 
 .footer__legal {
     display: flex;
-    gap: var(--space-5);
+    gap: var(--space-6);
     flex-wrap: wrap;
-    justify-content: flex-start;
     align-items: center;
+    margin-right: 100px !important;
 }
 
 .footer__legal-link {
@@ -636,6 +636,7 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
         flex-direction: column;
         width: 100%;
         gap: var(--space-3);
+        margin-right: 0 !important;
     }
 
     .footer__legal-link {
