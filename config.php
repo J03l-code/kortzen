@@ -42,6 +42,25 @@ define('SITE_NAME', getenv('SITE_NAME') ?: 'KORTZEN Barbería');
 define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '6Ldm9oUtAAAAALygbin3zWA6sx15vHe7DeJ0-Rop');
 define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '6Ldm9oUtAAAAAItTxMMq49FFc2Gl76ppbDsJfBIU');
 
+// Clave Secreta para ejecución de Tareas Programadas (Cron Jobs)
+define('CRON_SECRET', getenv('CRON_SECRET') ?: 'KortzenCron2026_9b8a7c6e5f4d');
+
+/**
+ * Genera un token HMAC criptográficamente seguro para inicio de sesión PWA
+ */
+function generarPwaToken($clienteId, $email) {
+    return hash_hmac('sha256', $clienteId . '|' . $email, DB_PASS);
+}
+
+/**
+ * Valida un token HMAC para PWA
+ */
+function validarPwaToken($clienteId, $email, $token) {
+    if (empty($clienteId) || empty($email) || empty($token)) return false;
+    $expected = generarPwaToken($clienteId, $email);
+    return hash_equals($expected, $token);
+}
+
 // Configuración de sesión persistente (PWA 365 Días)
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
@@ -472,25 +491,29 @@ function isClienteLoggedIn()
         return true;
     }
 
-    // Auto-restaurar sesión persistente de Cliente PWA (365 días)
-    if (!empty($_COOKIE['kortzen_pwa_client_id'])) {
-        $clientId = intval($_COOKIE['kortzen_pwa_client_id']);
-        if ($clientId > 0) {
-            try {
-                $pdo = getConnection();
-                $stmt = $pdo->prepare("SELECT id, nombre, email, foto_perfil, google_id FROM clientes WHERE id = ?");
-                $stmt->execute([$clientId]);
-                $c = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($c) {
-                    $_SESSION['cliente_logged_in'] = true;
-                    $_SESSION['cliente_id'] = $c['id'];
-                    $_SESSION['cliente_nombre'] = $c['nombre'];
-                    $_SESSION['cliente_email'] = $c['email'];
-                    $_SESSION['cliente_foto'] = $c['foto_perfil'] ?? null;
-                    $_SESSION['cliente_google_id'] = $c['google_id'] ?? null;
-                    return true;
-                }
-            } catch (Exception $e) {}
+    // Auto-restaurar sesión persistente de Cliente PWA de forma segura (Token firmado)
+    if (!empty($_COOKIE['kortzen_pwa_token'])) {
+        $rawToken = $_COOKIE['kortzen_pwa_token'];
+        if (strpos($rawToken, ':') !== false) {
+            list($cIdStr, $tokenHash) = explode(':', $rawToken, 2);
+            $clientId = intval($cIdStr);
+            if ($clientId > 0 && !empty($tokenHash)) {
+                try {
+                    $pdo = getConnection();
+                    $stmt = $pdo->prepare("SELECT id, nombre, email, foto_perfil, google_id FROM clientes WHERE id = ?");
+                    $stmt->execute([$clientId]);
+                    $c = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($c && validarPwaToken($c['id'], $c['email'], $tokenHash)) {
+                        $_SESSION['cliente_logged_in'] = true;
+                        $_SESSION['cliente_id'] = $c['id'];
+                        $_SESSION['cliente_nombre'] = $c['nombre'];
+                        $_SESSION['cliente_email'] = $c['email'];
+                        $_SESSION['cliente_foto'] = $c['foto_perfil'] ?? null;
+                        $_SESSION['cliente_google_id'] = $c['google_id'] ?? null;
+                        return true;
+                    }
+                } catch (Exception $e) {}
+            }
         }
     }
 

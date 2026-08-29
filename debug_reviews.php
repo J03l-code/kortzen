@@ -1,10 +1,10 @@
 <?php
 require_once 'config.php';
-
-// Enable error reporting
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+requireLogin();
+if (($_SESSION['user_rol'] ?? '') !== 'admin') {
+    http_response_code(403);
+    die('Acceso restringido.');
+}
 
 echo "<h1>KORTZEN Reviews Debugger</h1>";
 

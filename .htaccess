@@ -1,13 +1,40 @@
-# KORTZEN - Clean Extensionless URLs & SEO 301 Redirects
+# KORTZEN - Security & Hardening Configuration
+
+# 1. Disable directory browsing
+Options -Indexes
+
+# 2. Block access to sensitive files and directories (.git, .env, sql dumps, logs, configs)
+<FilesMatch "\.(env|sql|log|ini|conf|bak|sh|git.*)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 3. Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# 4. Clean Extensionless URLs & SEO 301 Redirects
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
 
-# 1. Redirect external requests with .html extension to clean extensionless URLs (301 Permanent Redirect)
+# Block access to hidden folders (like .git)
+RewriteRule ^(\.git|logs|sql)/ - [F,L]
+
+# Redirect external requests with .html extension to clean extensionless URLs (301 Permanent Redirect)
 RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
 RewriteRule ^ /%1 [R=301,L]
 
-# 2. Internally map extensionless URLs to corresponding .html file
+# Internally map extensionless URLs to corresponding .html file
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}\.html -f
 RewriteRule ^(.*)$ $1.html [L]

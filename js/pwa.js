@@ -25,12 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const pathname = window.location.pathname;
   
   if (pathname.includes('cliente-login.php') || pathname.includes('pwa-entry.php')) {
+    const savedToken = localStorage.getItem('kortzen_pwa_token');
     const savedClientId = localStorage.getItem('kortzen_pwa_client_id');
-    if (savedClientId && parseInt(savedClientId) > 0) {
+    if (savedToken) {
       fetch('/api/auto_login_pwa.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'client_id=' + encodeURIComponent(savedClientId)
+        body: 'token=' + encodeURIComponent(savedToken) + '&client_id=' + encodeURIComponent(savedClientId || '')
       })
       .then(res => res.json())
       .then(data => {

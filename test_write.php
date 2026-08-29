@@ -1,8 +1,12 @@
 <?php
 // Test de escritura en base de datos
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
 require_once 'config.php';
+requireLogin();
+if (($_SESSION['user_rol'] ?? '') !== 'admin') {
+    http_response_code(403);
+    die('Acceso restringido a administradores.');
+}
 
 echo "<!DOCTYPE html><html><head><title>Test Write</title></head><body>";
 echo "<h1>Prueba de Escritura en DB</h1>";

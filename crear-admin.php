@@ -1,11 +1,13 @@
 <?php
 /**
- * KORTZEN - Inicializador de Usuario Administrador Temporal
- * 
- * IMPORTANTE: Abre este archivo en tu navegador (https://kortzen.com/crear-admin.php) para crear o 
- * restablecer el usuario. Elimina este archivo del servidor inmediatamente después por seguridad.
+ * KORTZEN - Inicializador de Usuario Administrador (Protegido por Clave)
  */
 require_once 'config.php';
+
+if (php_sapi_name() !== 'cli' && ($_GET['key'] ?? '') !== 'KortzenAdminInit2026!') {
+    http_response_code(403);
+    die('Acceso no autorizado.');
+}
 
 try {
     $pdo = getConnection();

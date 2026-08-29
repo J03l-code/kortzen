@@ -140,7 +140,15 @@ try {
     $_SESSION['google_access_token'] = $tokenData['access_token'] ?? null;
     $_SESSION['cliente_logged_in'] = true;
 
-    // Guardar cookie persistente PWA (365 días)
+    // Guardar cookie persistente PWA firmada criptográficamente (365 días)
+    $pwaToken = generarPwaToken($clienteId, $email);
+    setcookie('kortzen_pwa_token', $clienteId . ':' . $pwaToken, [
+        'expires' => time() + 31536000,
+        'path' => '/',
+        'secure' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     setcookie('kortzen_pwa_client_id', (string)$clienteId, [
         'expires' => time() + 31536000,
         'path' => '/',

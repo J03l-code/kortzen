@@ -7,8 +7,12 @@ echo "<!DOCTYPE html><html><head><title>Test</title></head><body>";
 echo "<h1>Diagnóstico del Sistema</h1>";
 
 // 1. Test de config
-echo "<h2>1. Test config.php</h2>";
 require_once 'config.php';
+requireLogin();
+if (($_SESSION['user_rol'] ?? '') !== 'admin') {
+    http_response_code(403);
+    die('Acceso restringido a administradores.');
+}
 echo "✓ config.php cargado<br>";
 echo "✓ SITE_NAME: " . SITE_NAME . "<br>";
 

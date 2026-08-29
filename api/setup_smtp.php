@@ -3,8 +3,11 @@
  * KORTZEN - Configuración Directa de SMTP para info@kortzen.com
  */
 require_once __DIR__ . '/../config.php';
-
-header('Content-Type: text/html; charset=UTF-8');
+requireLogin();
+if (($_SESSION['user_rol'] ?? '') !== 'admin') {
+    http_response_code(403);
+    die('Acceso restringido a administradores.');
+}
 
 try {
     $pdo = getConnection();

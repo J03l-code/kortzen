@@ -8,6 +8,12 @@ require_once __DIR__ . '/../includes/email_helper.php';
 
 header('Content-Type: application/json');
 
+if (php_sapi_name() !== 'cli' && ($_GET['token'] ?? $_GET['cron_key'] ?? '') !== CRON_SECRET) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Acceso denegado. Token de cron inválido.']);
+    exit;
+}
+
 try {
     $pdo = getConnection();
 

@@ -4,8 +4,11 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/email_helper.php';
-
-header('Content-Type: text/html; charset=UTF-8');
+requireLogin();
+if (($_SESSION['user_rol'] ?? '') !== 'admin') {
+    http_response_code(403);
+    die('Acceso restringido a administradores.');
+}
 
 $email = $_GET['email'] ?? 'natyg2045@gmail.com';
 

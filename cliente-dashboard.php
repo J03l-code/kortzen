@@ -675,6 +675,9 @@ if ($cliente_id) {
     <script>
         if (typeof localStorage !== 'undefined') {
             localStorage.setItem('kortzen_pwa_client_id', '<?php echo $cliente_id; ?>');
+            <?php if (!empty($cliEmail)): ?>
+            localStorage.setItem('kortzen_pwa_token', '<?php echo $cliente_id . ':' . generarPwaToken($cliente_id, $cliEmail); ?>');
+            <?php endif; ?>
         }
     </script>
 </body>

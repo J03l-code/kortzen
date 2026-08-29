@@ -8,6 +8,17 @@ require_once __DIR__ . '/../includes/email_helper.php';
 
 header('Content-Type: application/json');
 
+// Permitir si es CLI, si tiene el token secreto CRON_SECRET, o si es un administrador logueado
+$isAuthorized = (php_sapi_name() === 'cli') || 
+    (($_GET['token'] ?? $_GET['cron_key'] ?? '') === CRON_SECRET) ||
+    (isLoggedIn() && ($_SESSION['user_rol'] ?? '') === 'admin');
+
+if (!$isAuthorized) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Acceso denegado. Token de cron inválido o sesión de administrador requerida.']);
+    exit;
+}
+
 $isTest = isset($_GET['test']) || isset($_GET['forzar']) || isset($_GET['id']);
 $testCitaId = intval($_GET['id'] ?? 0);
 

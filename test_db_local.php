@@ -1,5 +1,10 @@
 <?php
-$hosts = ['127.0.0.1', 'localhost'];
+require_once 'config.php';
+requireLogin();
+if (($_SESSION['user_rol'] ?? '') !== 'admin') {
+    http_response_code(403);
+    die('Acceso restringido.');
+}
 $creds = [
     ['root', ''],
     ['root', 'root'],

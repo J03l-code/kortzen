@@ -3,8 +3,11 @@
  * KORTZEN - Limpieza de Prefijos de Códigos de Referido
  */
 require_once __DIR__ . '/../config.php';
-
-header('Content-Type: text/html; charset=UTF-8');
+requireLogin();
+if (($_SESSION['user_rol'] ?? '') !== 'admin') {
+    http_response_code(403);
+    die('Acceso no autorizado.');
+}
 
 try {
     $pdo = getConnection();
