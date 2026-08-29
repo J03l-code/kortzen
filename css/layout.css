@@ -575,20 +575,28 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
     .footer__bottom {
         flex-direction: row;
         justify-content: space-between;
+        align-items: center;
+        padding-right: 80px; /* Desplaza los botones legales hacia la izquierda evitando el botón de WhatsApp */
     }
 }
 
 .footer__copyright {
     font-size: var(--text-sm);
     color: var(--color-gray);
+    text-align: left;
+}
+
+.footer__dev {
+    font-size: var(--text-sm);
     text-align: center;
 }
 
 .footer__legal {
     display: flex;
-    gap: var(--space-6);
+    gap: var(--space-5);
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
+    align-items: center;
 }
 
 .footer__legal-link {
@@ -900,10 +908,4 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
 .page-header__description {
     max-width: 600px;
     margin-inline: auto;
-}
-
-@media (min-width: 992px) {
-    .footer__copyright {
-        margin-left: 270px;
-    }
 }
