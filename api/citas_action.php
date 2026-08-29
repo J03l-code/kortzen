@@ -406,10 +406,26 @@ try {
 
 } catch (PDOException $e) {
     error_log("Error en citas_action.php: " . $e->getMessage());
+    $isAjax = isset($_GET['ajax']) 
+        || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+        || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strpos($_SERVER['HTTP_X_REQUESTED_WITH'], 'XMLHttpRequest') !== false);
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Error de base de datos: ' . $e->getMessage()]);
+        exit;
+    }
     header('Location: ' . $redirect_url . '?error=' . urlencode('Error de base de datos'));
     exit;
 
 } catch (Exception $e) {
+    $isAjax = isset($_GET['ajax']) 
+        || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+        || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strpos($_SERVER['HTTP_X_REQUESTED_WITH'], 'XMLHttpRequest') !== false);
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        exit;
+    }
     header('Location: ' . $redirect_url . '?error=' . urlencode($e->getMessage()));
     exit;
 }

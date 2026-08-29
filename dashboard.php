@@ -577,15 +577,15 @@ if ($currentUser['rol'] === 'admin_local') {
                                 <td><span style="font-size: 11px; color: #888888; font-weight: 700;"><?php echo htmlspecialchars($cita['sucursal_nombre'] ?? 'Kortzen'); ?></span></td>
                                 <td style="white-space: nowrap;">
                                     <div style="display: flex; gap: 8px; align-items: center;">
-                                        <select id="select_estado_<?php echo $cita['id']; ?>" onchange="prepararGuardarEstado(<?php echo $cita['id']; ?>, '<?php echo htmlspecialchars($cita['cliente']); ?>')" style="padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
-                                            <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>🟡 Pendiente</option>
-                                            <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>🔵 Confirmada</option>
-                                            <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>⚡ En Atención</option>
-                                            <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>🟢 Completada</option>
-                                            <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>🔴 Cancelada</option>
+                                        <select id="select_estado_<?php echo $cita['id']; ?>" onchange="prepararGuardarEstado(<?php echo $cita['id']; ?>)" style="padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
+                                            <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                                            <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>Confirmada</option>
+                                            <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>En Atención</option>
+                                            <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>Completada</option>
+                                            <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>Cancelada</option>
                                         </select>
-                                        <button type="button" onclick="guardarEstadoDirecto(<?php echo $cita['id']; ?>, '<?php echo htmlspecialchars($cita['cliente']); ?>')" style="padding: 6px 12px; border-radius: 6px; background: #10B981; color: #FFFFFF; border: none; font-weight: 800; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2); transition: all 0.2s;" title="Guardar cambio de estado en toda la plataforma">
-                                            💾 Guardar
+                                        <button type="button" id="btn_guardar_<?php echo $cita['id']; ?>" onclick="guardarEstadoDirecto(<?php echo $cita['id']; ?>, '<?php echo htmlspecialchars(addslashes($cita['cliente'])); ?>')" style="padding: 6px 14px; border-radius: 6px; background: #111111; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.15); font-weight: 800; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); transition: all 0.2s;" title="Guardar cambio de estado en toda la plataforma">
+                                            <i class="fas fa-check-circle" style="font-size: 11px; color: var(--primary-gold);"></i> Guardar
                                         </button>
                                     </div>
                                 </td>
@@ -1196,7 +1196,10 @@ if ($currentUser['rol'] === 'admin_local') {
         let citaEstadoPendienteId = 0;
         let citaEstadoPendienteEstado = '';
 
-        function prepararGuardarEstado(id, clienteNombre) {
+        let citaEstadoPendienteId = 0;
+        let citaEstadoPendienteEstado = '';
+
+        function prepararGuardarEstado(id) {
             const select = document.getElementById('select_estado_' + id);
             if (!select) return;
             const nuevoEstado = select.value;
@@ -1227,61 +1230,74 @@ if ($currentUser['rol'] === 'admin_local') {
             citaEstadoPendienteId = id;
             citaEstadoPendienteEstado = nuevoEstado;
 
-            const modal = document.getElementById('modalGuardarEstadoOverview');
-            const desc = document.getElementById('modalGuardarEstadoDesc');
-            const propinaSec = document.getElementById('modalPropinaSection');
-            const propinaInput = document.getElementById('modalPropinaInput');
-
+            // Si es completada, abrir modal para propina opcional
             if (nuevoEstado === 'completada') {
-                desc.innerHTML = 'Vas a marcar la cita de <strong>' + clienteNombre + '</strong> como <span style="color:#27ae60; font-weight:800;">COMPLETADA</span>.<br><br>Se acreditarán los puntos de fidelidad al cliente y se enviará la notificación PWA instantánea.';
+                const modal = document.getElementById('modalGuardarEstadoOverview');
+                const desc = document.getElementById('modalGuardarEstadoDesc');
+                const propinaSec = document.getElementById('modalPropinaSection');
+                const propinaInput = document.getElementById('modalPropinaInput');
+
+                desc.innerHTML = 'Vas a marcar la cita del cliente <strong>' + clienteNombre + '</strong> como <span style="color:#27ae60; font-weight:800;">COMPLETADA</span>.<br><br>Se acreditarán los puntos de fidelidad al cliente y se enviará la notificación instantánea PWA.';
                 propinaSec.style.display = 'block';
                 propinaInput.value = '0.00';
+                modal.style.display = 'flex';
             } else {
-                desc.innerHTML = '¿Deseas guardar el estado de la cita de <strong>' + clienteNombre + '</strong> como <span style="font-weight:800;">' + nuevoEstado.toUpperCase() + '</span> en toda la plataforma?';
-                propinaSec.style.display = 'none';
-            }
+                // Guardar directamente vía AJAX para otros estados
+                const btn = document.getElementById('btn_guardar_' + id);
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                }
 
-            modal.style.display = 'flex';
+                ejecutarGuardadoEstadoAjax(id, nuevoEstado, 0.00, btn);
+            }
         }
 
         function cerrarModalGuardarEstado() {
             document.getElementById('modalGuardarEstadoOverview').style.display = 'none';
         }
 
-        function ejecutarGuardadoEstado() {
+        function confirmarModalGuardarEstado() {
             if (!citaEstadoPendienteId || !citaEstadoPendienteEstado) return;
-
             const btn = document.getElementById('btnConfirmarGuardarEstado');
-            btn.disabled = true;
-            btn.innerText = 'Guardando...';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            }
+            const propinaVal = parseFloat(document.getElementById('modalPropinaInput').value || 0);
 
-            const propinaVal = document.getElementById('modalPropinaInput').value || '0.00';
+            ejecutarGuardadoEstadoAjax(citaEstadoPendienteId, citaEstadoPendienteEstado, propinaVal, btn);
+        }
 
+        function ejecutarGuardadoEstadoAjax(id, estado, propina, btnElement) {
             const formData = new FormData();
             formData.append('action', 'cambiar_estado');
-            formData.append('id', citaEstadoPendienteId);
-            formData.append('estado', citaEstadoPendienteEstado);
-            formData.append('propina', propinaVal);
+            formData.append('id', id);
+            formData.append('estado', estado);
+            formData.append('propina', propina);
             formData.append('redirect_source', 'dashboard');
 
             fetch('api/citas_action.php', {
                 method: 'POST',
                 body: formData,
-                headers: { 'Accept': 'application/json' }
+                headers: { 
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    alert('✅ Estado guardado exitosamente en toda la plataforma.');
                     window.location.reload();
                 } else {
-                    alert('❌ Error al guardar: ' + (data.message || 'Error en servidor'));
-                    btn.disabled = false;
-                    btn.innerText = '✓ Confirmar y Guardar';
+                    alert('Error al guardar: ' + (data.error || data.message || 'Ocurrió un problema en el servidor.'));
+                    if (btnElement) {
+                        btnElement.disabled = false;
+                        btnElement.innerHTML = '<i class="fas fa-check-circle"></i> Guardar';
+                    }
                 }
             })
             .catch(err => {
-                alert('✅ Estado guardado exitosamente.');
                 window.location.reload();
             });
         }
@@ -1290,8 +1306,10 @@ if ($currentUser['rol'] === 'admin_local') {
     <!-- Modal Guardar Estado Cita Overview -->
     <div id="modalGuardarEstadoOverview" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999; justify-content: center; align-items: center;">
         <div class="modal-content" style="background: #FFFFFF; width: 90%; max-width: 440px; padding: 24px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); color: #111;">
-            <h3 id="modalGuardarEstadoTitulo" style="margin-top: 0; font-size: 1.2rem; font-weight: 800; color: #111;">💾 Guardar Cambio de Estado</h3>
-            <p id="modalGuardarEstadoDesc" style="color: #555; font-size: 0.9rem; margin-bottom: 16px; line-height: 1.4;"></p>
+            <h3 id="modalGuardarEstadoTitulo" style="margin-top: 0; font-size: 1.15rem; font-weight: 800; color: #111; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-check-circle" style="color: #10B981;"></i> Finalizar Cita y Registrar Estado
+            </h3>
+            <p id="modalGuardarEstadoDesc" style="color: #555; font-size: 0.88rem; margin-bottom: 16px; line-height: 1.4;"></p>
             
             <div id="modalPropinaSection" style="display: none; margin-bottom: 16px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 10px; padding: 14px;">
                 <label style="display: block; font-weight: 800; font-size: 0.8rem; color: #111; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
@@ -1303,7 +1321,9 @@ if ($currentUser['rol'] === 'admin_local') {
 
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button type="button" onclick="cerrarModalGuardarEstado()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #CCC; background: #FFF; font-weight: 700; cursor: pointer; color: #444;">Cancelar</button>
-                <button type="button" id="btnConfirmarGuardarEstado" onclick="ejecutarGuardadoEstado()" style="flex: 1.2; padding: 12px; border-radius: 8px; border: none; background: #10B981; color: #FFF; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">✓ Confirmar y Guardar</button>
+                <button type="button" id="btnConfirmarGuardarEstado" onclick="confirmarModalGuardarEstado()" style="flex: 1.2; padding: 12px; border-radius: 8px; border: none; background: #111111; color: #FFF; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fas fa-check" style="color: var(--primary-gold);"></i> Guardar Estado
+                </button>
             </div>
         </div>
     </div>
