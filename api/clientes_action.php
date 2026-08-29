@@ -13,11 +13,11 @@ try {
 
     switch ($action) {
         case 'create':
-            $nombre = trim($_POST['nombre'] ?? '');
-            $email = trim($_POST['email'] ?? '');
-            $telefono = trim($_POST['telefono'] ?? '');
+            $nombre = mb_substr(trim($_POST['nombre'] ?? ''), 0, 100);
+            $email = mb_substr(trim($_POST['email'] ?? ''), 0, 100);
+            $telefono = mb_substr(trim($_POST['telefono'] ?? ''), 0, 20);
             $fecha_nacimiento = $_POST['fecha_nacimiento'] ?? null;
-            $notas = trim($_POST['notas'] ?? '');
+            $notas = mb_substr(trim($_POST['notas'] ?? ''), 0, 1000);
 
             if (empty($nombre)) {
                 throw new Exception('El nombre es obligatorio.');
@@ -55,11 +55,11 @@ try {
 
         case 'update':
             $id = intval($_POST['id'] ?? 0);
-            $nombre = trim($_POST['nombre'] ?? '');
-            $email = trim($_POST['email'] ?? '');
-            $telefono = trim($_POST['telefono'] ?? '');
+            $nombre = mb_substr(trim($_POST['nombre'] ?? ''), 0, 100);
+            $email = mb_substr(trim($_POST['email'] ?? ''), 0, 100);
+            $telefono = mb_substr(trim($_POST['telefono'] ?? ''), 0, 20);
             $fecha_nacimiento = $_POST['fecha_nacimiento'] ?? null;
-            $notas = trim($_POST['notas'] ?? '');
+            $notas = mb_substr(trim($_POST['notas'] ?? ''), 0, 1000);
 
             if ($id <= 0) {
                 throw new Exception('ID de cliente inválido.');

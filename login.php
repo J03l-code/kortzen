@@ -100,13 +100,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="email" class="form-label">Email</label>
                     <input type="email" id="email" name="email" class="form-input"
-                        value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required autocomplete="email">
+                        value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required autocomplete="email" maxlength="100">
                 </div>
 
                 <div class="form-group">
                     <label for="password" class="form-label">Contraseña</label>
                     <input type="password" id="password" name="password" class="form-input" required
-                        autocomplete="current-password">
+                        autocomplete="current-password" maxlength="100">
                 </div>
 
                 <!-- Google reCAPTCHA v3 (Invisible Score) -->
