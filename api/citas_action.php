@@ -275,6 +275,14 @@ try {
 
                 $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = ?, propina = ? WHERE id = ?");
                 $stmtUpdate->execute([$nuevoEstado, $propina, $id]);
+            } elseif ($nuevoEstado === 'pendiente') {
+                // Si el admin resetea a Pendiente, resetear asistencia_confirmada = 0 en toda la plataforma
+                $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = 'pendiente', asistencia_confirmada = 0 WHERE id = ?");
+                $stmtUpdate->execute([$id]);
+            } elseif ($nuevoEstado === 'confirmada') {
+                // Si el admin marca como Confirmada, marcar asistencia_confirmada = 1
+                $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = 'confirmada', asistencia_confirmada = 1 WHERE id = ?");
+                $stmtUpdate->execute([$id]);
             } else {
                 $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = ? WHERE id = ?");
                 $stmtUpdate->execute([$nuevoEstado, $id]);

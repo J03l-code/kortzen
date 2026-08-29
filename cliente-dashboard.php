@@ -187,7 +187,7 @@ if ($cliente_id) {
         <?php if ($proxima_cita): 
             $ts_proxima_chk = strtotime($proxima_cita['fecha_hora']);
             $hrs_chk = ($ts_proxima_chk - time()) / 3600;
-            $is_conf_chk = !empty($proxima_cita['asistencia_confirmada']);
+            $is_conf_chk = !empty($proxima_cita['asistencia_confirmada']) && $proxima_cita['estado'] === 'confirmada';
             if ($hrs_chk <= 2.5 && $hrs_chk >= -0.5 && !$is_conf_chk):
         ?>
             <div style="background: #FFFBEB; border: 2px solid #F59E0B; border-radius: 14px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);">
@@ -316,7 +316,7 @@ if ($cliente_id) {
 
             <?php 
                 $horasFaltantes = ($ts_cita - time()) / 3600;
-                $isConfirmada = !empty($proxima_cita['asistencia_confirmada']);
+                $isConfirmada = !empty($proxima_cita['asistencia_confirmada']) && $proxima_cita['estado'] === 'confirmada';
             ?>
 
             <!-- SECCIÓN CONFIRMACIÓN DE ASISTENCIA (INTEGRACIÓN PUSH) -->
