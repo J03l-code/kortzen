@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+enforceRateLimit('reservar_page', 40, 60);
 
 // Si no hay cliente logueado, redirigir a login de cliente (o google auth)
 // Nota: Asumimos que existe un index.html con botón de login o similar.

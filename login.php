@@ -16,6 +16,7 @@ if (isLoggedIn()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforceRateLimit('login_staff', 10, 300, 'Demasiados intentos de inicio de sesión. Por favor espera 5 minutos.');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 

@@ -2,6 +2,7 @@
 require_once '../config.php';
 
 header('Content-Type: application/json');
+enforceRateLimit('crear_cita_cliente', 20, 60, 'Has realizado demasiadas solicitudes de reserva en poco tiempo. Por favor espera un minuto.');
 
 if (!isClienteLoggedIn()) {
     echo json_encode(['success' => false, 'message' => 'Debes iniciar sesión.']);

@@ -404,6 +404,65 @@ function registrarLog($accion, $tabla, $registro_id = 0, $descripcion = '')
 }
 
 /**
+ * Rate Limiter Helper (Protección Anti-Spam y Brute-Force por IP)
+ * 
+ * @param string $key Identificador de la zona (ej. 'login', 'api', 'reservas')
+ * @param int $maxRequests Máximo de solicitudes permitidas en la ventana de tiempo
+ * @param int $periodSeconds Tamaño de la ventana de tiempo en segundos
+ * @return bool true si está dentro del límite, false si excedió
+ */
+function checkRateLimit($key = 'global', $maxRequests = 60, $periodSeconds = 60) {
+    if (session_status() === PHP_SESSION_NONE) {
+        @session_start();
+    }
+
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    $rateKey = 'ratelimit_' . md5($key . '_' . $ip);
+    $now = time();
+
+    if (!isset($_SESSION[$rateKey]) || !is_array($_SESSION[$rateKey])) {
+        $_SESSION[$rateKey] = [ $now ];
+        return true;
+    }
+
+    // Filtrar solicitudes dentro de la ventana de tiempo activa
+    $_SESSION[$rateKey] = array_values(array_filter($_SESSION[$rateKey], function($timestamp) use ($now, $periodSeconds) {
+        return ($now - $timestamp) < $periodSeconds;
+    }));
+
+    if (count($_SESSION[$rateKey]) >= $maxRequests) {
+        return false;
+    }
+
+    $_SESSION[$rateKey][] = $now;
+    return true;
+}
+
+/**
+ * Aplica Rate Limit estricto deteniendo la ejecución con HTTP 429 si se excede el límite
+ */
+function enforceRateLimit($key = 'global', $maxRequests = 60, $periodSeconds = 60, $customMessage = null) {
+    if (!checkRateLimit($key, $maxRequests, $periodSeconds)) {
+        $msg = $customMessage ?: 'Demasiadas solicitudes en poco tiempo. Por favor, espera un momento antes de volver a intentarlo.';
+        
+        $reqUri = $_SERVER['REQUEST_URI'] ?? '';
+        $isJson = (strpos($reqUri, '/api/') !== false) ||
+            (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
+            (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strpos($_SERVER['HTTP_X_REQUESTED_WITH'], 'XMLHttpRequest') !== false);
+
+        http_response_code(429);
+        if ($isJson) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => $msg, 'message' => $msg]);
+            exit;
+        } else {
+            echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Límite Excedido - KORTZEN</title><style>body{font-family:sans-serif;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;box-sizing:border-box;text-align:center}.box{background:#1e1e1e;padding:30px;border-radius:14px;border:1px solid #333;max-width:420px;box-shadow:0 10px 30px rgba(0,0,0,0.5)}h2{color:#f59e0b;margin-top:0;font-size:1.4rem}p{color:#ccc;font-size:0.95rem;line-height:1.5}.btn{display:inline-block;margin-top:18px;padding:12px 24px;background:#c9a96e;color:#000;text-decoration:none;font-weight:bold;border-radius:8px}</style></head><body><div class="box"><h2>⏳ Límite de Solicitudes Alcanzado</h2><p>' . htmlspecialchars($msg) . '</p><a href="javascript:location.reload()" class="btn">Reintentar</a></div></body></html>';
+            exit;
+        }
+    }
+}
+
+/**
  * Verificar si un cliente está autenticado (Google OAuth)
  * @return bool
  */
