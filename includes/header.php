@@ -9,6 +9,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon.png?v=10">
     <link rel="shortcut icon" href="/assets/icons/favicon.png?v=10">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/favicon.png?v=10">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>

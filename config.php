@@ -86,60 +86,61 @@ function getConnection()
                 $pdo->exec("SET time_zone = '-05:00'");
             } catch (Exception $e_tz) {}
 
-            // Auto-migración columna propina en citas
-            try {
-                $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
-            } catch (Exception $e_prop) {}
+            // Auto-migraciones ejecutadas 1 sola vez por sesión activa para máxima velocidad de carga
+            if (empty($_SESSION['kortzen_schema_migrated'])) {
+                $_SESSION['kortzen_schema_migrated'] = true;
 
-            // Auto-migración tabla inventario_barbero (Stock por Barbero)
-            try {
-                $pdo->exec("
-                    CREATE TABLE IF NOT EXISTS inventario_barbero (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        barbero_id INT NOT NULL,
-                        sucursal_id INT DEFAULT NULL,
-                        producto VARCHAR(255) NOT NULL,
-                        cantidad DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-                        unidad VARCHAR(50) DEFAULT 'unidades',
-                        precio DECIMAL(10,2) DEFAULT 0.00,
-                        descripcion TEXT NULL,
-                        fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                        INDEX idx_barbero (barbero_id)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-                ");
-            } catch (Exception $e_invb) {}
+                try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
+                } catch (Exception $e_prop) {}
 
-            // Auto-migración columnas de horario de almuerzo fijo en usuarios (Por defecto 13:00 a 14:00 para todos)
-            try {
-                $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '13:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1");
-            } catch (Exception $e_almuerzo) {}
+                try {
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS inventario_barbero (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            barbero_id INT NOT NULL,
+                            sucursal_id INT DEFAULT NULL,
+                            producto VARCHAR(255) NOT NULL,
+                            cantidad DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                            unidad VARCHAR(50) DEFAULT 'unidades',
+                            precio DECIMAL(10,2) DEFAULT 0.00,
+                            descripcion TEXT NULL,
+                            fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                            INDEX idx_barbero (barbero_id)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                    ");
+                } catch (Exception $e_invb) {}
 
-            try {
-                $pdo->exec("UPDATE usuarios SET almuerzo_inicio = '13:00:00', almuerzo_fin = '14:00:00' WHERE almuerzo_inicio = '14:00:00' OR almuerzo_inicio IS NULL");
-            } catch (Exception $e_updalm) {}
+                try {
+                    $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '13:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1");
+                } catch (Exception $e_almuerzo) {}
 
-            // Auto-migración tabla push_subscriptions y columnas recordatorio_2h_enviado, asistencia_confirmada
-            try {
-                $pdo->exec("ALTER TABLE citas ADD COLUMN recordatorio_2h_enviado TINYINT(1) DEFAULT 0");
-            } catch (Exception $e_r2h) {}
+                try {
+                    $pdo->exec("UPDATE usuarios SET almuerzo_inicio = '13:00:00', almuerzo_fin = '14:00:00' WHERE almuerzo_inicio = '14:00:00' OR almuerzo_inicio IS NULL");
+                } catch (Exception $e_updalm) {}
 
-            try {
-                $pdo->exec("ALTER TABLE citas ADD COLUMN asistencia_confirmada TINYINT(1) DEFAULT 0");
-            } catch (Exception $e_asist) {}
+                try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN recordatorio_2h_enviado TINYINT(1) DEFAULT 0");
+                } catch (Exception $e_r2h) {}
 
-            try {
-                $pdo->exec("
-                    CREATE TABLE IF NOT EXISTS push_subscriptions (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        cliente_id INT NULL,
-                        endpoint TEXT NOT NULL,
-                        p256dh TEXT NULL,
-                        auth TEXT NULL,
-                        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                        INDEX idx_cliente (cliente_id)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-                ");
-            } catch (Exception $e_psub) {}
+                try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN asistencia_confirmada TINYINT(1) DEFAULT 0");
+                } catch (Exception $e_asist) {}
+
+                try {
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS push_subscriptions (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            cliente_id INT NULL,
+                            endpoint TEXT NOT NULL,
+                            p256dh TEXT NULL,
+                            auth TEXT NULL,
+                            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                            INDEX idx_cliente (cliente_id)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                    ");
+                } catch (Exception $e_psub) {}
+            }
 
         } catch (PDOException $e) {
             // Log del error (en producción, usa error_log)
@@ -320,6 +321,9 @@ function asegurarTablaLogs()
     static $asegurado = false;
     if ($asegurado) return;
     $asegurado = true;
+
+    if (!empty($_SESSION['kortzen_logs_migrated'])) return;
+    $_SESSION['kortzen_logs_migrated'] = true;
 
     try {
         $pdo = getConnection();
