@@ -237,6 +237,29 @@ try {
             header('Location: ' . $redirect_url . '?success=' . urlencode($msgOk));
             exit;
 
+        case 'cambiar_estado':
+            $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
+            $nuevoEstado = trim($_POST['estado'] ?? $_GET['estado'] ?? '');
+            $validEstados = ['pendiente', 'confirmada', 'en_atencion', 'completada', 'cancelada'];
+
+            if ($id <= 0 || !in_array($nuevoEstado, $validEstados)) {
+                throw new Exception('Parámetros de cita o estado inválidos.');
+            }
+
+            $stmtStatus = $pdo->prepare("UPDATE citas SET estado = ? WHERE id = ?");
+            $stmtStatus->execute([$nuevoEstado, $id]);
+
+            registrarLog('EDITAR', 'citas', $id, "Estado de cita #$id cambiado a '$nuevoEstado'");
+
+            if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'id' => $id, 'estado' => $nuevoEstado]);
+                exit;
+            }
+
+            header('Location: ' . $redirect_url . '?success=Estado de cita actualizado');
+            exit;
+
         case 'delete':
             $id = intval($_POST['id'] ?? 0);
 

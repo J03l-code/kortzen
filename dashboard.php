@@ -14,10 +14,34 @@ if ($currentUser['rol'] === 'barbero') {
 $pageTitle = 'Overview Completo';
 include 'includes/header.php';
 ?>
-
-<div class="page-header">
-    <h1 class="page-title">Bienvenido, <?php echo htmlspecialchars($currentUser['nombre']); ?></h1>
-    <p class="page-subtitle">Tu panel de control profesional</p>
+<?php
+$filterSucursalId = 0;
+if ($currentUser['rol'] === 'admin_local') {
+    $filterSucursalId = intval($currentUser['sucursal_id']);
+} else {
+    $filterSucursalId = intval($_GET['sucursal_id'] ?? 0);
+}
+?>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+    <div>
+        <h1 class="page-title" style="margin: 0;">Bienvenido, <?php echo htmlspecialchars($currentUser['nombre']); ?></h1>
+        <p class="page-subtitle" style="margin-top: 4px;">Overview y Métricas en Tiempo Real</p>
+    </div>
+    <?php if ($currentUser['rol'] === 'admin'): 
+        $sucursalesList = query("SELECT id, nombre FROM sucursales ORDER BY nombre ASC");
+    ?>
+    <div>
+        <form method="GET" action="dashboard.php" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 11px; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px;">Filtro Sucursal:</label>
+            <select name="sucursal_id" onchange="this.form.submit()" style="padding: 8px 14px; border-radius: 8px; border: 1.5px solid #EAEAEA; background: #FFFFFF; font-weight: 800; font-size: 0.85rem; cursor: pointer; color: #111111; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+                <option value="0" <?php echo ($filterSucursalId == 0) ? 'selected' : ''; ?>>🏢 Todas las Sucursales (Global)</option>
+                <?php foreach ($sucursalesList as $s): ?>
+                    <option value="<?php echo $s['id']; ?>" <?php echo ($filterSucursalId == $s['id']) ? 'selected' : ''; ?>>📍 <?php echo htmlspecialchars($s['nombre']); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </form>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Estilos Específicos para Dashboard Mejorado -->
@@ -180,77 +204,142 @@ include 'includes/header.php';
     }
 </style>
 
-<?php if ($currentUser['rol'] === 'admin'): ?>
-    <!-- VISTA ADMIN GLOBAL (Técnico) - DASHBOARD COMPLETO -->
+<?php if (in_array($currentUser['rol'], ['admin', 'admin_local'])): ?>
+    <!-- VISTA ADMIN / ADMIN LOCAL (OVERVIEW Y MÉTRICAS COMPLETAS) -->
     <?php
     $hoy = date('Y-m-d');
     $mesInicio = date('Y-m-01');
     $mesFin = date('Y-m-t');
 
-    // 1. KPI GLOBAL: Citas y Ventas
-    $citasStats = query("SELECT 
-        COUNT(*) as total, 
-        SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
+    $whereCitas = $filterSucursalId > 0 ? " AND sucursal_id = $filterSucursalId" : "";
+    $whereProd = $filterSucursalId > 0 ? " AND sucursal_id = $filterSucursalId" : "";
+
+    // 1. KPI: Ventas Citas + Productos Hoy
+    $citasHoyRow = query("SELECT 
+        COUNT(*) as total_citas, 
         SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) as completadas,
-        SUM(CASE WHEN estado = 'completada' AND DATE(fecha_hora) = ? THEN precio_final ELSE 0 END) as venta_dia
-    FROM citas WHERE DATE(fecha_hora) = ?", [$hoy, $hoy])[0];
+        SUM(CASE WHEN estado = 'completada' THEN precio_final ELSE 0 END) as venta_citas,
+        SUM(CASE WHEN estado = 'completada' THEN propina ELSE 0 END) as propinas_hoy
+    FROM citas WHERE DATE(fecha_hora) = ?$whereCitas", [$hoy])[0] ?? [];
 
-    // Venta Mes Global
-    $ventaMes = query("SELECT SUM(precio_final) as total FROM citas WHERE estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$mesInicio, $mesFin])[0]['total'] ?? 0;
+    $prodHoyRow = query("SELECT SUM(precio_unitario * cantidad) as total_prod, SUM(cantidad) as items_prod 
+                         FROM ventas_productos WHERE DATE(fecha) = ?$whereProd", [$hoy])[0] ?? [];
 
-    // 2. Ranking Barberos Global (Mes)
-    $topBarberos = query("SELECT u.id, u.nombre, s.nombre as sucursal, COUNT(c.id) as citas, SUM(c.precio_final) as total
-                          FROM usuarios u
-                          JOIN citas c ON u.id = c.barbero_id
-                          LEFT JOIN sucursales s ON u.sucursal_id = s.id
-                          WHERE c.estado = 'completada'
-                          AND DATE(c.fecha_hora) BETWEEN ? AND ?
-                          GROUP BY u.id
-                          ORDER BY total DESC LIMIT 5", [$mesInicio, $mesFin]);
+    $vCitasHoy = floatval($citasHoyRow['venta_citas'] ?? 0);
+    $vProdHoy = floatval($prodHoyRow['total_prod'] ?? 0);
+    $ventaTotalHoy = $vCitasHoy + $vProdHoy;
+    $citasCompletadasHoy = intval($citasHoyRow['completadas'] ?? 0);
+    $itemsVendidosHoy = intval($prodHoyRow['items_prod'] ?? 0);
 
-    // 3. Inventario Bajo Global
-    $lowStock = query("SELECT i.producto, i.cantidad, i.stock_minimo, s.nombre as sucursal 
-                       FROM inventario i
-                       JOIN sucursales s ON i.sucursal_id = s.id
-                       WHERE i.cantidad <= i.stock_minimo 
-                       ORDER BY i.cantidad ASC LIMIT 5");
+    // 2. KPI: Recaudación Citas + Productos Mes
+    $citasMesRow = query("SELECT 
+        COUNT(*) as total_citas, 
+        SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) as completadas,
+        SUM(CASE WHEN estado = 'completada' THEN precio_final ELSE 0 END) as venta_citas,
+        SUM(CASE WHEN estado = 'completada' THEN propina ELSE 0 END) as propinas_mes
+    FROM citas WHERE estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?$whereCitas", [$mesInicio, $mesFin])[0] ?? [];
 
-    // 4. Agenda Global (Hoy) - Todas las sucursales
-    $agendaGlobal = query("SELECT c.*, u.nombre as barbero, s.nombre as servicio, suc.nombre as sucursal_nombre, cli.nombre as cliente, cli.telefono, cli.id as cliente_id 
-                           FROM citas c
-                           JOIN usuarios u ON c.barbero_id = u.id
-                           JOIN servicios s ON c.servicio_id = s.id
-                           JOIN sucursales suc ON c.sucursal_id = suc.id
-                           JOIN clientes cli ON c.cliente_id = cli.id
-                           WHERE DATE(c.fecha_hora) = ?
-                           ORDER BY c.fecha_hora ASC", [$hoy]);
+    $prodMesRow = query("SELECT SUM(precio_unitario * cantidad) as total_prod 
+                         FROM ventas_productos WHERE DATE(fecha) BETWEEN ? AND ?$whereProd", [$mesInicio, $mesFin])[0] ?? [];
 
-    // 5. Valor Inventario Global
-    $inventarioStats = query("SELECT SUM(cantidad * precio) as total_valor, SUM(cantidad) as total_items FROM inventario");
-    $valorInventario = $inventarioStats[0]['total_valor'] ?? 0;
-    $totalItems = $inventarioStats[0]['total_items'] ?? 0;
+    $vCitasMes = floatval($citasMesRow['venta_citas'] ?? 0);
+    $vProdMes = floatval($prodMesRow['total_prod'] ?? 0);
+    $recaudacionMesTotal = $vCitasMes + $vProdMes;
+    $citasCompletadasMes = intval($citasMesRow['completadas'] ?? 0);
+    $totalPropinasMes = floatval($citasMesRow['propinas_mes'] ?? 0);
 
-    // 6. Gráfica 7 Días Global
+    // Ticket Promedio del Mes
+    $ticketPromedioMes = $citasCompletadasMes > 0 ? ($vCitasMes / $citasCompletadasMes) : 0;
+
+    // 3. Valor Stock Global / Sede
+    if ($filterSucursalId > 0) {
+        $invStats = query("SELECT SUM(cantidad * precio) as total_valor, SUM(cantidad) as total_items FROM inventario WHERE sucursal_id = ?", [$filterSucursalId])[0] ?? [];
+    } else {
+        $invStats = query("SELECT SUM(cantidad * precio) as total_valor, SUM(cantidad) as total_items FROM inventario")[0] ?? [];
+    }
+    $valorInventario = floatval($invStats['total_valor'] ?? 0);
+    $totalItems = floatval($invStats['total_items'] ?? 0);
+
+    // 4. Ranking Barberos
+    if ($filterSucursalId > 0) {
+        $topBarberos = query("SELECT u.id, u.nombre, s.nombre as sucursal, COUNT(c.id) as citas, SUM(c.precio_final) as total
+                              FROM usuarios u
+                              JOIN citas c ON u.id = c.barbero_id
+                              LEFT JOIN sucursales s ON u.sucursal_id = s.id
+                              WHERE u.sucursal_id = ? AND c.estado = 'completada' AND DATE(c.fecha_hora) BETWEEN ? AND ?
+                              GROUP BY u.id ORDER BY total DESC LIMIT 5", [$filterSucursalId, $mesInicio, $mesFin]);
+    } else {
+        $topBarberos = query("SELECT u.id, u.nombre, s.nombre as sucursal, COUNT(c.id) as citas, SUM(c.precio_final) as total
+                              FROM usuarios u
+                              JOIN citas c ON u.id = c.barbero_id
+                              LEFT JOIN sucursales s ON u.sucursal_id = s.id
+                              WHERE c.estado = 'completada' AND DATE(c.fecha_hora) BETWEEN ? AND ?
+                              GROUP BY u.id ORDER BY total DESC LIMIT 5", [$mesInicio, $mesFin]);
+    }
+
+    // 5. Inventario Bajo / Alertas
+    if ($filterSucursalId > 0) {
+        $lowStock = query("SELECT i.producto, i.cantidad, i.stock_minimo, s.nombre as sucursal 
+                           FROM inventario i
+                           JOIN sucursales s ON i.sucursal_id = s.id
+                           WHERE i.sucursal_id = ? AND i.cantidad <= i.stock_minimo 
+                           ORDER BY i.cantidad ASC LIMIT 5", [$filterSucursalId]);
+    } else {
+        $lowStock = query("SELECT i.producto, i.cantidad, i.stock_minimo, s.nombre as sucursal 
+                           FROM inventario i
+                           JOIN sucursales s ON i.sucursal_id = s.id
+                           WHERE i.cantidad <= i.stock_minimo 
+                           ORDER BY i.cantidad ASC LIMIT 5");
+    }
+
+    // 6. Agenda de Hoy
+    if ($filterSucursalId > 0) {
+        $agendaGlobal = query("SELECT c.*, u.nombre as barbero, s.nombre as servicio, suc.nombre as sucursal_nombre, cli.nombre as cliente, cli.telefono, cli.id as cliente_id 
+                               FROM citas c
+                               JOIN usuarios u ON c.barbero_id = u.id
+                               JOIN servicios s ON c.servicio_id = s.id
+                               JOIN sucursales suc ON c.sucursal_id = suc.id
+                               JOIN clientes cli ON c.cliente_id = cli.id
+                               WHERE c.sucursal_id = ? AND DATE(c.fecha_hora) = ?
+                               ORDER BY c.fecha_hora ASC", [$filterSucursalId, $hoy]);
+    } else {
+        $agendaGlobal = query("SELECT c.*, u.nombre as barbero, s.nombre as servicio, suc.nombre as sucursal_nombre, cli.nombre as cliente, cli.telefono, cli.id as cliente_id 
+                               FROM citas c
+                               JOIN usuarios u ON c.barbero_id = u.id
+                               JOIN servicios s ON c.servicio_id = s.id
+                               JOIN sucursales suc ON c.sucursal_id = suc.id
+                               JOIN clientes cli ON c.cliente_id = cli.id
+                               WHERE DATE(c.fecha_hora) = ?
+                               ORDER BY c.fecha_hora ASC", [$hoy]);
+    }
+
+    // 7. Retención
+    $totalHoyCitas = count($agendaGlobal);
+    $recurrentes = 0;
+    foreach ($agendaGlobal as $c) {
+        $historial = query("SELECT COUNT(*) as n FROM citas WHERE cliente_id = ? AND estado = 'completada'", [$c['cliente_id']])[0]['n'] ?? 0;
+        if ($historial > 1) $recurrentes++;
+    }
+    $retentionRate = $totalHoyCitas > 0 ? round(($recurrentes / $totalHoyCitas) * 100) : 0;
+
+    // 8. Gráfica 7 Días
     $last7Days = [];
     $diasEsp = ['Sun' => 'Dom', 'Mon' => 'Lun', 'Tue' => 'Mar', 'Wed' => 'Mie', 'Thu' => 'Jue', 'Fri' => 'Vie', 'Sat' => 'Sab'];
 
     for ($i = 6; $i >= 0; $i--) {
         $d = date('Y-m-d', strtotime("-$i days"));
-        $total = query("SELECT SUM(precio_final) as t FROM citas WHERE estado = 'completada' AND DATE(fecha_hora) = ?", [$d])[0]['t'] ?? 0;
+        if ($filterSucursalId > 0) {
+            $tCitas = query("SELECT SUM(precio_final) as t FROM citas WHERE sucursal_id = ? AND estado = 'completada' AND DATE(fecha_hora) = ?", [$filterSucursalId, $d])[0]['t'] ?? 0;
+            $tProd = query("SELECT SUM(precio_unitario * cantidad) as t FROM ventas_productos WHERE sucursal_id = ? AND DATE(fecha) = ?", [$filterSucursalId, $d])[0]['t'] ?? 0;
+        } else {
+            $tCitas = query("SELECT SUM(precio_final) as t FROM citas WHERE estado = 'completada' AND DATE(fecha_hora) = ?", [$d])[0]['t'] ?? 0;
+            $tProd = query("SELECT SUM(precio_unitario * cantidad) as t FROM ventas_productos WHERE DATE(fecha) = ?", [$d])[0]['t'] ?? 0;
+        }
         $dayName = date('D', strtotime($d));
-        $last7Days[] = ['date' => $diasEsp[$dayName], 'val' => $total];
+        $last7Days[] = ['date' => $diasEsp[$dayName], 'val' => floatval($tCitas + $tProd)];
     }
     $maxVal = max(array_column($last7Days, 'val'));
     $maxVal = $maxVal > 0 ? $maxVal : 1;
-
-    // 7. Retención Global
-    $totalHoyCitas = count($agendaGlobal);
-    $recurrentes = 0;
-    foreach ($agendaGlobal as $c) {
-        $historial = query("SELECT COUNT(*) as n FROM citas WHERE cliente_id = ? AND estado = 'completada'", [$c['cliente_id']])[0]['n'];
-        if ($historial > 1) $recurrentes++;
-    }
-    $retentionRate = $totalHoyCitas > 0 ? round(($recurrentes / $totalHoyCitas) * 100) : 0;
 
     $meses = ['January' => 'Enero', 'February' => 'Febrero', 'March' => 'Marzo', 'April' => 'Abril', 'May' => 'Mayo', 'June' => 'Junio', 'July' => 'Julio', 'August' => 'Agosto', 'September' => 'Septiembre', 'October' => 'Octubre', 'November' => 'Noviembre', 'December' => 'Diciembre'];
     $mesActual = $meses[date('F')] ?? date('F');
@@ -261,87 +350,95 @@ include 'includes/header.php';
             background: #FFFFFF !important;
             border: 1px solid #E5E5E5 !important;
             color: #111 !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            border-radius: 12px !important;
+            padding: 20px !important;
         }
         .earnings-card .earnings-title {
             color: #666;
-            font-size: 0.85em;
+            font-size: 0.82em;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 700;
         }
         .earnings-card .earnings-amount {
             color: #111;
             font-weight: 800;   
+            font-size: 1.8rem;
+            margin: 6px 0;
         }
         .earnings-card .trend-indicator {
             color: var(--primary-gold);
             font-weight: 600;
+            font-size: 0.82rem;
         }
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
         }
     </style>
 
     <div class="dashboard-grid">
-        <!-- Venta Día -->
+        <!-- Venta Día (Citas + Productos) -->
         <div class="earnings-card">
-            <div class="earnings-title">Venta Global (Hoy)</div>
-            <div class="earnings-amount">$<?php echo number_format($citasStats['venta_dia'] ?? 0, 2); ?></div>
+            <div class="earnings-title">Venta Total (Hoy)</div>
+            <div class="earnings-amount">$<?php echo number_format($ventaTotalHoy, 2); ?></div>
             <div class="trend-indicator">
-                <span><?php echo $citasStats['completadas']; ?> citas finalizadas</span>
+                <span><?php echo $citasCompletadasHoy; ?> citas • <?php echo $itemsVendidosHoy; ?> prods</span>
             </div>
         </div>
 
-        <!-- Recaudación Mensual -->
+        <!-- Recaudación Mensual (Citas + Productos) -->
         <div class="earnings-card">
-            <div class="earnings-title">Recaudación Global (Mes)</div>
-            <div class="earnings-amount">$<?php echo number_format($ventaMes, 2); ?></div>
+            <div class="earnings-title">Recaudación (Mes)</div>
+            <div class="earnings-amount">$<?php echo number_format($recaudacionMesTotal, 2); ?></div>
             <div class="trend-indicator trend-up">
-                <span><?php echo $mesActual; ?></span>
+                <span><?php echo $mesActual; ?> (<?php echo $citasCompletadasMes; ?> citas)</span>
+            </div>
+        </div>
+
+        <!-- Ticket Promedio (Mes) -->
+        <div class="earnings-card">
+            <div class="earnings-title">Ticket Promedio</div>
+            <div class="earnings-amount">$<?php echo number_format($ticketPromedioMes, 2); ?></div>
+            <div class="trend-indicator">
+                <span>Por cita este mes</span>
+            </div>
+        </div>
+
+        <!-- Propinas Recaudadas (Mes) -->
+        <div class="earnings-card">
+            <div class="earnings-title">Propinas (Mes)</div>
+            <div class="earnings-amount" style="color: #27AE60 !important;">$<?php echo number_format($totalPropinasMes, 2); ?></div>
+            <div class="trend-indicator" style="color: #27AE60;">
+                <span>Total propinas barberos</span>
             </div>
         </div>
 
         <!-- Valor Inventario -->
         <div class="earnings-card">
-            <div class="earnings-title">Valor Stock Global</div>
+            <div class="earnings-title">Valor Stock Productos</div>
             <div class="earnings-amount">$<?php echo number_format($valorInventario, 2); ?></div>
             <div class="trend-indicator">
-                <span><?php echo $totalItems; ?> items totales</span>
-            </div>
-        </div>
-        
-        <!-- Ventas Productos Hoy -->
-        <?php
-            $ventasProdHoy = query("SELECT SUM(precio_unitario * cantidad) as total, SUM(cantidad) as items 
-                                    FROM ventas_productos 
-                                    WHERE DATE(fecha) = ?", [$hoy]);
-            $totalVentasProd = $ventasProdHoy[0]['total'] ?? 0;
-            $itemsVendidos = $ventasProdHoy[0]['items'] ?? 0;
-        ?>
-        <div class="earnings-card">
-            <div class="earnings-title">Ventas Productos (Hoy)</div>
-            <div class="earnings-amount">$<?php echo number_format($totalVentasProd, 2); ?></div>
-            <div class="trend-indicator">
-                <span><?php echo $itemsVendidos; ?> items vendidos</span>
+                <span><?php echo $totalItems; ?> unidades stock</span>
             </div>
         </div>
 
         <!-- Fidelización -->
-        <div class="earnings-card" style="background: linear-gradient(135deg, #2C3E50 0%, #000000 100%) !important; color: #FFF !important;">
+        <div class="earnings-card" style="background: linear-gradient(135deg, #111111 0%, #2A2A2A 100%) !important; color: #FFF !important;">
             <div class="earnings-title" style="color: #AAA !important;">Fidelización Hoy</div>
             <div class="earnings-amount" style="color: #FFF !important;"><?php echo $retentionRate; ?>%</div>
-            <div class="trend-indicator">
-                <span><?php echo $recurrentes; ?> recurrentes</span>
+            <div class="trend-indicator" style="color: #10B981;">
+                <span><?php echo $recurrentes; ?> de <?php echo $totalHoyCitas; ?> citas son recurrentes</span>
             </div>
         </div>
     </div>
 
     <!-- GRÁFICO DE BARRAS SEMANAL -->
     <div class="card" style="margin-bottom: 24px;">
-        <div class="card-title">Tendencia de Ventas (7 Días) - Global</div>
+        <div class="card-title">Tendencia de Ventas (7 Días) - <?php echo ($filterSucursalId > 0 ? 'Sede Seleccionada' : 'Global'); ?></div>
         <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 150px; padding-top: 20px;">
             <?php foreach ($last7Days as $day):
                 $height = ($day['val'] / $maxVal) * 100;
@@ -767,9 +864,13 @@ include 'includes/header.php';
                                         </td>
                                         <td><?php echo htmlspecialchars($cita['servicio']); ?></td>
                                         <td>
-                                            <span class="badge badge-<?php echo $cita['estado']; ?>">
-                                                <?php echo ucfirst($cita['estado']); ?>
-                                            </span>
+                                            <select onchange="cambiarEstadoCitaOverview(<?php echo $cita['id']; ?>, this.value)" style="padding: 5px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
+                                                <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>🟡 Pendiente</option>
+                                                <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>🔵 Confirmada</option>
+                                                <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>⚡ En Atención</option>
+                                                <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>🟢 Completada</option>
+                                                <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>🔴 Cancelada</option>
+                                            </select>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -1375,6 +1476,31 @@ include 'includes/header.php';
 
         function crearCitaRapida() {
             window.location.href = 'citas_crear.php';
+        }
+
+        function cambiarEstadoCitaOverview(id, nuevoEstado) {
+            const formData = new FormData();
+            formData.append('action', 'cambiar_estado');
+            formData.append('id', id);
+            formData.append('estado', nuevoEstado);
+            formData.append('redirect_source', 'dashboard');
+
+            fetch('api/citas_action.php', {
+                method: 'POST',
+                body: formData,
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Error al actualizar el estado de la cita.');
+                }
+            })
+            .catch(err => {
+                window.location.reload();
+            });
         }
     </script>
 
