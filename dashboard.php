@@ -1196,9 +1196,6 @@ if ($currentUser['rol'] === 'admin_local') {
         let citaEstadoPendienteId = 0;
         let citaEstadoPendienteEstado = '';
 
-        let citaEstadoPendienteId = 0;
-        let citaEstadoPendienteEstado = '';
-
         function prepararGuardarEstado(id) {
             const select = document.getElementById('select_estado_' + id);
             if (!select) return;

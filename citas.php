@@ -482,9 +482,10 @@ include 'includes/header.php';
                     </option>
                 <?php endforeach; ?>
             </select>
-            <input type="number" name="cantidades[]" placeholder="Cant." class="filter-select" style="width: 80px;" min="1" step="0.1">
             <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: #E74C3C; cursor: pointer;">✕</button>
         `;
+    }
+
     function prepararGuardarEstadoCitas(id) {
         const select = document.getElementById('select_estado_citas_' + id);
         if (!select) return;
