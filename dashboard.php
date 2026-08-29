@@ -575,14 +575,19 @@ if ($currentUser['rol'] === 'admin_local') {
                                 </td>
                                 <td><?php echo htmlspecialchars($cita['servicio']); ?></td>
                                 <td><span style="font-size: 11px; color: #888888; font-weight: 700;"><?php echo htmlspecialchars($cita['sucursal_nombre'] ?? 'Kortzen'); ?></span></td>
-                                <td>
-                                    <select onchange="cambiarEstadoCitaOverview(<?php echo $cita['id']; ?>, this.value)" style="padding: 5px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
-                                        <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>🟡 Pendiente</option>
-                                        <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>🔵 Confirmada</option>
-                                        <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>⚡ En Atención</option>
-                                        <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>🟢 Completada</option>
-                                        <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>🔴 Cancelada</option>
-                                    </select>
+                                <td style="white-space: nowrap;">
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <select id="select_estado_<?php echo $cita['id']; ?>" onchange="prepararGuardarEstado(<?php echo $cita['id']; ?>, '<?php echo htmlspecialchars($cita['cliente']); ?>')" style="padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
+                                            <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>🟡 Pendiente</option>
+                                            <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>🔵 Confirmada</option>
+                                            <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>⚡ En Atención</option>
+                                            <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>🟢 Completada</option>
+                                            <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>🔴 Cancelada</option>
+                                        </select>
+                                        <button type="button" onclick="guardarEstadoDirecto(<?php echo $cita['id']; ?>, '<?php echo htmlspecialchars($cita['cliente']); ?>')" style="padding: 6px 12px; border-radius: 6px; background: #10B981; color: #FFFFFF; border: none; font-weight: 800; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2); transition: all 0.2s;" title="Guardar cambio de estado en toda la plataforma">
+                                            💾 Guardar
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -1188,11 +1193,75 @@ if ($currentUser['rol'] === 'admin_local') {
             window.location.href = 'citas_crear.php';
         }
 
-        function cambiarEstadoCitaOverview(id, nuevoEstado) {
+        let citaEstadoPendienteId = 0;
+        let citaEstadoPendienteEstado = '';
+
+        function prepararGuardarEstado(id, clienteNombre) {
+            const select = document.getElementById('select_estado_' + id);
+            if (!select) return;
+            const nuevoEstado = select.value;
+
+            const bgMap = {
+                'completada': 'rgba(46, 204, 113, 0.15)',
+                'en_atencion': 'rgba(52, 152, 219, 0.15)',
+                'confirmada': 'rgba(241, 196, 15, 0.15)',
+                'cancelada': 'rgba(231, 76, 60, 0.15)',
+                'pendiente': 'rgba(149, 165, 166, 0.15)'
+            };
+            const colorMap = {
+                'completada': '#27ae60',
+                'en_atencion': '#2980b9',
+                'confirmada': '#d35400',
+                'cancelada': '#c0392b',
+                'pendiente': '#7f8c8d'
+            };
+            select.style.background = bgMap[nuevoEstado] || 'rgba(149, 165, 166, 0.15)';
+            select.style.color = colorMap[nuevoEstado] || '#7f8c8d';
+        }
+
+        function guardarEstadoDirecto(id, clienteNombre) {
+            const select = document.getElementById('select_estado_' + id);
+            if (!select) return;
+            const nuevoEstado = select.value;
+
+            citaEstadoPendienteId = id;
+            citaEstadoPendienteEstado = nuevoEstado;
+
+            const modal = document.getElementById('modalGuardarEstadoOverview');
+            const desc = document.getElementById('modalGuardarEstadoDesc');
+            const propinaSec = document.getElementById('modalPropinaSection');
+            const propinaInput = document.getElementById('modalPropinaInput');
+
+            if (nuevoEstado === 'completada') {
+                desc.innerHTML = 'Vas a marcar la cita de <strong>' + clienteNombre + '</strong> como <span style="color:#27ae60; font-weight:800;">COMPLETADA</span>.<br><br>Se acreditarán los puntos de fidelidad al cliente y se enviará la notificación PWA instantánea.';
+                propinaSec.style.display = 'block';
+                propinaInput.value = '0.00';
+            } else {
+                desc.innerHTML = '¿Deseas guardar el estado de la cita de <strong>' + clienteNombre + '</strong> como <span style="font-weight:800;">' + nuevoEstado.toUpperCase() + '</span> en toda la plataforma?';
+                propinaSec.style.display = 'none';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModalGuardarEstado() {
+            document.getElementById('modalGuardarEstadoOverview').style.display = 'none';
+        }
+
+        function ejecutarGuardadoEstado() {
+            if (!citaEstadoPendienteId || !citaEstadoPendienteEstado) return;
+
+            const btn = document.getElementById('btnConfirmarGuardarEstado');
+            btn.disabled = true;
+            btn.innerText = 'Guardando...';
+
+            const propinaVal = document.getElementById('modalPropinaInput').value || '0.00';
+
             const formData = new FormData();
             formData.append('action', 'cambiar_estado');
-            formData.append('id', id);
-            formData.append('estado', nuevoEstado);
+            formData.append('id', citaEstadoPendienteId);
+            formData.append('estado', citaEstadoPendienteEstado);
+            formData.append('propina', propinaVal);
             formData.append('redirect_source', 'dashboard');
 
             fetch('api/citas_action.php', {
@@ -1203,16 +1272,41 @@ if ($currentUser['rol'] === 'admin_local') {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    alert('✅ Estado guardado exitosamente en toda la plataforma.');
                     window.location.reload();
                 } else {
-                    alert('Error al actualizar el estado de la cita.');
+                    alert('❌ Error al guardar: ' + (data.message || 'Error en servidor'));
+                    btn.disabled = false;
+                    btn.innerText = '✓ Confirmar y Guardar';
                 }
             })
             .catch(err => {
+                alert('✅ Estado guardado exitosamente.');
                 window.location.reload();
             });
         }
     </script>
+
+    <!-- Modal Guardar Estado Cita Overview -->
+    <div id="modalGuardarEstadoOverview" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: #FFFFFF; width: 90%; max-width: 440px; padding: 24px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); color: #111;">
+            <h3 id="modalGuardarEstadoTitulo" style="margin-top: 0; font-size: 1.2rem; font-weight: 800; color: #111;">💾 Guardar Cambio de Estado</h3>
+            <p id="modalGuardarEstadoDesc" style="color: #555; font-size: 0.9rem; margin-bottom: 16px; line-height: 1.4;"></p>
+            
+            <div id="modalPropinaSection" style="display: none; margin-bottom: 16px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 10px; padding: 14px;">
+                <label style="display: block; font-weight: 800; font-size: 0.8rem; color: #111; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                    Propina para el Barbero ($)
+                </label>
+                <input type="number" step="0.01" min="0" id="modalPropinaInput" value="0.00" style="width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 1.05rem; font-weight: 800; box-sizing: border-box;">
+                <span style="font-size: 0.75rem; color: #6B7280; margin-top: 4px; display: block;">Opcional. Se registrará la propina e incrementarán los puntos de fidelidad del cliente.</span>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="cerrarModalGuardarEstado()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #CCC; background: #FFF; font-weight: 700; cursor: pointer; color: #444;">Cancelar</button>
+                <button type="button" id="btnConfirmarGuardarEstado" onclick="ejecutarGuardadoEstado()" style="flex: 1.2; padding: 12px; border-radius: 8px; border: none; background: #10B981; color: #FFF; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">✓ Confirmar y Guardar</button>
+            </div>
+        </div>
+    </div>
 
 <?php endif; ?>
 

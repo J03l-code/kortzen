@@ -240,24 +240,136 @@ try {
         case 'cambiar_estado':
             $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
             $nuevoEstado = trim($_POST['estado'] ?? $_GET['estado'] ?? '');
+            $propina = floatval($_POST['propina'] ?? 0.00);
+            if ($propina < 0) $propina = 0.00;
+
             $validEstados = ['pendiente', 'confirmada', 'en_atencion', 'completada', 'cancelada'];
 
             if ($id <= 0 || !in_array($nuevoEstado, $validEstados)) {
                 throw new Exception('Parámetros de cita o estado inválidos.');
             }
 
-            $stmtStatus = $pdo->prepare("UPDATE citas SET estado = ? WHERE id = ?");
-            $stmtStatus->execute([$nuevoEstado, $id]);
+            // Obtener estado anterior y detalles de la cita
+            $stmtCitaInfo = $pdo->prepare("
+                SELECT c.*, cli.id as cliente_id, cli.nombre as cliente_nombre, s.nombre as servicio_nombre, u.nombre as barbero_nombre
+                FROM citas c
+                LEFT JOIN clientes cli ON c.cliente_id = cli.id
+                LEFT JOIN servicios s ON c.servicio_id = s.id
+                LEFT JOIN usuarios u ON c.barbero_id = u.id
+                WHERE c.id = ?
+            ");
+            $stmtCitaInfo->execute([$id]);
+            $citaRow = $stmtCitaInfo->fetch(PDO::FETCH_ASSOC);
 
-            registrarLog('EDITAR', 'citas', $id, "Estado de cita #$id cambiado a '$nuevoEstado'");
+            if (!$citaRow) {
+                throw new Exception('La cita no existe.');
+            }
 
-            if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+            $estadoAnterior = $citaRow['estado'];
+
+            // Actualizar estado (y propina si se envió)
+            if ($nuevoEstado === 'completada' && $propina >= 0) {
+                try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
+                } catch (Exception $exP) {}
+
+                $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = ?, propina = ? WHERE id = ?");
+                $stmtUpdate->execute([$nuevoEstado, $propina, $id]);
+            } else {
+                $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = ? WHERE id = ?");
+                $stmtUpdate->execute([$nuevoEstado, $id]);
+            }
+
+            // Si cambió a COMPLETADA y antes NO estaba completada: Otorgar puntos de fidelidad y bonus referido
+            if ($nuevoEstado === 'completada' && $estadoAnterior !== 'completada') {
+                if (!empty($citaRow['cliente_id'])) {
+                    // Puntos fidelidad por corte
+                    $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
+                    $cfgs = $stmtCfg ? $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR) : [];
+                    $puntosPorCorte = intval($cfgs['puntos_por_corte'] ?? 100);
+
+                    try {
+                        $pdo->exec("ALTER TABLE clientes ADD COLUMN puntos INT DEFAULT 0 AFTER telefono");
+                    } catch (Exception $ex) {}
+
+                    $stmtAddPts = $pdo->prepare("UPDATE clientes SET puntos = COALESCE(puntos, 0) + ? WHERE id = ?");
+                    $stmtAddPts->execute([$puntosPorCorte, $citaRow['cliente_id']]);
+
+                    // Puntos por referido
+                    try {
+                        $stmtPendingRef = $pdo->prepare("SELECT * FROM referidos WHERE cita_id = ? AND estado = 'pendiente'");
+                        $stmtPendingRef->execute([$id]);
+                        $refPending = $stmtPendingRef->fetch(PDO::FETCH_ASSOC);
+
+                        if ($refPending) {
+                            $referenteId = $refPending['referente_id'];
+                            $puntosBonus = intval($refPending['puntos_otorgados'] ?? 200);
+
+                            $stmtMarkRef = $pdo->prepare("UPDATE referidos SET estado = 'completado' WHERE id = ?");
+                            $stmtMarkRef->execute([$refPending['id']]);
+
+                            if ($referenteId > 0 && $puntosBonus > 0) {
+                                $stmtAddRefPts = $pdo->prepare("UPDATE clientes SET puntos = COALESCE(puntos, 0) + ? WHERE id = ?");
+                                $stmtAddRefPts->execute([$puntosBonus, $referenteId]);
+                            }
+                        }
+                    } catch (Exception $exRef) {}
+                }
+            }
+
+            // PWA Notification & Push Notification al Cliente
+            if (!empty($citaRow['cliente_id'])) {
+                $titulosNotif = [
+                    'completada' => '✂️ Cita Completada',
+                    'confirmada' => '✅ Cita Confirmada',
+                    'cancelada'  => '❌ Cita Cancelada',
+                    'en_atencion'=> '💈 Tu turno ha comenzado',
+                    'pendiente'  => '📅 Estado de cita: Pendiente'
+                ];
+                $mensajesNotif = [
+                    'completada' => '¡Tu servicio de ' . ($citaRow['servicio_nombre'] ?? 'barbería') . ' ha sido completado! Gracias por elegir KORTZEN.',
+                    'confirmada' => 'Tu cita de ' . ($citaRow['servicio_nombre'] ?? 'barbería') . ' para el ' . date('d/m/Y H:i', strtotime($citaRow['fecha_hora'])) . ' fue confirmada.',
+                    'cancelada'  => 'Tu cita del ' . date('d/m/Y H:i', strtotime($citaRow['fecha_hora'])) . ' ha sido cancelada.',
+                    'en_atencion'=> 'El barbero ' . ($citaRow['barbero_nombre'] ?? '') . ' está listo para atenderte.',
+                    'pendiente'  => 'El estado de tu cita ha sido modificado a Pendiente.'
+                ];
+
+                $notifTitulo = $titulosNotif[$nuevoEstado] ?? 'Actualización de Cita';
+                $notifMensaje = $mensajesNotif[$nuevoEstado] ?? 'El estado de tu cita ha cambiado a ' . ucfirst($nuevoEstado);
+
+                try {
+                    // 1. Insertar en tabla notificaciones_pwa
+                    $stmtNotif = $pdo->prepare("INSERT INTO notificaciones_pwa (cliente_id, cita_id, titulo, mensaje, url, leido, fecha_creacion) VALUES (?, ?, ?, ?, ?, 0, NOW())");
+                    $stmtNotif->execute([$citaRow['cliente_id'], $id, $notifTitulo, $notifMensaje, '/cliente-dashboard.php']);
+
+                    // 2. Intentar WebPush VAPID si el helper existe
+                    if (file_exists(__DIR__ . '/webpush_helper.php')) {
+                        require_once __DIR__ . '/webpush_helper.php';
+                        if (function_exists('enviarPushACliente')) {
+                            enviarPushACliente($citaRow['cliente_id'], $notifTitulo, $notifMensaje, '/cliente-dashboard.php');
+                        }
+                    }
+                } catch (Exception $exNotif) {}
+            }
+
+            registrarLog('EDITAR', 'citas', $id, "Estado de cita #$id cambiado de '$estadoAnterior' a '$nuevoEstado'");
+
+            $isAjax = isset($_GET['ajax']) 
+                || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+                || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strpos($_SERVER['HTTP_X_REQUESTED_WITH'], 'XMLHttpRequest') !== false);
+
+            if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'id' => $id, 'estado' => $nuevoEstado]);
+                echo json_encode([
+                    'success' => true,
+                    'id' => $id,
+                    'estado' => $nuevoEstado,
+                    'message' => "Estado actualizado exitosamente a " . ucfirst($nuevoEstado) . "."
+                ]);
                 exit;
             }
 
-            header('Location: ' . $redirect_url . '?success=Estado de cita actualizado');
+            header('Location: ' . $redirect_url . '?success=' . urlencode("Estado de cita actualizado exitosamente a " . ucfirst($nuevoEstado)));
             exit;
 
         case 'delete':
