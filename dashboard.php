@@ -525,364 +525,74 @@ if ($currentUser['rol'] === 'admin_local') {
         </div>
     </div>
 
-<?php elseif ($currentUser['rol'] === 'admin_local'): ?>
-    <!-- VISTA ADMIN LOCAL (Mantenida Original) -->
-    <?php
-    $sucursal_id = $currentUser['sucursal_id'];
-    $hoy = date('Y-m-d');
-    $mesInicio = date('Y-m-01');
-    $mesFin = date('Y-m-t');
-
-    // 1. KPI: Citas y Ventas
-    $citasStats = query("SELECT 
-        COUNT(*) as total, 
-        SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
-        SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) as completadas,
-        SUM(CASE WHEN estado = 'completada' AND DATE(fecha_hora) = ? THEN precio_final ELSE 0 END) as venta_dia
-    FROM citas WHERE sucursal_id = ? AND DATE(fecha_hora) = ?", [$hoy, $sucursal_id, $hoy])[0];
-
-    // Venta Mes
-    $ventaMes = query("SELECT SUM(precio_final) as total FROM citas WHERE sucursal_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?", [$sucursal_id, $mesInicio, $mesFin])[0]['total'] ?? 0;
-
-    // 2. Ranking Barberos (Mes)
-    $topBarberos = query("SELECT u.id, u.nombre, COUNT(c.id) as citas, SUM(c.precio_final) as total
-                          FROM usuarios u
-                          JOIN citas c ON u.id = c.barbero_id
-                          WHERE u.sucursal_id = ? AND c.estado = 'completada'
-                          AND DATE(c.fecha_hora) BETWEEN ? AND ?
-                          GROUP BY u.id
-                          ORDER BY total DESC LIMIT 5", [$sucursal_id, $mesInicio, $mesFin]);
-
-    // 3. Inventario Bajo (Alerta)
-    $lowStock = query("SELECT producto, cantidad, stock_minimo FROM inventario 
-                       WHERE sucursal_id = ? AND cantidad <= stock_minimo 
-                       ORDER BY cantidad ASC LIMIT 5", [$sucursal_id]);
-
-    // 4. Agenda General Sucursal (Hoy)
-    $agendaGlobal = query("SELECT c.*, u.nombre as barbero, s.nombre as servicio, cli.nombre as cliente, cli.telefono, cli.id as cliente_id 
-                           FROM citas c
-                           JOIN usuarios u ON c.barbero_id = u.id
-                           JOIN servicios s ON c.servicio_id = s.id
-                           JOIN clientes cli ON c.cliente_id = cli.id
-                           WHERE c.sucursal_id = ? AND DATE(c.fecha_hora) = ?
-                           ORDER BY c.fecha_hora ASC", [$sucursal_id, $hoy]);
-
-    // 5. Total Valor Inventario (Activos)
-    $inventarioStats = query("SELECT SUM(cantidad * precio) as total_valor, SUM(cantidad) as total_items FROM inventario WHERE sucursal_id = ?", [$sucursal_id]);
-    $valorInventario = $inventarioStats[0]['total_valor'] ?? 0;
-    $totalItems = $inventarioStats[0]['total_items'] ?? 0;
-    ?>
-
-    <?php
-    // 6. Gráfica 7 Días (CSS Puro)
-    $last7Days = [];
-    $diasEsp = ['Sun' => 'Dom', 'Mon' => 'Lun', 'Tue' => 'Mar', 'Wed' => 'Mie', 'Thu' => 'Jue', 'Fri' => 'Vie', 'Sat' => 'Sab'];
-
-    for ($i = 6; $i >= 0; $i--) {
-        $d = date('Y-m-d', strtotime("-$i days"));
-        // Filtro flexible: si sucursal_id es NULL, sumar todo.
-        if ($sucursal_id) {
-            $total = query("SELECT SUM(precio_final) as t FROM citas WHERE sucursal_id = ? AND estado = 'completada' AND DATE(fecha_hora) = ?", [$sucursal_id, $d])[0]['t'] ?? 0;
-        } else {
-            $total = query("SELECT SUM(precio_final) as t FROM citas WHERE estado = 'completada' AND DATE(fecha_hora) = ?", [$d])[0]['t'] ?? 0;
-        }
-        $dayName = date('D', strtotime($d));
-        $last7Days[] = ['date' => $diasEsp[$dayName], 'val' => $total];
-    }
-    // Normalizar para altura de gráfico
-    $maxVal = max(array_column($last7Days, 'val'));
-    $maxVal = $maxVal > 0 ? $maxVal : 1;
-
-    // 7. Tasa de Retención (Hoy)
-    $totalHoyCitas = count($agendaGlobal);
-    $recurrentes = 0;
-    foreach ($agendaGlobal as $c) {
-        $historial = query("SELECT COUNT(*) as n FROM citas WHERE cliente_id = ? AND estado = 'completada'", [$c['cliente_id']])[0]['n'];
-        if ($historial > 1)
-            $recurrentes++;
-    }
-    $retentionRate = $totalHoyCitas > 0 ? round(($recurrentes / $totalHoyCitas) * 100) : 0;
-
-    // Helper mes español
-    $meses = ['January' => 'Enero', 'February' => 'Febrero', 'March' => 'Marzo', 'April' => 'Abril', 'May' => 'Mayo', 'June' => 'Junio', 'July' => 'Julio', 'August' => 'Agosto', 'September' => 'Septiembre', 'October' => 'Octubre', 'November' => 'Noviembre', 'December' => 'Diciembre'];
-    $mesActual = $meses[date('F')] ?? date('F');
-    ?>
-
-    <style>
-        .earnings-card {
-            background: #FFFFFF !important;
-            border: 1px solid #E5E5E5 !important;
-            color: #111 !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        .earnings-card .earnings-title {
-            color: #666;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .earnings-card .earnings-amount {
-            color: #111;
-            font-weight: 800;   
-        }
-        .earnings-card .trend-indicator {
-            color: var(--primary-gold);
-            font-weight: 600;
-        }
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-    </style>
-
-    <div class="dashboard-grid">
-        <!-- Venta Día -->
-        <div class="earnings-card">
-            <div class="earnings-title">Venta del Día</div>
-            <div class="earnings-amount">$<?php echo number_format($citasStats['venta_dia'] ?? 0, 2); ?></div>
-            <div class="trend-indicator">
-                <span><?php echo $citasStats['completadas']; ?> citas finalizadas</span>
-            </div>
-        </div>
-
-        <!-- Recaudación Mensual -->
-        <div class="earnings-card">
-            <div class="earnings-title">Recaudación Mensual</div>
-            <div class="earnings-amount">$<?php echo number_format($ventaMes, 2); ?></div>
-            <div class="trend-indicator">
-                <span><?php echo $mesActual; ?></span>
-            </div>
-        </div>
-
-        <!-- Valor Inventario (NUEVO) -->
-        <div class="earnings-card">
-            <div class="earnings-title">Valor en Productos</div>
-            <div class="earnings-amount">$<?php echo number_format($valorInventario, 2); ?></div>
-            <div class="trend-indicator">
-                <span><?php echo $totalItems; ?> unidades en stock</span>
-            </div>
-        </div>
-
-        <!-- Retención -->
-        <div class="earnings-card" style="background: linear-gradient(135deg, #2C3E50 0%, #000000 100%);">
-            <div class="earnings-title">Fidelización Hoy</div>
-            <div class="earnings-amount"><?php echo $retentionRate; ?>%</div>
-            <div class="trend-indicator">
-                <span><?php echo $recurrentes; ?> clientes recurrentes</span>
-            </div>
-        </div>
-        
-        <!-- PRODUCTOS VENDIDOS (HOY) -->
-        <?php
-            // Calcular productos vendidos HOY
-            $ventasProdHoy = query("SELECT SUM(precio_unitario * cantidad) as total, SUM(cantidad) as items 
-                                    FROM ventas_productos 
-                                    WHERE sucursal_id = ? AND DATE(fecha) = ?", [$sucursal_id, $hoy]);
-            $totalVentasProd = $ventasProdHoy[0]['total'] ?? 0;
-            $itemsVendidos = $ventasProdHoy[0]['items'] ?? 0;
-        ?>
-        <div class="earnings-card">
-            <div class="earnings-title">Ventas Productos (Hoy)</div>
-            <div class="earnings-amount">$<?php echo number_format($totalVentasProd, 2); ?></div>
-            <div class="trend-indicator">
-                <span><?php echo $itemsVendidos; ?> items vendidos</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- GRÁFICO DE BARRAS SEMANAL -->
+    <!-- AGENDA GENERAL DE HOY (VISTA DE ANCHO COMPLETO Y CONTROL INTERACTIVO) -->
     <div class="card" style="margin-bottom: 24px;">
-        <div class="card-title">Tendencia de Ventas (7 Días)</div>
-        <div
-            style="display: flex; align-items: flex-end; justify-content: space-between; height: 150px; padding-top: 20px;">
-            <?php foreach ($last7Days as $day):
-                $height = ($day['val'] / $maxVal) * 100;
-                $color = $day['val'] > 0 ? 'var(--primary-gold)' : '#333';
-                ?>
-                <div style="text-align: center; width: 100%;">
-                    <div style="font-size: 10px; color: #BBB; margin-bottom: 5px;">$<?php echo (int) $day['val']; ?></div>
-                    <div style="
-                    height: <?php echo $height; ?>%; 
-                    background: <?php echo $color; ?>; 
-                    width: 60%; 
-                    margin: 0 auto; 
-                    border-radius: 4px 4px 0 0;
-                    min-height: 4px;
-                    transition: height 1s ease;">
-                    </div>
-                    <div style="margin-top: 8px; font-size: 11px; color: #888;"><?php echo $day['date']; ?></div>
-                </div>
-            <?php endforeach; ?>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="card-title" style="margin: 0; font-size: 1.1rem; font-weight: 800;">📅 Agenda General de Hoy (<?php echo date('d/m/Y'); ?>)</div>
+            <a href="citas.php" style="font-size: 11px; color: var(--primary-gold); text-decoration: none; font-weight: 700;">Ver Todas las Citas →</a>
         </div>
-    </div>
-
-    <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
-
-        <!-- Columna Izquierda: Ranking + Inventario -->
-        <div style="flex: 1; min-width: 300px;">
-
-            <!-- Ranking Barberos -->
-            <div class="card">
-                <div class="card-title">🏆 Top Barberos (Mes)</div>
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Barbero</th>
+                        <th>Cliente</th>
+                        <th>Servicio</th>
+                        <th>Sucursal</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($agendaGlobal): ?>
+                        <?php foreach ($agendaGlobal as $cita): ?>
                             <tr>
-                                <th>Barbero</th>
-                                <th style="text-align: right;">Ventas</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($topBarberos): ?>
-                                <?php foreach ($topBarberos as $b): ?>
-                                    <tr>
-                                        <td>
-                                            <a href="barbero_detalle.php?id=<?php echo $b['id']; ?>" style="color: #FFFFFF; text-decoration: none; font-weight: 800;" title="Ver perfil completo y stock">
-                                                <div><?php echo htmlspecialchars($b['nombre']); ?></div>
+                                <td style="font-weight: bold; color: var(--primary-gold);">
+                                    <?php echo date('H:i', strtotime($cita['fecha_hora'])); ?>
+                                </td>
+                                <td><?php echo htmlspecialchars($cita['barbero']); ?></td>
+                                <td>
+                                    <div style="font-weight:bold;"><?php echo htmlspecialchars($cita['cliente']); ?></div>
+                                    <?php if (!empty($cita['telefono'])): 
+                                        $wa_phone = formatPhoneForWhatsapp($cita['telefono']);
+                                        $wa_msg = urlencode("Hola " . explode(' ', $cita['cliente'])[0] . ", te escribo de Kortzen sobre tu cita.");
+                                        $raw_phone = preg_replace('/[^0-9+]/', '', $cita['telefono']);
+                                    ?>
+                                        <div style="font-size: 11px; margin-top: 4px; display: flex; gap: 8px; align-items: center;">
+                                            <span style="color:#888;"><?php echo htmlspecialchars($cita['telefono']); ?></span>
+                                            
+                                            <!-- WA Button -->
+                                            <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo $wa_msg; ?>" target="_blank" title="Enviar WhatsApp" style="color: #25D366; text-decoration: none;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" /></svg>
                                             </a>
-                                            <div style="font-size: 10px; color: #888;"><?php echo $b['citas']; ?> citas completadas</div>
-                                        </td>
-                                        <td style="text-align: right; color: var(--primary-gold); font-weight: bold;">
-                                            $<?php echo number_format($b['total'], 0); ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="2" style="text-align: center; color: #666;">Sin datos aún</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-            <!-- Widget Stock por Barbero -->
-            <div class="card" style="margin-top: 24px; border: 1px solid rgba(16, 185, 129, 0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div class="card-title" style="margin: 0; color: #10B981;">📦 Stock por Barbero</div>
-                    <a href="usuarios.php" style="font-size: 11px; color: var(--primary-gold); text-decoration: none; font-weight: 700;">Ver Todos →</a>
-                </div>
-                <?php
-                $stockBarberosDash = query("
-                    SELECT ib.*, u.nombre as barbero_nombre, u.id as barbero_id_user
-                    FROM inventario_barbero ib
-                    JOIN usuarios u ON ib.barbero_id = u.id
-                    ORDER BY u.nombre ASC, ib.producto ASC
-                    LIMIT 6
-                ");
-                ?>
-                <?php if ($stockBarberosDash): ?>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        <?php foreach ($stockBarberosDash as $sbd): ?>
-                            <li style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <div>
-                                    <a href="barbero_detalle.php?id=<?php echo $sbd['barbero_id_user']; ?>" style="color: #FFFFFF; font-weight: 800; text-decoration: none; font-size: 13px;">
-                                        <?php echo htmlspecialchars($sbd['barbero_nombre']); ?>
-                                    </a>
-                                    <span style="color: #888; font-size: 11px; display: block;">
-                                        <?php echo htmlspecialchars($sbd['producto']); ?>
-                                    </span>
-                                </div>
-                                <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; font-weight: 800; font-size: 12px; padding: 3px 8px; border-radius: 4px;">
-                                    <?php echo number_format($sbd['cantidad'], 1); ?> <?php echo htmlspecialchars($sbd['unidad']); ?>
-                                </span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php else: ?>
-                    <div style="font-size: 12px; color: #888; text-align: center; padding: 12px;">No hay productos asignados a barberos aún.</div>
-                <?php endif; ?>
-            </div>
-
-            <!-- Alerta Inventario -->
-            <?php if ($lowStock): ?>
-                <div class="card" style="margin-top: 24px; border-left: 4px solid #E74C3C;">
-                    <div class="card-title" style="color: #E74C3C;">Stock Bajo General</div>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        <?php foreach ($lowStock as $prod): ?>
-                            <li
-                                style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <span><?php echo htmlspecialchars($prod['producto']); ?></span>
-                                <span style="color: #E74C3C; font-weight: bold;"><?php echo $prod['cantidad']; ?> und.</span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <a href="inventario.php"
-                        style="display: block; margin-top: 10px; font-size: 11px; text-align: right; color: #AAA;">Gestionar
-                        Inventario →</a>
-                </div>
-            <?php endif; ?>
-
-        </div>
-
-        <!-- Columna Derecha: Agenda Global -->
-        <div style="flex: 2; min-width: 400px;">
-            <div class="card">
-                <div class="card-title">Agenda General de Sucursal (Hoy)</div>
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Hora</th>
-                                <th>Barbero</th>
-                                <th>Cliente</th>
-                                <th>Servicio</th>
-                                <th>Estado</th>
+                                            <!-- Call Button -->
+                                            <a href="tel:<?php echo $raw_phone; ?>" title="Llamar" style="color: var(--primary-gold); text-decoration: none;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars($cita['servicio']); ?></td>
+                                <td><span style="font-size: 11px; color: #888888; font-weight: 700;"><?php echo htmlspecialchars($cita['sucursal_nombre'] ?? 'Kortzen'); ?></span></td>
+                                <td>
+                                    <select onchange="cambiarEstadoCitaOverview(<?php echo $cita['id']; ?>, this.value)" style="padding: 5px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
+                                        <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>🟡 Pendiente</option>
+                                        <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>🔵 Confirmada</option>
+                                        <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>⚡ En Atención</option>
+                                        <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>🟢 Completada</option>
+                                        <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>🔴 Cancelada</option>
+                                    </select>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($agendaGlobal): ?>
-                                <?php foreach ($agendaGlobal as $cita): ?>
-                                    <tr>
-                                        <td style="font-weight: bold; color: var(--primary-gold);">
-                                            <?php echo date('H:i', strtotime($cita['fecha_hora'])); ?>
-                                        </td>
-                                        <td><?php echo htmlspecialchars($cita['barbero']); ?></td>
-                                        <td>
-                                            <div style="font-weight:bold;"><?php echo htmlspecialchars($cita['cliente']); ?></div>
-                                            <?php if (!empty($cita['telefono'])): 
-                                                $wa_phone = formatPhoneForWhatsapp($cita['telefono']);
-                                                $wa_msg = urlencode("Hola " . explode(' ', $cita['cliente'])[0] . ", te escribo de Kortzen sobre tu cita.");
-                                            ?>
-                                                <div style="font-size: 11px; margin-top: 4px; display: flex; gap: 8px; align-items: center;">
-                                                    <span style="color:#888;"><?php echo htmlspecialchars($cita['telefono']); ?></span>
-                                                    
-                                                    <!-- WA Button -->
-                                                    <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo $wa_msg; ?>" target="_blank" title="WhatsApp" style="color: #25D366; text-decoration: none;">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" /></svg>
-                                                    </a>
-
-                                                    <!-- Call Button -->
-                                                    <a href="tel:<?php echo $raw_phone; ?>" title="Llamar" style="color: var(--primary-gold); text-decoration: none;">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                                                    </a>
-                                                </div>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td><?php echo htmlspecialchars($cita['servicio']); ?></td>
-                                        <td>
-                                            <select onchange="cambiarEstadoCitaOverview(<?php echo $cita['id']; ?>, this.value)" style="padding: 5px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
-                                                <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>🟡 Pendiente</option>
-                                                <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>🔵 Confirmada</option>
-                                                <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>⚡ En Atención</option>
-                                                <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>🟢 Completada</option>
-                                                <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>🔴 Cancelada</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="5" style="text-align: center; padding: 20px;">No hay citas para hoy</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">No hay citas registradas para el día de hoy.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 
