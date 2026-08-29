@@ -26,8 +26,20 @@
   </url>
   <url>
     <loc>https://kortzen.com/contacto</loc>
-    <lastmod>2026-08-18</lastmod>
+    <lastmod>2026-08-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kortzen.com/politica-de-privacidad</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://kortzen.com/terminos-de-uso</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

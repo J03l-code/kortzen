@@ -276,6 +276,10 @@ if (file_exists($googleConfigPath)) {
             Conexión segura con tu cuenta de Google
         </div>
 
+        <p style="color: #777777; font-size: 0.78rem; margin-top: 12px; line-height: 1.4; text-align: center;">
+            Al ingresar, aceptas nuestros <a href="/terminos-de-uso.html" target="_blank" style="color: #D4AF37; text-decoration: underline;">Términos de Uso</a> y nuestra <a href="/politica-de-privacidad.html" target="_blank" style="color: #D4AF37; text-decoration: underline;">Política de Privacidad</a>.
+        </p>
+
         <div class="divider"><span>o</span></div>
 
         <a href="/contacto.html" class="btn-guest">Continuar sin cuenta →</a>
