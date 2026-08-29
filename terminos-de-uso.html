@@ -37,33 +37,13 @@
     <script src="/js/pwa.js" defer></script>
 
     <style>
-        .legal-page {
-            padding: 120px 0 80px;
-            background-color: var(--color-black-matte, #0e0e0e);
-            color: #d1d5db;
-            min-height: 80vh;
-        }
-
-        .legal-container {
-            max-width: 920px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        .legal-header {
-            text-align: center;
-            margin-bottom: 50px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-        }
-
-        .legal-badge {
+        .legal-pill {
             display: inline-block;
-            padding: 6px 16px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 6px 20px;
+            background: #FAF6EE;
+            border: 1px solid #E3CAA5;
             border-radius: 50px;
-            color: #D4AF37;
+            color: #C59B27;
             font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -71,123 +51,109 @@
             margin-bottom: 16px;
         }
 
-        .legal-title {
-            font-family: var(--font-primary, 'Cinzel', serif);
-            font-size: 2.5rem;
-            color: #ffffff;
-            margin-bottom: 12px;
-            letter-spacing: 1px;
+        .legal-wrapper {
+            background-color: var(--color-charcoal, #F7F7F7);
+            padding: 60px 0 100px;
         }
 
-        .legal-date {
-            font-size: 0.9rem;
-            color: #888888;
-        }
-
-        .legal-content {
-            background: #141414;
-            border: 1px solid #262626;
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            line-height: 1.8;
+        .legal-box {
+            background: #FFFFFF;
+            border: 2px solid #111111;
+            border-radius: 12px;
+            padding: 50px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+            color: #222222;
+            font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+            line-height: 1.85;
             font-size: 0.98rem;
         }
 
-        .legal-section {
-            margin-bottom: 36px;
-        }
-
-        .legal-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .legal-section h2 {
-            font-family: var(--font-primary, 'Cinzel', serif);
-            font-size: 1.4rem;
-            color: #D4AF37;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid #222222;
-            padding-bottom: 8px;
-        }
-
-        .legal-section h3 {
-            font-size: 1.1rem;
-            color: #ffffff;
-            margin: 18px 0 10px;
-        }
-
-        .legal-section p {
+        .legal-box h2 {
+            font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif);
+            font-size: 1.5rem;
+            color: #111111;
+            margin-top: 36px;
             margin-bottom: 14px;
-            color: #cccccc;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #E5E5E5;
+            letter-spacing: 0.5px;
         }
 
-        .legal-section ul {
-            list-style-type: none;
-            padding-left: 0;
+        .legal-box h2:first-of-type {
+            margin-top: 0;
+        }
+
+        .legal-box p {
             margin-bottom: 16px;
+            color: #333333;
         }
 
-        .legal-section ul li {
+        .legal-box ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 20px;
+        }
+
+        .legal-box ul li {
             position: relative;
             padding-left: 24px;
             margin-bottom: 10px;
-            color: #bbbbbb;
+            color: #444444;
         }
 
-        .legal-section ul li::before {
-            content: "•";
-            color: #D4AF37;
-            font-size: 1.4rem;
+        .legal-box ul li::before {
+            content: "—";
             position: absolute;
-            left: 6px;
-            top: -4px;
+            left: 4px;
+            color: #111111;
+            font-weight: bold;
         }
 
-        .legal-highlight {
-            background: rgba(212, 175, 55, 0.05);
-            border-left: 3px solid #D4AF37;
-            padding: 16px 20px;
+        .legal-notice {
+            background: #FAF8F5;
+            border-left: 4px solid #111111;
+            border-right: 1px solid #E3CAA5;
+            border-top: 1px solid #E3CAA5;
+            border-bottom: 1px solid #E3CAA5;
+            padding: 20px 24px;
             border-radius: 0 8px 8px 0;
-            margin: 20px 0;
-            font-size: 0.95rem;
-            color: #e5e5e5;
+            margin: 24px 0;
+            font-size: 0.94rem;
+            color: #222222;
         }
 
-        .legal-contact-box {
-            background: #1a1a1a;
-            border: 1px solid #333333;
-            border-radius: 12px;
-            padding: 24px;
-            margin-top: 25px;
+        .legal-contact-panel {
+            background: #FAF8F5;
+            border: 1.5px solid #111111;
+            border-radius: 8px;
+            padding: 28px;
+            margin-top: 36px;
             text-align: center;
         }
 
-        .legal-contact-box a {
-            color: #D4AF37;
-            text-decoration: none;
-            font-weight: 600;
+        .legal-contact-panel h3 {
+            font-family: var(--font-display, 'Cormorant Garamond', serif);
+            font-size: 1.35rem;
+            color: #111111;
+            margin-bottom: 8px;
         }
 
-        .legal-contact-box a:hover {
+        .legal-contact-panel a {
+            color: #111111;
+            font-weight: 600;
             text-decoration: underline;
         }
 
         @media (max-width: 768px) {
-            .legal-page {
-                padding: 100px 0 60px;
+            .legal-wrapper {
+                padding: 30px 0 60px;
             }
-            .legal-content {
-                padding: 24px 18px;
+            .legal-box {
+                padding: 26px 18px;
+                border-width: 1.5px;
             }
-            .legal-title {
-                font-size: 1.8rem;
-            }
-            .legal-section h2 {
-                font-size: 1.2rem;
+            .legal-box h2 {
+                font-size: 1.3rem;
             }
         }
     </style>
@@ -225,129 +191,112 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="legal-page">
-        <div class="legal-container">
-            <div class="legal-header">
-                <span class="legal-badge">Términos de Servicio</span>
-                <h1 class="legal-title">TÉRMINOS Y CONDICIONES DE USO</h1>
-                <p class="legal-date">Última actualización: 28 de agosto de 2026 | KORTZEN Barbería</p>
+    <main>
+        <!-- Page Header -->
+        <section class="page-header">
+            <div class="container">
+                <span class="legal-pill">Términos de Servicio</span>
+                <h1 class="page-header__title">Términos y Condiciones de Uso</h1>
+                <p class="page-header__description">
+                    Condiciones contractuales, políticas de agendamiento y normas de servicio de KORTZEN Barbería.
+                </p>
             </div>
+        </section>
 
-            <div class="legal-content">
-                <section class="legal-section">
+        <!-- Content Section -->
+        <section class="legal-wrapper">
+            <div class="container" style="max-width: 940px;">
+                <div class="legal-box">
                     <h2>1. Disposiciones Generales y Aceptación</h2>
                     <p>
-                        Bienvenido a <strong>KORTZEN Barbería</strong> (en adelante, "KORTZEN", "la Empresa" o "la Plataforma"). Los presentes Términos y Condiciones de Uso constituyen un acuerdo legal vinculante entre cualquier persona que acceda, navegue, utilice o agende servicios a través de nuestro sitio web (<a href="https://kortzen.com" style="color: #D4AF37;">https://kortzen.com</a>), Aplicación Web Progresiva (PWA) o en nuestros salones físicos.
+                        Bienvenido a KORTZEN Barbería (en adelante, "KORTZEN" o "la Empresa"). Los presentes Términos y Condiciones de Uso constituyen un acuerdo legal vinculante celebrado entre cualquier persona que acceda, navegue o agende servicios a través de la plataforma web (https://kortzen.com), la Aplicación Web Progresiva (PWA) o en nuestros salones físicos.
                     </p>
                     <p>
-                        <strong>Al agendar una cita o utilizar esta plataforma, el usuario declara haber leído, comprendido y aceptado en su totalidad estos Términos y Condiciones</strong>, así como nuestra Política de Privacidad. Si no está de acuerdo con alguna de las disposiciones aquí establecidas, deberá abstenerse de utilizar el servicio.
+                        <strong>Al agendar una cita o utilizar esta plataforma, el usuario declara haber leído, comprendido y aceptado en su totalidad estos Términos y Condiciones</strong>, así como la Política de Privacidad. Si no está de acuerdo con alguna de las disposiciones aquí establecidas, deberá abstenerse de utilizar el servicio.
                     </p>
-                </section>
 
-                <section class="legal-section">
                     <h2>2. Políticas de Reserva, Puntualidad y Cancelaciones</h2>
-                    <p>Para garantizar un servicio de máxima excelencia y respetar el tiempo de todos nuestros clientes, rigen las siguientes reglas operativas:</p>
+                    <p>Con el fin de garantizar una atención de excelencia y el debido respeto a la agenda de nuestros clientes, rigen las siguientes condiciones:</p>
                     <ul>
-                        <li><strong>Agendamiento:</strong> Las reservas se realizan seleccionando barbero, servicio, fecha, hora y sucursal. La cita queda registrada en estado pendiente o confirmada tras la validación digital.</li>
-                        <li><strong>Margen de Tolerancia (Puntualidad):</strong> Se concede un margen máximo de <strong>10 minutos de tolerancia</strong> a partir de la hora fijada. Transcurrido dicho plazo sin aviso previo, el barbero podrá disponer del turno o reasignarlo para no perjudicar a los siguientes clientes.</li>
-                        <li><strong>Cancelaciones y Reprogramaciones:</strong> El cliente puede cancelar o reprogramar su cita sin penalización hasta con <strong>2 horas de anticipación</strong> desde su panel de usuario o comunicándose por WhatsApp.</li>
-                        <li><strong>Inasistencias Injustificadas (No-Show):</strong> El sistema registra las ausencias no notificadas. KORTZEN se reserva el derecho de restringir el agendamiento digital automático a usuarios con reiteradas inasistencias sin previo aviso.</li>
+                        <li><strong>Agendamiento:</strong> Las reservas se realizan seleccionando barbero, servicio, fecha, hora y sucursal. La cita queda registrada en el sistema de agenda central.</li>
+                        <li><strong>Margen de Puntualidad y Tolerancia:</strong> Se establece un margen máximo de <strong>10 minutos de tolerancia</strong> respecto a la hora fijada. Transcurrido dicho lapso sin previo aviso, el turno podrá ser reasignado o cancelado para no perjudicar la atención de los clientes subsiguientes.</li>
+                        <li><strong>Cancelaciones y Modificaciones:</strong> El cliente puede cancelar o reprogramar su cita sin recargo con al menos <strong>2 horas de anticipación</strong> desde su panel digital o comunicándose a nuestros canales de atención.</li>
+                        <li><strong>Inasistencias Reiteradas (No-Show):</strong> El sistema registra las ausencias no notificadas. KORTZEN se reserva el derecho de restringir el agendamiento digital automático a usuarios que incurran en ausencias reiteradas sin justificación.</li>
                     </ul>
-                </section>
 
-                <section class="legal-section">
                     <h2>3. Declaración de Salud, Sensibilidades Cutáneas y Alergias (Descargo de Responsabilidad)</h2>
-                    <div class="legal-highlight">
-                        <strong>⚠️ OBLIGACIÓN DE INFORMAR ANTES DEL SERVICIO:</strong><br>
-                        El cliente tiene la obligación expresa de comunicar al barbero o estilista, <strong>antes de iniciar cualquier procedimiento</strong>, la existencia de:
+                    <div class="legal-notice">
+                        <strong>OBLIGACIÓN DE INFORMAR ANTES DEL INICIO DEL SERVICIO:</strong><br>
+                        El cliente tiene la obligación expresa de comunicar al barbero o estilista asignado, con carácter previo a cualquier procedimiento:
                         <ul style="margin-top: 8px; margin-bottom: 0;">
-                            <li>Alergias o hipersensibilidad a productos cosméticos, lociones, tintes, ceras, aceites o toallas calientes.</li>
-                            <li>Afecciones dermatológicas, dermatitis, foliculitis, psoriasis o heridas/cicatrices recientes en cuero cabelludo, rostro o cuello.</li>
-                            <li>Tratamientos médicos dermatológicos en curso (ej. retinoides, isotretinoína) o lunares de cuidado.</li>
+                            <li>Alergias, hipersensibilidad o antecedentes de irritación a productos cosméticos, lociones, tintes, ceras o toallas calientes.</li>
+                            <li>Afecciones dermatológicas activas, foliculitis, psoriasis, dermatitis o heridas recientes en el cuero cabelludo, rostro o cuello.</li>
+                            <li>Tratamientos médicos dermatológicos en curso (ej. retinoides orales/tópicos) o lunares de cuidado en la zona de corte o afeitado.</li>
                         </ul>
                     </div>
                     <p>
-                        <strong>Descargo de Responsabilidad:</strong> KORTZEN utiliza insumos y cosméticos profesionales de alta calidad debidamente esterilizados y homologados. No obstante, KORTZEN, sus propietarios, administradores y barberos quedan <strong>expresamente eximidos de toda responsabilidad civil, médica o indemnizatoria</strong> derivada de reacciones alérgicas, irritaciones cutáneas imprevistas o sensibilidad dérmica cuando el cliente haya omitido declarar dichas condiciones preexistentes.
+                        <strong>Descargo de Responsabilidad:</strong> KORTZEN utiliza insumos cosméticos y herramientas profesionales debidamente esterilizadas. En consecuencia, KORTZEN, sus propietarios, administradores y colaboradores quedan <strong>expresamente eximidos de responsabilidad civil, médica o indemnizatoria</strong> por reacciones alérgicas o irritaciones imprevisibles cuando el cliente haya omitido declarar dichas condiciones preexistentes.
                     </p>
-                </section>
 
-                <section class="legal-section">
                     <h2>4. Programa de Fidelidad KORTZEN Loyalty y Códigos Promocionales</h2>
-                    <p>KORTZEN ofrece un sistema de acumulación de puntos y beneficios para premiar la lealtad de sus clientes:</p>
+                    <p>KORTZEN dispone de un sistema de acumulación de puntos para premiar la preferencia de sus clientes:</p>
                     <ul>
-                        <li><strong>Naturaleza de los Puntos:</strong> Los puntos KORTZEN Loyalty se acreditan únicamente tras completar efectivamente una cita de servicio. Los puntos son personales e intransferibles, no constituyen moneda de curso legal ni pueden ser canjeados por dinero en efectivo.</li>
-                        <li><strong>Códigos de Referidos y Cupones:</strong> Los códigos promocionales son válidos por una sola vez por cliente o según las condiciones fijadas en cada campaña. Está prohibido el uso de cuentas falsas, scripts o mecanismos automatizados para inflar puntos de referido.</li>
-                        <li><strong>Facultad de Modificación y Revocación:</strong> KORTZEN se reserva la facultad de modificar las tablas de equivalencia de puntos, ajustar niveles o anular saldos acumulados de manera fraudulenta o en contravención a estos términos.</li>
+                        <li><strong>Naturaleza de los Puntos:</strong> Los puntos KORTZEN Loyalty se acreditan exclusivamente tras la conclusión efectiva y confirmada del servicio. Los puntos son personales e intransferibles, no tienen valor monetario en efectivo y no son canjeables por dinero.</li>
+                        <li><strong>Códigos de Descuento y Referidos:</strong> Los cupones promocionales y beneficios por referidos son válidos por una sola vez por cliente o según las reglas de cada campaña. Queda prohibida la creación de cuentas múltiples o el uso de métodos automatizados para la obtención irregular de puntos.</li>
+                        <li><strong>Facultad de Revocación:</strong> KORTZEN se reserva el derecho de auditar, ajustar o revocar saldos de puntos obtenidos de forma fraudulenta o en contravención a estos términos.</li>
                     </ul>
-                </section>
 
-                <section class="legal-section">
-                    <h2>5. Conducta y Derecho de Admisión</h2>
+                    <h2>5. Normas de Convivencia y Derecho de Admisión</h2>
                     <p>
-                        KORTZEN promueve un entorno de respeto, exclusividad y confort para todos sus asistentes. Nos reservamos el derecho de admisión y permanencia en nuestras instalaciones y plataforma digital en los siguientes casos:
+                        KORTZEN se reserva el derecho de admisión y permanencia en sus establecimientos físicos y plataforma digital en los siguientes supuestos:
                     </p>
                     <ul>
-                        <li>Clientes que se presenten bajo evidente estado de ebriedad o bajo la influencia de sustancias psicotrópicas.</li>
-                        <li>Comportamientos agresivos, irrespetuosos o discriminatorios hacia el personal o hacia otros clientes.</li>
-                        <li>Uso malicioso, intentos de hackeo o alteración de los sistemas informáticos de KORTZEN.</li>
+                        <li>Presentarse bajo evidente estado de embriaguez o influencia de sustancias psicotrópicas.</li>
+                        <li>Conductas hostiles, discriminatorias, ofensivas o irrespetuosas hacia el personal o hacia otros asistentes.</li>
+                        <li>Intentos de vulneración, manipulación o ataque a la seguridad informática de la plataforma digital.</li>
                     </ul>
-                </section>
 
-                <section class="legal-section">
                     <h2>6. Propiedad Intelectual e Industrial</h2>
                     <p>
-                        Todos los elementos que componen la plataforma KORTZEN (incluyendo marcas registradas, nombres comerciales, isotipos, logotipos, diseño gráfico, código fuente, interfaz de usuario, fotografías, textos y material audiovisual) son propiedad exclusiva de <strong>KORTZEN</strong> y se encuentran protegidos por las leyes de propiedad intelectual de la República del Ecuador y tratados internacionales.
+                        La marca KORTZEN, sus logotipos, signos distintivos, textos, diseño gráfico, código fuente, interfaz y contenidos audiovisuales son de propiedad exclusiva de <strong>KORTZEN</strong> y se encuentran amparados por las leyes de propiedad intelectual de la República del Ecuador y tratados internacionales. Queda prohibida su reproducción, alteración o explotación no autorizada.
                     </p>
-                    <p>
-                        Queda prohibida su reproducción, copia, distribución, modificación o uso comercial no autorizado sin el consentimiento previo y por escrito de KORTZEN.
-                    </p>
-                </section>
 
-                <section class="legal-section">
                     <h2>7. Limitación de Responsabilidad Tecnológica</h2>
                     <p>
-                        KORTZEN realiza sus mejores esfuerzos técnicos para garantizar la disponibilidad continua y segura de su plataforma digital y sistema de reservas. Sin embargo, no se hace responsable por:
+                        KORTZEN procura la máxima disponibilidad y seguridad de sus servicios digitales. No obstante, no asume responsabilidad por:
                     </p>
                     <ul>
-                        <li>Interrupciones temporales del servicio derivadas de caídas de proveedores externos de hosting, fallos en la red eléctrica o problemas de conectividad a internet.</li>
-                        <li>Fallas o demoras en la recepción de notificaciones Push o correos electrónicos atribuibles a configuraciones del navegador o restricciones de proveedores de correo (ej. filtros antispam).</li>
-                        <li>Daños derivados de un uso inadecuado o negligente del dispositivo del usuario.</li>
+                        <li>Interrupciones transitorias debidas a fallos de conectividad, mantenimiento de servidores o caídas de redes externas.</li>
+                        <li>Demoras o fallos en la recepción de notificaciones Push o correos atribuibles a configuraciones del dispositivo o filtros antispam del usuario.</li>
                     </ul>
-                </section>
 
-                <section class="legal-section">
                     <h2>8. Cláusula de Indemnidad</h2>
                     <p>
-                        El usuario se compromete a defender, indemnizar y mantener indemne a KORTZEN, sus socios, directores, administradores, barberos y empleados frente a cualquier demanda, reclamo, pérdida, daño o gasto (incluyendo honorarios legales) derivado del uso indebido de la plataforma o del incumplimiento de las presentes estipulaciones.
+                        El usuario acuerda indemnizar y mantener libre de daños y perjuicios a KORTZEN, sus representantes y colaboradores frente a cualquier reclamación judicial o extrajudicial derivada del uso indebido de los servicios o del quebrantamiento de las presentes condiciones.
                     </p>
-                </section>
 
-                <section class="legal-section">
-                    <h2>9. Modificaciones a los Términos</h2>
+                    <h2>9. Modificación de los Términos</h2>
                     <p>
-                        KORTZEN se reserva el derecho de modificar o actualizar estos Términos y Condiciones en cualquier momento. Las modificaciones entrarán en vigencia inmediatamente después de su publicación en el sitio web. El uso continuo de los servicios tras dichas modificaciones implicará la aceptación plena de los nuevos términos.
+                        KORTZEN podrá modificar estos Términos y Condiciones en cualquier momento. Los cambios regirán a partir de su publicación oficial en este portal web.
                     </p>
-                </section>
 
-                <section class="legal-section">
                     <h2>10. Legislación Aplicable y Jurisdicción</h2>
                     <p>
-                        Para todos los efectos legales, estos Términos y Condiciones de Uso se interpretan y rigen conforme a las <strong>leyes vigentes de la República del Ecuador</strong>. En caso de cualquier controversia o disputa legal que no pueda resolverse de mutuo acuerdo, las partes se someten a la jurisdicción de los tribunales y jueces competentes de la ciudad de <strong>Quito, Distrito Metropolitano</strong>, renunciando expresamente a cualquier otro fuero o domicilio.
+                        Estos Términos y Condiciones se interpretan y rigen conforme a las <strong>leyes de la República del Ecuador</strong>. Para cualquier controversia no resuelta de mutuo acuerdo, las partes se someten a la jurisdicción de los tribunales de la ciudad de <strong>Quito, Distrito Metropolitano</strong>, con renuncia expresa a cualquier otro fuero.
                     </p>
-                </section>
 
-                <div class="legal-contact-box">
-                    <h3 style="color: #ffffff; margin-bottom: 8px;">Atención Legal y Consultas</h3>
-                    <p style="color: #aaaaaa; margin-bottom: 12px;">Para consultas legales, sugerencias o atención personalizada:</p>
-                    <p>
-                        📧 <strong>Correo:</strong> <a href="mailto:info@kortzen.com">info@kortzen.com</a> &nbsp;|&nbsp; 
-                        📍 <strong>Ubicación:</strong> Llano Chico, Quito, Ecuador &nbsp;|&nbsp; 
-                        📱 <strong>WhatsApp:</strong> <a href="https://wa.me/5930988422770" target="_blank">+593 098 842 2770</a>
-                    </p>
+                    <div class="legal-contact-panel">
+                        <h3>Atención Legal y Canales Oficiales</h3>
+                        <p style="color: #666666; margin-bottom: 12px;">Para cualquier consulta legal o formal:</p>
+                        <p>
+                            Correo: <a href="mailto:info@kortzen.com">info@kortzen.com</a> &nbsp;|&nbsp; 
+                            Ubicación: Llano Chico, Quito, Ecuador &nbsp;|&nbsp; 
+                            WhatsApp: <a href="https://wa.me/5930988422770" target="_blank">+593 098 842 2770</a>
+                        </p>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
     </main>
 
     <!-- Footer -->
@@ -395,7 +344,7 @@
             <p class="footer__copyright">© 2026 KORTZEN. Todos los derechos reservados.</p>
             <div class="footer__legal">
                 <a href="/politica-de-privacidad.html" class="footer__legal-link">Política de Privacidad</a>
-                <a href="/terminos-de-uso.html" class="footer__legal-link" style="color: #D4AF37;">Términos de Uso</a>
+                <a href="/terminos-de-uso.html" class="footer__legal-link" style="color: #111111; font-weight: 600;">Términos de Uso</a>
                 <a href="/login.php" class="footer__legal-link">Acceso Barberos</a>
             </div>
         </div>

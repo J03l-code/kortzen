@@ -10,7 +10,7 @@
     <!-- Open Graph Meta Tags -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Política de Privacidad | KORTZEN Barbería">
-    <meta property="og:description" content="Conoce cómo KORTZEN protege y gestiona tus datos personales, reservas y privacidad digital conforme a la ley.">
+    <meta property="og:description" content="Conoce cómo KORTZEN protege y gestiona tus datos personales conforme a la Ley Orgánica de Protección de Datos Personales de Ecuador.">
     <meta property="og:url" content="https://kortzen.com/politica-de-privacidad">
     <meta property="og:image" content="https://kortzen.com/assets/images/hero-bg-dark.jpg">
 
@@ -37,33 +37,13 @@
     <script src="/js/pwa.js" defer></script>
 
     <style>
-        .legal-page {
-            padding: 120px 0 80px;
-            background-color: var(--color-black-matte, #0e0e0e);
-            color: #d1d5db;
-            min-height: 80vh;
-        }
-
-        .legal-container {
-            max-width: 920px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        .legal-header {
-            text-align: center;
-            margin-bottom: 50px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-        }
-
-        .legal-badge {
+        .legal-pill {
             display: inline-block;
-            padding: 6px 16px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 6px 20px;
+            background: #FAF6EE;
+            border: 1px solid #E3CAA5;
             border-radius: 50px;
-            color: #D4AF37;
+            color: #C59B27;
             font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -71,123 +51,109 @@
             margin-bottom: 16px;
         }
 
-        .legal-title {
-            font-family: var(--font-primary, 'Cinzel', serif);
-            font-size: 2.5rem;
-            color: #ffffff;
-            margin-bottom: 12px;
-            letter-spacing: 1px;
+        .legal-wrapper {
+            background-color: var(--color-charcoal, #F7F7F7);
+            padding: 60px 0 100px;
         }
 
-        .legal-date {
-            font-size: 0.9rem;
-            color: #888888;
-        }
-
-        .legal-content {
-            background: #141414;
-            border: 1px solid #262626;
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            line-height: 1.8;
+        .legal-box {
+            background: #FFFFFF;
+            border: 2px solid #111111;
+            border-radius: 12px;
+            padding: 50px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+            color: #222222;
+            font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+            line-height: 1.85;
             font-size: 0.98rem;
         }
 
-        .legal-section {
-            margin-bottom: 36px;
-        }
-
-        .legal-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .legal-section h2 {
-            font-family: var(--font-primary, 'Cinzel', serif);
-            font-size: 1.4rem;
-            color: #D4AF37;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid #222222;
-            padding-bottom: 8px;
-        }
-
-        .legal-section h3 {
-            font-size: 1.1rem;
-            color: #ffffff;
-            margin: 18px 0 10px;
-        }
-
-        .legal-section p {
+        .legal-box h2 {
+            font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif);
+            font-size: 1.5rem;
+            color: #111111;
+            margin-top: 36px;
             margin-bottom: 14px;
-            color: #cccccc;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #E5E5E5;
+            letter-spacing: 0.5px;
         }
 
-        .legal-section ul {
-            list-style-type: none;
-            padding-left: 0;
+        .legal-box h2:first-of-type {
+            margin-top: 0;
+        }
+
+        .legal-box p {
             margin-bottom: 16px;
+            color: #333333;
         }
 
-        .legal-section ul li {
+        .legal-box ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 20px;
+        }
+
+        .legal-box ul li {
             position: relative;
             padding-left: 24px;
             margin-bottom: 10px;
-            color: #bbbbbb;
+            color: #444444;
         }
 
-        .legal-section ul li::before {
-            content: "•";
-            color: #D4AF37;
-            font-size: 1.4rem;
+        .legal-box ul li::before {
+            content: "—";
             position: absolute;
-            left: 6px;
-            top: -4px;
+            left: 4px;
+            color: #111111;
+            font-weight: bold;
         }
 
-        .legal-highlight {
-            background: rgba(212, 175, 55, 0.05);
-            border-left: 3px solid #D4AF37;
-            padding: 16px 20px;
+        .legal-notice {
+            background: #FAF8F5;
+            border-left: 4px solid #111111;
+            border-right: 1px solid #E3CAA5;
+            border-top: 1px solid #E3CAA5;
+            border-bottom: 1px solid #E3CAA5;
+            padding: 20px 24px;
             border-radius: 0 8px 8px 0;
-            margin: 20px 0;
-            font-size: 0.95rem;
-            color: #e5e5e5;
+            margin: 24px 0;
+            font-size: 0.94rem;
+            color: #222222;
         }
 
-        .legal-contact-box {
-            background: #1a1a1a;
-            border: 1px solid #333333;
-            border-radius: 12px;
-            padding: 24px;
-            margin-top: 25px;
+        .legal-contact-panel {
+            background: #FAF8F5;
+            border: 1.5px solid #111111;
+            border-radius: 8px;
+            padding: 28px;
+            margin-top: 36px;
             text-align: center;
         }
 
-        .legal-contact-box a {
-            color: #D4AF37;
-            text-decoration: none;
-            font-weight: 600;
+        .legal-contact-panel h3 {
+            font-family: var(--font-display, 'Cormorant Garamond', serif);
+            font-size: 1.35rem;
+            color: #111111;
+            margin-bottom: 8px;
         }
 
-        .legal-contact-box a:hover {
+        .legal-contact-panel a {
+            color: #111111;
+            font-weight: 600;
             text-decoration: underline;
         }
 
         @media (max-width: 768px) {
-            .legal-page {
-                padding: 100px 0 60px;
+            .legal-wrapper {
+                padding: 30px 0 60px;
             }
-            .legal-content {
-                padding: 24px 18px;
+            .legal-box {
+                padding: 26px 18px;
+                border-width: 1.5px;
             }
-            .legal-title {
-                font-size: 1.8rem;
-            }
-            .legal-section h2 {
-                font-size: 1.2rem;
+            .legal-box h2 {
+                font-size: 1.3rem;
             }
         }
     </style>
@@ -225,144 +191,103 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="legal-page">
-        <div class="legal-container">
-            <div class="legal-header">
-                <span class="legal-badge">Legal & Privacidad</span>
-                <h1 class="legal-title">POLÍTICA DE PRIVACIDAD</h1>
-                <p class="legal-date">Última actualización: 28 de agosto de 2026 | Conforme a la LOPDP (Ecuador) y Estándares Internacionales</p>
+    <main>
+        <!-- Page Header -->
+        <section class="page-header">
+            <div class="container">
+                <span class="legal-pill">Legal & Privacidad</span>
+                <h1 class="page-header__title">Política de Privacidad</h1>
+                <p class="page-header__description">
+                    Transparencia y protección integral de sus datos personales conforme a la legislación vigente de la República del Ecuador.
+                </p>
             </div>
+        </section>
 
-            <div class="legal-content">
-                <section class="legal-section">
+        <!-- Content Section -->
+        <section class="legal-wrapper">
+            <div class="container" style="max-width: 940px;">
+                <div class="legal-box">
                     <h2>1. Identidad y Responsable del Tratamiento</h2>
                     <p>
-                        En <strong>KORTZEN Barbería</strong> (en adelante, "KORTZEN", "nosotros" o "la Plataforma"), con domicilio principal en Llano Chico, Quito, Ecuador, la protección de la privacidad, integridad y confidencialidad de los datos personales de nuestros clientes y usuarios es una prioridad absoluta.
+                        KORTZEN Barbería (en adelante, "KORTZEN" o "la Empresa"), con domicilio legal y operativo en Llano Chico, Quito, Ecuador, es el responsable del tratamiento y resguardo de los datos personales suministrados por los clientes a través del sitio web oficial (https://kortzen.com), la Aplicación Web Progresiva (PWA) y los canales de atención presenciales y digitales.
                     </p>
-                    <p>
-                        La presente Política de Privacidad regula el tratamiento de los datos personales recopilados a través de nuestro sitio web oficial (<a href="https://kortzen.com" style="color: #D4AF37;">https://kortzen.com</a>), nuestra Aplicación Web Progresiva (PWA), sistemas de agendamiento digital, programas de fidelidad y canales oficiales de comunicación.
-                    </p>
-                </section>
 
-                <section class="legal-section">
-                    <h2>2. Marco Legal Aplicable</h2>
+                    <h2>2. Marco Jurídico Aplicable</h2>
                     <p>
-                        Este documento se rige estrictamente por la <strong>Ley Orgánica de Protección de Datos Personales de la República del Ecuador (LOPDP)</strong>, su Reglamento General, y adopta las mejores prácticas y principios reconocidos internacionalmente (incluyendo el Reglamento General de Protección de Datos - RGPD / GDPR de la Unión Europea para clientes internacionales).
+                        La presente Política de Privacidad se rige estrictamente por la <strong>Ley Orgánica de Protección de Datos Personales de la República del Ecuador (LOPDP)</strong>, su Reglamento General, y adopta los principios internacionales reconocidos para la debida tutela de la privacidad digital y el tratamiento lícito de la información.
                     </p>
-                </section>
 
-                <section class="legal-section">
-                    <h2>3. Datos Personales que Recopilamos</h2>
-                    <p>Recopilamos únicamente la información necesaria y proporcionada voluntariamente para prestar nuestros servicios de barbería de alta gama y gestionar reservas digitales:</p>
+                    <h2>3. Datos Personales Objeto de Tratamiento</h2>
+                    <p>Recopilamos únicamente los datos necesarios y proporcionados de manera voluntaria por el usuario para la prestación de nuestros servicios de barbería:</p>
                     <ul>
-                        <li><strong>Datos de Identificación y Contacto:</strong> Nombre completo, dirección de correo electrónico, número de teléfono móvil / WhatsApp.</li>
-                        <li><strong>Datos de Autenticación Social (Google OAuth):</strong> Identificador único de Google (Google ID), nombre de perfil, correo electrónico verificado y fotografía de perfil público.</li>
-                        <li><strong>Información de Reservas y Preferencias de Estilo:</strong> Historial de citas, servicios seleccionados, barbero de preferencia, sucursal, fecha y hora, notas de servicio, estilo buscado, ambiente y bebida preferida en sala de espera.</li>
-                        <li><strong>Programa de Fidelidad y Referidos:</strong> Puntos acumulados KORTZEN Loyalty, nivel de membresía (Plata, Oro, VIP) y código de referido asignado.</li>
-                        <li><strong>Datos Técnicos y de Navegación:</strong> Dirección IP (procesada temporalmente para mitigación de ataques y rate limiting), registros de actividad (logs de seguridad), identificadores de notificaciones WebPush (PWA) y cookies técnicas.</li>
+                        <li><strong>Identificación y Contacto:</strong> Nombre y apellido, dirección de correo electrónico y número de teléfono móvil / WhatsApp.</li>
+                        <li><strong>Autenticación Digital (Google OAuth):</strong> Identificador de usuario de Google, correo electrónico verificado y fotografía pública de perfil.</li>
+                        <li><strong>Historial de Reservas y Preferencias:</strong> Registro de servicios solicitados, barbero asignado, sucursal, fecha y hora de atención, estilo y observaciones de servicio.</li>
+                        <li><strong>Programa de Fidelidad:</strong> Puntos acumulados KORTZEN Loyalty, nivel de membresía y códigos promocionales o de referido utilizados.</li>
+                        <li><strong>Datos Técnicos de Seguridad:</strong> Dirección IP anonimizada para prevención de ataques informáticos, registros de actividad de sesión y tokens de notificación WebPush autorizados por el usuario.</li>
                     </ul>
-                    <div class="legal-highlight">
-                        <strong>🛡️ Nota sobre Datos de Pago:</strong> KORTZEN no almacena en sus servidores números de tarjetas de crédito ni credenciales bancarias. Los cobros se realizan directamente en caja en nuestras sucursales físicas o a través de pasarelas de pago externas certificadas PCI-DSS.
+
+                    <div class="legal-notice">
+                        <strong>Protección de Datos Financieros:</strong> KORTZEN no almacena en sus servidores números de tarjetas bancarias ni claves financieras. Las transacciones se realizan directamente en caja en nuestras sucursales o mediante procesadores de pago externos autorizados con certificación PCI-DSS.
                     </div>
-                </section>
 
-                <section class="legal-section">
-                    <h2>4. Finalidad del Tratamiento de los Datos</h2>
-                    <p>Sus datos personales son tratados con las siguientes finalidades legítimas:</p>
+                    <h2>4. Finalidades del Tratamiento</h2>
+                    <p>Los datos personales recolectados son tratados exclusivamente para los siguientes fines:</p>
                     <ul>
-                        <li><strong>Gestión de Citas:</strong> Procesar, agendar, modificar, confirmar y cancelar sus reservas de servicios de barbería y estilismo.</li>
-                        <li><strong>Alertas y Notificaciones de Servicio:</strong> Enviar confirmaciones instantáneas, recordatorios de citas (vía correo electrónico y notificaciones WebPush PWA 2 horas antes de su turno) y actualizaciones operativas.</li>
-                        <li><strong>Experiencia Personalizada:</strong> Recordar sus preferencias de corte, barba, bebidas y música para ofrecerle una atención personalizada en cada visita.</li>
-                        <li><strong>Programa de Puntos y Beneficios:</strong> Acreditar puntos por visitas completadas y aplicar descuentos legítimos en sus próximas atenciones.</li>
-                        <li><strong>Seguridad del Sistema:</strong> Proteger la infraestructura contra accesos no autorizados, ataques de denegación de servicio, inyecciones de código y abusos automatizados.</li>
+                        <li>Agendamiento, confirmación, reprogramación y seguimiento de citas de barbería y estilismo.</li>
+                        <li>Envío de confirmaciones y recordatorios de servicio mediante correo electrónico y notificaciones WebPush (2 horas antes del turno).</li>
+                        <li>Gestión, acreditación y canje de beneficios del programa de fidelidad KORTZEN Loyalty.</li>
+                        <li>Personalización de la experiencia del cliente según sus preferencias de corte y cuidado personal.</li>
+                        <li>Prevención de fraudes, mitigación de abusos automatizados y seguridad de la infraestructura digital.</li>
                     </ul>
-                </section>
 
-                <section class="legal-section">
-                    <h2>5. Base Legal para el Tratamiento</h2>
-                    <p>El tratamiento de sus datos se fundamenta en:</p>
-                    <ul>
-                        <li><strong>La ejecución de una relación de servicios:</strong> Agendar y brindar los servicios de barbería solicitados por el cliente.</li>
-                        <li><strong>El consentimiento libre, previo, expreso e informado:</strong> Otorgado al autenticarse con Google, suscribirse a notificaciones PWA o registrarse en la plataforma.</li>
-                        <li><strong>El interés legítimo de KORTZEN:</strong> Garantizar la ciberseguridad, trazabilidad de reservas y calidad del servicio.</li>
-                    </ul>
-                </section>
-
-                <section class="legal-section">
-                    <h2>6. Confidencialidad y No Venta de Datos</h2>
+                    <h2>5. Confidencialidad y Prohibición de Venta de Datos</h2>
                     <p>
-                        <strong>KORTZEN no vende, no alquila, no comercializa ni transfiere sus datos personales a terceros</strong> para fines publicitarios o de telemercadeo ajenos a nuestra operación.
+                        KORTZEN mantiene una política estricta de confidencialidad: <strong>no vende, no cede, no comercializa ni arrienda datos personales de clientes a terceros</strong> con fines publicitarios o comerciales ajenos a la operación de la barbería.
                     </p>
-                    <p>
-                        Sus datos solo podrán ser compartidos con proveedores tecnológicos estrictamente necesarios para la prestación del servicio bajo estrictos acuerdos de confidencialidad (servidores de hosting seguro, API de Google para autenticación y servicios de correo transaccional SMTP autenticado).
-                    </p>
-                </section>
 
-                <section class="legal-section">
-                    <h2>7. Medidas de Seguridad y Blindaje Técnico</h2>
+                    <h2>6. Medidas de Seguridad y Custodia Técnica</h2>
                     <p>
-                        KORTZEN implementa rigurosas medidas de seguridad técnicas, organizativas y físicas para proteger sus datos personales contra accesos no autorizados, pérdida o alteración:
+                        Implementamos salvaguardas técnicas y organizativas para evitar la alteración, pérdida, acceso no autorizado o robo de datos personales:
                     </p>
                     <ul>
-                        <li>Cifrado de comunicaciones en tránsito mediante protocolo HTTPS y certificados SSL/TLS modernos.</li>
-                        <li>Contraseñas de personal protegidas con algoritmos de hashing criptográfico BCRYPT.</li>
-                        <li>Sesiones persistentes PWA firmadas con tokens criptográficos HMAC-SHA256 (prevención de suplantación de identidad).</li>
-                        <li>Consultas a base de datos mediante sentencias 100% preparadas (PDO Parameter Binding) contra inyecciones SQL.</li>
-                        <li>Limitadores de tasa de solicitudes (Rate Limiting) y bloqueo de directorios sensibles en servidor.</li>
+                        <li>Transmisión cifrada de extremo a extremo mediante protocolo seguro HTTPS (TLS/SSL).</li>
+                        <li>Contraseñas de usuarios administrativos resguardadas mediante algoritmos criptográficos BCRYPT.</li>
+                        <li>Sesiones móviles persistentes autenticadas con firmas digitales HMAC-SHA256 para prevenir suplantaciones.</li>
+                        <li>Consultas a base de datos estructuradas al 100% con sentencias preparadas (Prepared Statements) para neutralizar inyecciones de código.</li>
+                        <li>Limitadores de tasa de peticiones (Rate Limiting) y control de acceso estricto a archivos de sistema.</li>
                     </ul>
-                </section>
 
-                <section class="legal-section">
-                    <h2>8. Ejercicio de Derechos del Titular (Derechos ARCO+)</h2>
+                    <h2>7. Ejercicio de Derechos del Titular (Derechos ARCO+)</h2>
                     <p>
-                        Conforme a la LOPDP ecuatoriana, usted tiene derecho en todo momento a ejercer sus derechos de:
+                        De conformidad con la LOPDP, usted puede ejercer en cualquier momento sus derechos de <strong>Acceso, Rectificación, Actualización, Eliminación, Oposición y Portabilidad</strong> de sus datos personales.
                     </p>
-                    <ul>
-                        <li><strong>Acceso e Información:</strong> Conocer qué datos personales mantenemos sobre usted y cómo son tratados.</li>
-                        <li><strong>Rectificación y Actualización:</strong> Modificar datos inexactos, incompletos o desactualizados desde su panel de perfil o solicitándolo directamente.</li>
-                        <li><strong>Eliminación / Supresión:</strong> Solicitar la eliminación total de su cuenta y registros personales cuando no sean necesarios para fines legales o fiscales.</li>
-                        <li><strong>Oposición y Limitación:</strong> Oponerse al tratamiento de sus datos para fines específicos o revocar el consentimiento previamente otorgado.</li>
-                        <li><strong>Portabilidad:</strong> Solicitar una copia estructurada de sus datos en formato electrónico común.</li>
-                    </ul>
                     <p>
-                        Para ejercer cualquiera de estos derechos, basta con enviar un correo electrónico con su solicitud a <a href="mailto:info@kortzen.com" style="color: #D4AF37;">info@kortzen.com</a> o contactarnos por nuestros canales oficiales. Su solicitud será atendida en los plazos legales establecidos.
+                        Para ejercer cualquiera de estos derechos o solicitar la supresión definitiva de su cuenta, dirija su requerimiento al correo electrónico <strong>info@kortzen.com</strong>. Las solicitudes serán tramitadas en los plazos establecidos por la legislación ecuatoriana.
                     </p>
-                </section>
 
-                <section class="legal-section">
-                    <h2>9. Política de Cookies y Almacenamiento Local (PWA)</h2>
+                    <h2>8. Uso de Cookies y Almacenamiento Local (PWA)</h2>
                     <p>
-                        Utilizamos cookies y almacenamiento local estrictamente necesarios para:
+                        Utilizamos cookies técnicas y almacenamiento local estrictamente necesarios para mantener activa la sesión del cliente, recordar su sucursal habitual y permitir el funcionamiento sin interrupciones de la Aplicación Web Progresiva. No empleamos cookies de rastreo invasivo de terceros.
                     </p>
-                    <ul>
-                        <li>Mantener activa su sesión de cliente de forma segura en la web y en la PWA instalada en su dispositivo móvil.</li>
-                        <li>Recordar su preferencia de sucursal y configuración visual.</li>
-                        <li>Prevenir ataques de falsificación de peticiones en sitios cruzados (CSRF) y fijación de sesión.</li>
-                    </ul>
-                    <p>
-                        No utilizamos cookies de rastreo invasivas de terceros con fines de publicidad programática.
-                    </p>
-                </section>
 
-                <section class="legal-section">
-                    <h2>10. Cambios en la Política de Privacidad</h2>
+                    <h2>9. Actualizaciones de la Política</h2>
                     <p>
-                        KORTZEN se reserva el derecho de actualizar esta Política de Privacidad para reflejar cambios legislativos, jurisprudenciales o mejoras operativas en la plataforma. Cualquier modificación sustancial será comunicada a través de nuestro sitio web oficial con su fecha de vigencia correspondiente.
+                        KORTZEN se reserva el derecho de actualizar esta Política de Privacidad para adecuarla a reformas normativas o mejoras operativas. Las modificaciones entrarán en vigencia tras su publicación en esta misma página web.
                     </p>
-                </section>
 
-                <div class="legal-contact-box">
-                    <h3 style="color: #ffffff; margin-bottom: 8px;">¿Tienes preguntas sobre tu privacidad?</h3>
-                    <p style="color: #aaaaaa; margin-bottom: 12px;">Estamos a tu total disposición para atender cualquier inquietud o solicitud de protección de datos.</p>
-                    <p>
-                        📧 <strong>Correo:</strong> <a href="mailto:info@kortzen.com">info@kortzen.com</a> &nbsp;|&nbsp; 
-                        📍 <strong>Ubicación:</strong> Llano Chico, Quito, Ecuador &nbsp;|&nbsp; 
-                        📱 <strong>WhatsApp:</strong> <a href="https://wa.me/5930988422770" target="_blank">+593 098 842 2770</a>
-                    </p>
+                    <div class="legal-contact-panel">
+                        <h3>Consultas de Privacidad y Protección de Datos</h3>
+                        <p style="color: #666666; margin-bottom: 12px;">Para cualquier consulta sobre el tratamiento de sus datos personales:</p>
+                        <p>
+                            Correo: <a href="mailto:info@kortzen.com">info@kortzen.com</a> &nbsp;|&nbsp; 
+                            Ubicación: Llano Chico, Quito, Ecuador &nbsp;|&nbsp; 
+                            WhatsApp: <a href="https://wa.me/5930988422770" target="_blank">+593 098 842 2770</a>
+                        </p>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
     </main>
 
     <!-- Footer -->
@@ -409,7 +334,7 @@
         <div class="footer__bottom">
             <p class="footer__copyright">© 2026 KORTZEN. Todos los derechos reservados.</p>
             <div class="footer__legal">
-                <a href="/politica-de-privacidad.html" class="footer__legal-link" style="color: #D4AF37;">Política de Privacidad</a>
+                <a href="/politica-de-privacidad.html" class="footer__legal-link" style="color: #111111; font-weight: 600;">Política de Privacidad</a>
                 <a href="/terminos-de-uso.html" class="footer__legal-link">Términos de Uso</a>
                 <a href="/login.php" class="footer__legal-link">Acceso Barberos</a>
             </div>
