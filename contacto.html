@@ -177,7 +177,7 @@
                             </svg>
                             <div>
                                 <p class="contact-info__label">Dirección</p>
-                                <p class="contact-info__value">Llano Chico, Quito<br>Ecuador</p>
+                                <p class="contact-info__value" data-branch-dynamic="address">Llano Chico, Quito, Ecuador</p>
                             </div>
                         </div>
                         <div class="contact-info__item">
@@ -188,7 +188,7 @@
                             </svg>
                             <div>
                                 <p class="contact-info__label">Teléfono</p>
-                                <p class="contact-info__value">+593 98 842 2770</p>
+                                <p class="contact-info__value"><a href="tel:+593988422770" data-branch-dynamic="phone" style="color: inherit; text-decoration: none;">+593 98 842 2770</a></p>
                             </div>
                         </div>
                         <div class="contact-info__item">
@@ -210,13 +210,13 @@
                             </svg>
                             <div>
                                 <p class="contact-info__label">Horario</p>
-                                <p class="contact-info__value">Lunes a Domingo: 10:00 - 20:00</p>
+                                <p class="contact-info__value" data-branch-dynamic="hours">Lunes a Domingo: 10:00 - 20:00</p>
                             </div>
                         </div>
 
                         <div class="contact-map"
                             style="margin-top: var(--space-6); border-radius: var(--radius-lg); overflow: hidden; height: 300px; border: 1px solid var(--color-gray);">
-                            <iframe
+                            <iframe data-branch-dynamic="map"
                                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.8071991201023!2d-78.44604192503535!3d-0.13528119986338483!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fc52de96153%3A0x35f5708deeee0cf7!2sKORTZEN!5e0!3m2!1sen!2sec!4v1786588668585!5m2!1sen!2sec"
                                 width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
                                 referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -326,7 +326,7 @@
         </svg>
     </a>
     <script src="/js/client-auth.js?v=100"></script>
-    <script src="/js/branch-selector.js?v=19000"></script>
+    <script src="/js/branch-selector.js?v=25000"></script>
     <script type="module" src="/js/main.js"></script>
 </body>
 </html>

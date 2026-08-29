@@ -14,11 +14,19 @@ async function fetchBranches() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-        const response = await fetch('/api/get_sucursales.php', { signal: controller.signal });
+        const response = await fetch('/api/get_sucursales.php?t=' + Date.now(), { signal: controller.signal });
         clearTimeout(timeoutId);
         const json = await response.json();
         if (json.success && json.data && json.data.length > 0) {
             cachedBranches = json.data;
+            // Actualizar la referencia de sucursal seleccionada con los datos más recientes del servidor
+            const savedId = localStorage.getItem(BRANCH_STORAGE_KEY);
+            if (savedId) {
+                const refreshed = cachedBranches.find(b => b.id == savedId && !b.isProximamente && b.estado === 'activo');
+                if (refreshed) {
+                    currentSelectedBranch = refreshed;
+                }
+            }
             return cachedBranches;
         }
     } catch (e) {
@@ -45,8 +53,6 @@ async function fetchBranches() {
  * Obtener la sucursal seleccionada actualmente
  */
 function getSelectedBranch() {
-    if (currentSelectedBranch) return currentSelectedBranch;
-
     const savedId = localStorage.getItem(BRANCH_STORAGE_KEY);
     if (savedId) {
         if (cachedBranches.length > 0) {
@@ -56,8 +62,15 @@ function getSelectedBranch() {
                 return currentSelectedBranch;
             }
         } else {
-            // Si cachedBranches aún se está cargando de la API, devolver id preservado de localStorage
-            return { id: parseInt(savedId) };
+            return currentSelectedBranch || { id: parseInt(savedId) };
+        }
+    }
+
+    if (currentSelectedBranch && cachedBranches.length > 0) {
+        const refreshed = cachedBranches.find(b => b.id == currentSelectedBranch.id);
+        if (refreshed) {
+            currentSelectedBranch = refreshed;
+            return currentSelectedBranch;
         }
     }
 
@@ -359,52 +372,66 @@ function updateBranchInfoBar() {
 }
 
 /**
- * Actualiza el Footer global en todas las páginas según la sucursal seleccionada
+ * Actualiza el Footer global y las secciones informativas en todas las páginas según la sucursal seleccionada
  */
 function updateGlobalFooter(branch) {
     if (!branch) return;
 
-    // 1. Dirección en Footer
-    const addressElems = document.querySelectorAll('[data-branch-dynamic="address"], .footer__branch-address');
-    addressElems.forEach(el => {
-        el.textContent = branch.address || branch.direccion || 'Llano Chico, Quito, Ecuador';
+    const branchName = branch.name || branch.nombre || 'KORTZEN';
+    const branchAddress = branch.address || branch.direccion || 'Llano Chico, Quito, Ecuador';
+    const branchPhone = branch.phone || branch.telefono || '+593 98 842 2770';
+    const open = branch.openTime || '10:00';
+    const close = branch.closeTime || '20:00';
+    const scheduleText = `Lunes a Domingo: ${open} - ${close}`;
+    const scheduleShort = `Lun - Dom: ${open} - ${close}`;
+
+    // 1. Nombres dinámicos
+    document.querySelectorAll('[data-branch-dynamic="name"]').forEach(el => {
+        el.textContent = branchName;
     });
 
-    // 2. Teléfono / WhatsApp en Footer
+    // 2. Dirección en Footer y Contacto
+    const addressElems = document.querySelectorAll('[data-branch-dynamic="address"], .footer__branch-address');
+    addressElems.forEach(el => {
+        el.textContent = branchAddress;
+    });
+
+    // 3. Teléfono / WhatsApp en Footer y Contacto
     const phoneElems = document.querySelectorAll('[data-branch-dynamic="phone"], .footer__branch-phone');
     phoneElems.forEach(el => {
-        const phoneVal = branch.phone || branch.telefono || '+593 98 842 2770';
-        el.textContent = phoneVal;
+        el.textContent = branchPhone;
         if (el.tagName === 'A') {
-            const cleanDigits = phoneVal.replace(/\D/g, '');
+            const cleanDigits = branchPhone.replace(/\D/g, '');
             el.href = cleanDigits ? `tel:+${cleanDigits}` : '#';
         }
     });
 
-    // 3. Horarios en Footer
+    // 4. Horarios en Footer y Contacto
     const hoursElems = document.querySelectorAll('[data-branch-dynamic="hours"], .footer__schedule-time, .footer__branch-hours');
     hoursElems.forEach(el => {
-        const open = branch.openTime || '10:00';
-        const close = branch.closeTime || '20:00';
-        el.textContent = `Lun - Dom: ${open} - ${close}`;
+        el.textContent = el.classList.contains('contact-info__value') ? scheduleText : scheduleShort;
     });
 
-    // 4. Mapa Google Maps en Footer
-    const mapIframe = document.getElementById('footer-map-iframe') || document.querySelector('[data-branch-dynamic="map"]');
-    if (mapIframe) {
+    // 5. Mapa Google Maps en Footer y Contacto
+    const mapIframes = document.querySelectorAll('#footer-map-iframe, [data-branch-dynamic="map"], .contact-map iframe');
+    mapIframes.forEach(mapIframe => {
         if (branch.mapa_url && branch.mapa_url.length > 10) {
-            mapIframe.src = branch.mapa_url;
-            const container = mapIframe.closest('.footer__map-section') || mapIframe.parentElement;
+            let finalMapUrl = branch.mapa_url.trim();
+            if (!finalMapUrl.includes('/embed') && (finalMapUrl.includes('google.com/maps') || finalMapUrl.includes('goo.gl/maps'))) {
+                finalMapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(finalMapUrl)}&output=embed`;
+            }
+            mapIframe.src = finalMapUrl;
+            const container = mapIframe.closest('.footer__map-section, .contact-map') || mapIframe.parentElement;
             if (container) container.style.display = 'block';
         } else if (branch.id == 1) {
             mapIframe.src = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.8071991201023!2d-78.44604192503535!3d-0.13528119986338483!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fc52de96153%3A0x35f5708deeee0cf7!2sKORTZEN!5e0!3m2!1sen!2sec!4v1786588668585!5m2!1sen!2sec";
-            const container = mapIframe.closest('.footer__map-section') || mapIframe.parentElement;
+            const container = mapIframe.closest('.footer__map-section, .contact-map') || mapIframe.parentElement;
             if (container) container.style.display = 'block';
         } else {
-            const container = mapIframe.closest('.footer__map-section') || mapIframe.parentElement;
-            if (container) container.style.display = 'none';
+            const container = mapIframe.closest('.footer__map-section, .contact-map') || mapIframe.parentElement;
+            if (container && mapIframe.id === 'footer-map-iframe') container.style.display = 'none';
         }
-    }
+    });
 }
 
 /**

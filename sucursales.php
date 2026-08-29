@@ -22,6 +22,18 @@ include 'includes/header.php';
     <?php endif; ?>
 </div>
 
+<?php if (isset($_GET['success'])): ?>
+    <div style="background: rgba(46, 204, 113, 0.12); border: 1px solid #2ECC71; color: #27ae60; padding: 14px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 18px;">✓</span> <?php echo htmlspecialchars($_GET['success']); ?>
+    </div>
+<?php endif; ?>
+
+<?php if (isset($_GET['error'])): ?>
+    <div style="background: rgba(231, 76, 60, 0.12); border: 1px solid #E74C3C; color: #c0392b; padding: 14px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 18px;">⚠</span> <?php echo htmlspecialchars($_GET['error']); ?>
+    </div>
+<?php endif; ?>
+
 <style>
     .page-header {
         display: flex;

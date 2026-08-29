@@ -132,6 +132,12 @@ include 'includes/header.php';
         <?php echo $isEdit ? htmlspecialchars($sucursal['nombre']) : 'Nueva Sucursal'; ?>
     </h1>
 
+    <?php if (isset($_GET['error'])): ?>
+        <div style="background: rgba(231, 76, 60, 0.12); border: 1px solid #E74C3C; color: #c0392b; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; font-size: 13px;">
+            ⚠ <?php echo htmlspecialchars($_GET['error']); ?>
+        </div>
+    <?php endif; ?>
+
     <form method="POST" action="api/sucursales_action.php">
         <input type="hidden" name="action" value="<?php echo $isEdit ? 'update' : 'create'; ?>">
         <?php if ($isEdit): ?>
@@ -150,6 +156,13 @@ include 'includes/header.php';
             <input type="text" name="direccion" class="form-input"
                 value="<?php echo $isEdit ? htmlspecialchars($sucursal['direccion']) : ''; ?>"
                 placeholder="Calle Gran Vía, 42 - Madrid" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" name="telefono" class="form-input"
+                value="<?php echo $isEdit ? htmlspecialchars($sucursal['telefono']) : ''; ?>"
+                placeholder="+593 98 842 2770" required>
         </div>
 
         <div class="form-group">

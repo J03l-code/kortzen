@@ -132,6 +132,12 @@ include 'includes/header.php';
         <?php echo $isEdit ? htmlspecialchars($sucursal['nombre']) : 'Nueva Sucursal'; ?>
     </h1>
 
+    <?php if (isset($_GET['error'])): ?>
+        <div style="background: rgba(231, 76, 60, 0.12); border: 1px solid #E74C3C; color: #c0392b; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; font-size: 13px;">
+            ⚠ <?php echo htmlspecialchars($_GET['error']); ?>
+        </div>
+    <?php endif; ?>
+
     <form method="POST" action="api/sucursales_action.php">
         <input type="hidden" name="action" value="<?php echo $isEdit ? 'update' : 'create'; ?>">
         <?php if ($isEdit): ?>
@@ -168,16 +174,20 @@ include 'includes/header.php';
             </select>
         </div>
 
+        <?php
+        $valApertura = ($isEdit && !empty($sucursal['horario_apertura'])) ? date('H:i', strtotime($sucursal['horario_apertura'])) : '10:00';
+        $valCierre = ($isEdit && !empty($sucursal['horario_cierre'])) ? date('H:i', strtotime($sucursal['horario_cierre'])) : '20:00';
+        ?>
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
                 <label class="form-label">Apertura</label>
                 <input type="time" name="horario_apertura" class="form-input"
-                    value="<?php echo $isEdit ? htmlspecialchars($sucursal['horario_apertura'] ?? '10:00') : '10:00'; ?>">
+                    value="<?php echo htmlspecialchars($valApertura); ?>">
             </div>
             <div>
                 <label class="form-label">Cierre</label>
                 <input type="time" name="horario_cierre" class="form-input"
-                    value="<?php echo $isEdit ? htmlspecialchars($sucursal['horario_cierre'] ?? '20:00') : '20:00'; ?>">
+                    value="<?php echo htmlspecialchars($valCierre); ?>">
             </div>
         </div>
 

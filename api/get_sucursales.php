@@ -5,31 +5,44 @@
  */
 require_once __DIR__ . '/../config.php';
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 try {
     $pdo = getConnection();
 
-    // Intentar consulta con columnas extendidas
+    // Obtener columnas existentes de forma segura
+    $existingCols = [];
     try {
-        $stmt = $pdo->prepare("
-            SELECT id, nombre, direccion, telefono, 
-                   DATE_FORMAT(COALESCE(horario_apertura, '10:00:00'), '%H:%i') as horario_apertura, 
-                   DATE_FORMAT(COALESCE(horario_cierre, '20:00:00'), '%H:%i') as horario_cierre, 
-                   COALESCE(estado, 'activo') as estado,
-                   imagen_url, mapa_url
-            FROM sucursales 
-            WHERE COALESCE(estado, 'activo') IN ('activo', 'proximamente')
-            ORDER BY CASE WHEN COALESCE(estado, 'activo') = 'activo' THEN 1 ELSE 2 END, id ASC
-        ");
-        $stmt->execute();
-        $sucursales = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $exSql) {
-        // Fallback básico si la tabla aún no tiene las nuevas columnas
-        $stmt = $pdo->prepare("SELECT * FROM sucursales");
-        $stmt->execute();
-        $sucursales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $pdo->query("SHOW COLUMNS FROM sucursales");
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $existingCols[] = $r['Field'];
+        }
+    } catch (Exception $e) {}
+
+    $hasEstado = in_array('estado', $existingCols);
+    $hasApertura = in_array('horario_apertura', $existingCols);
+    $hasCierre = in_array('horario_cierre', $existingCols);
+    $hasMapa = in_array('mapa_url', $existingCols);
+
+    $sql = "SELECT id, nombre, direccion, telefono";
+    if ($hasApertura) $sql .= ", DATE_FORMAT(COALESCE(horario_apertura, '10:00:00'), '%H:%i') as horario_apertura";
+    if ($hasCierre) $sql .= ", DATE_FORMAT(COALESCE(horario_cierre, '20:00:00'), '%H:%i') as horario_cierre";
+    if ($hasEstado) $sql .= ", COALESCE(estado, 'activo') as estado";
+    if ($hasMapa) $sql .= ", mapa_url";
+    $sql .= " FROM sucursales";
+
+    if ($hasEstado) {
+        $sql .= " WHERE COALESCE(estado, 'activo') IN ('activo', 'proximamente')";
+        $sql .= " ORDER BY CASE WHEN COALESCE(estado, 'activo') = 'activo' THEN 1 ELSE 2 END, id ASC";
+    } else {
+        $sql .= " ORDER BY id ASC";
     }
+
+    $stmt = $pdo->query($sql);
+    $sucursales = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Formatear datos para cliente
     $formatted = [];
@@ -37,13 +50,16 @@ try {
         $estado = $s['estado'] ?? 'activo';
         if ($estado === 'inactivo') continue;
 
+        $openTime = !empty($s['horario_apertura']) ? date('H:i', strtotime($s['horario_apertura'])) : '10:00';
+        $closeTime = !empty($s['horario_cierre']) ? date('H:i', strtotime($s['horario_cierre'])) : '20:00';
+
         $formatted[] = [
             'id' => intval($s['id']),
             'name' => $s['nombre'],
             'address' => $s['direccion'] ?: 'Quito',
             'phone' => $s['telefono'] ?: '',
-            'openTime' => !empty($s['horario_apertura']) ? date('H:i', strtotime($s['horario_apertura'])) : '10:00',
-            'closeTime' => !empty($s['horario_cierre']) ? date('H:i', strtotime($s['horario_cierre'])) : '20:00',
+            'openTime' => $openTime,
+            'closeTime' => $closeTime,
             'estado' => $estado,
             'isProximamente' => ($estado === 'proximamente'),
             'mapa_url' => $s['mapa_url'] ?? null
