@@ -1275,6 +1275,7 @@ if ($currentUser['rol'] === 'admin_local') {
             formData.append('id', id);
             formData.append('estado', estado);
             formData.append('propina', propina);
+            formData.append('ajax', '1');
             formData.append('redirect_source', 'dashboard');
 
             fetch('api/citas_action.php', {

@@ -318,9 +318,24 @@ include 'includes/header.php';
                         </td>
 
                         <td>
-                            <span class="status-badge status-<?php echo $cita['estado']; ?>">
-                                <?php echo strtoupper($cita['estado']); ?>
-                            </span>
+                            <?php if ($currentUser['rol'] === 'admin' || $currentUser['rol'] === 'admin_local'): ?>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <select id="select_estado_citas_<?php echo $cita['id']; ?>" onchange="prepararGuardarEstadoCitas(<?php echo $cita['id']; ?>)" style="padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
+                                        <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                                        <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>Confirmada</option>
+                                        <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>En Atención</option>
+                                        <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>Completada</option>
+                                        <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>Cancelada</option>
+                                    </select>
+                                    <button type="button" id="btn_guardar_citas_<?php echo $cita['id']; ?>" onclick="guardarEstadoDirectoCitas(<?php echo $cita['id']; ?>, '<?php echo htmlspecialchars(addslashes($cita['cliente_nombre'])); ?>')" style="padding: 6px 14px; border-radius: 6px; background: #111111; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.15); font-weight: 800; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); transition: all 0.2s;" title="Guardar cambio de estado en toda la plataforma">
+                                        <i class="fas fa-check-circle" style="font-size: 11px; color: var(--primary-gold);"></i> Guardar
+                                    </button>
+                                </div>
+                            <?php else: ?>
+                                <span class="status-badge status-<?php echo $cita['estado']; ?>">
+                                    <?php echo strtoupper($cita['estado']); ?>
+                                </span>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <div class="actions-cell">
@@ -470,7 +485,73 @@ include 'includes/header.php';
             <input type="number" name="cantidades[]" placeholder="Cant." class="filter-select" style="width: 80px;" min="1" step="0.1">
             <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: #E74C3C; cursor: pointer;">✕</button>
         `;
-        document.getElementById('materialesList').appendChild(div);
+    function prepararGuardarEstadoCitas(id) {
+        const select = document.getElementById('select_estado_citas_' + id);
+        if (!select) return;
+        const nuevoEstado = select.value;
+
+        const bgMap = {
+            'completada': 'rgba(46, 204, 113, 0.15)',
+            'en_atencion': 'rgba(52, 152, 219, 0.15)',
+            'confirmada': 'rgba(241, 196, 15, 0.15)',
+            'cancelada': 'rgba(231, 76, 60, 0.15)',
+            'pendiente': 'rgba(149, 165, 166, 0.15)'
+        };
+        const colorMap = {
+            'completada': '#27ae60',
+            'en_atencion': '#2980b9',
+            'confirmada': '#d35400',
+            'cancelada': '#c0392b',
+            'pendiente': '#7f8c8d'
+        };
+        select.style.background = bgMap[nuevoEstado] || 'rgba(149, 165, 166, 0.15)';
+        select.style.color = colorMap[nuevoEstado] || '#7f8c8d';
+    }
+
+    function guardarEstadoDirectoCitas(id, clienteNombre) {
+        const select = document.getElementById('select_estado_citas_' + id);
+        if (!select) return;
+        const nuevoEstado = select.value;
+
+        if (nuevoEstado === 'completada') {
+            abrirModalTerminar(id);
+        } else {
+            const btn = document.getElementById('btn_guardar_citas_' + id);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'cambiar_estado');
+            formData.append('id', id);
+            formData.append('estado', nuevoEstado);
+            formData.append('ajax', '1');
+
+            fetch('api/citas_action.php', {
+                method: 'POST',
+                body: formData,
+                headers: { 
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Error al guardar: ' + (data.error || data.message || 'Ocurrió un error en el servidor.'));
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> Guardar';
+                    }
+                }
+            })
+            .catch(err => {
+                window.location.reload();
+            });
+        }
     }
 </script>
 

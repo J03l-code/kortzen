@@ -354,7 +354,8 @@ try {
 
             registrarLog('EDITAR', 'citas', $id, "Estado de cita #$id cambiado de '$estadoAnterior' a '$nuevoEstado'");
 
-            $isAjax = isset($_GET['ajax']) 
+            $isAjax = isset($_POST['ajax'])
+                || isset($_GET['ajax'])
                 || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
                 || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strpos($_SERVER['HTTP_X_REQUESTED_WITH'], 'XMLHttpRequest') !== false);
 
