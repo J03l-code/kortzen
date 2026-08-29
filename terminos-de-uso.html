@@ -37,31 +37,55 @@
     <script src="/js/pwa.js" defer></script>
 
     <style>
+        .page-header--legal {
+            padding-top: 160px !important;
+            padding-bottom: 45px !important;
+            background-color: var(--color-charcoal, #F7F7F7) !important;
+            text-align: center;
+        }
+
         .legal-pill {
             display: inline-block;
-            padding: 6px 20px;
+            padding: 6px 22px;
             background: #FAF6EE;
             border: 1px solid #E3CAA5;
             border-radius: 50px;
             color: #C59B27;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
+        }
+
+        .page-header__title {
+            font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif);
+            font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+            font-weight: 500;
+            color: #111111;
+            margin-bottom: 12px;
+            line-height: 1.15;
+        }
+
+        .page-header__description {
+            font-size: 1rem;
+            color: #666666;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.6;
         }
 
         .legal-wrapper {
             background-color: var(--color-charcoal, #F7F7F7);
-            padding: 60px 0 100px;
+            padding: 20px 0 90px;
         }
 
         .legal-box {
             background: #FFFFFF;
             border: 2px solid #111111;
             border-radius: 12px;
-            padding: 50px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+            padding: 48px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
             color: #222222;
             font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
             line-height: 1.85;
@@ -70,12 +94,12 @@
 
         .legal-box h2 {
             font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif);
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             color: #111111;
             margin-top: 36px;
             margin-bottom: 14px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #E5E5E5;
+            border-bottom: 1px solid #EAEAEA;
             letter-spacing: 0.5px;
         }
 
@@ -96,7 +120,7 @@
 
         .legal-box ul li {
             position: relative;
-            padding-left: 24px;
+            padding-left: 22px;
             margin-bottom: 10px;
             color: #444444;
         }
@@ -104,7 +128,7 @@
         .legal-box ul li::before {
             content: "—";
             position: absolute;
-            left: 4px;
+            left: 2px;
             color: #111111;
             font-weight: bold;
         }
@@ -145,15 +169,19 @@
         }
 
         @media (max-width: 768px) {
+            .page-header--legal {
+                padding-top: 130px !important;
+                padding-bottom: 30px !important;
+            }
             .legal-wrapper {
-                padding: 30px 0 60px;
+                padding: 10px 0 60px;
             }
             .legal-box {
-                padding: 26px 18px;
+                padding: 24px 18px;
                 border-width: 1.5px;
             }
             .legal-box h2 {
-                font-size: 1.3rem;
+                font-size: 1.25rem;
             }
         }
     </style>
@@ -193,9 +221,9 @@
 
     <main>
         <!-- Page Header -->
-        <section class="page-header">
+        <section class="page-header page-header--legal">
             <div class="container">
-                <span class="legal-pill">Términos de Servicio</span>
+                <span class="legal-pill">TÉRMINOS DE SERVICIO</span>
                 <h1 class="page-header__title">Términos y Condiciones de Uso</h1>
                 <p class="page-header__description">
                     Condiciones contractuales, políticas de agendamiento y normas de servicio de KORTZEN Barbería.
@@ -353,10 +381,11 @@
     <!-- WhatsApp Flotante -->
     <a href="https://wa.me/5930988422770" class="floating-whatsapp-btn" target="_blank" title="Contáctanos por WhatsApp">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
         </svg>
     </a>
     <script src="/js/client-auth.js?v=100"></script>
+    <script src="/js/branch-selector.js?v=19000"></script>
     <script type="module" src="/js/main.js"></script>
 </body>
 </html>
