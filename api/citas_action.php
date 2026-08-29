@@ -265,6 +265,19 @@ try {
                 throw new Exception('La cita no existe.');
             }
 
+            // Validar Permisos de Acceso y Propiedad de Cita (RBAC & IDOR Protection)
+            $userRol = $_SESSION['user_rol'] ?? '';
+            $userId = intval($_SESSION['user_id'] ?? 0);
+            $userSucursal = intval($_SESSION['user_sucursal_id'] ?? 0);
+
+            if ($userRol === 'barbero' && intval($citaRow['barbero_id']) !== $userId) {
+                throw new Exception('Acceso denegado: Solo puedes modificar tus propias citas.');
+            }
+
+            if ($userRol === 'admin_local' && $userSucursal > 0 && intval($citaRow['sucursal_id']) !== $userSucursal) {
+                throw new Exception('Acceso denegado: Esta cita pertenece a otra sucursal.');
+            }
+
             $estadoAnterior = $citaRow['estado'];
 
             // Actualizar estado (y propina si se envió)
@@ -388,8 +401,15 @@ try {
                 throw new Exception('ID de cita inválido.');
             }
 
+            $userRol = $_SESSION['user_rol'] ?? '';
+            $userSucursal = intval($_SESSION['user_sucursal_id'] ?? 0);
+
+            if ($userRol === 'barbero') {
+                throw new Exception('Acceso denegado: Los barberos no tienen permisos para eliminar citas.');
+            }
+
             $stmtCDetails = $pdo->prepare("
-                SELECT c.nombre as cliente_nombre, s.nombre as servicio_nombre
+                SELECT cita.sucursal_id, c.nombre as cliente_nombre, s.nombre as servicio_nombre
                 FROM citas cita
                 LEFT JOIN clientes c ON cita.cliente_id = c.id
                 LEFT JOIN servicios s ON cita.servicio_id = s.id
@@ -397,8 +417,17 @@ try {
             ");
             $stmtCDetails->execute([$id]);
             $cD = $stmtCDetails->fetch(PDO::FETCH_ASSOC);
-            $cNombre = $cD ? $cD['cliente_nombre'] : "Cliente";
-            $sNombre = $cD ? $cD['servicio_nombre'] : "Servicio";
+
+            if (!$cD) {
+                throw new Exception('La cita a eliminar no existe.');
+            }
+
+            if ($userRol === 'admin_local' && $userSucursal > 0 && intval($cD['sucursal_id']) !== $userSucursal) {
+                throw new Exception('Acceso denegado: No puedes eliminar citas de otra sucursal.');
+            }
+
+            $cNombre = $cD['cliente_nombre'] ?? "Cliente";
+            $sNombre = $cD['servicio_nombre'] ?? "Servicio";
 
             $sql = "DELETE FROM citas WHERE id = ?";
             $stmt = $pdo->prepare($sql);

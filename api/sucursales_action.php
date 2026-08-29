@@ -2,9 +2,9 @@
 require_once '../config.php';
 
 // Asegurar que el usuario esté logueado
-if (!isLoggedIn()) {
+if (!isLoggedIn() || ($_SESSION['user_rol'] ?? '') !== 'admin') {
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'No autorizado']);
+    echo json_encode(['success' => false, 'message' => 'Acceso denegado. Solo administradores pueden gestionar sucursales.']);
     exit;
 }
 

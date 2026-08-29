@@ -1,9 +1,9 @@
 <?php
 require_once '../config.php';
 
-if (!isLoggedIn()) {
+if (!isLoggedIn() || !in_array($_SESSION['user_rol'] ?? '', ['admin', 'admin_local'])) {
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'No autorizado']);
+    echo json_encode(['success' => false, 'message' => 'Acceso no autorizado.']);
     exit;
 }
 
