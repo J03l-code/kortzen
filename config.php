@@ -61,16 +61,18 @@ function validarPwaToken($clienteId, $email, $token) {
     return hash_equals($expected, $token);
 }
 
-// Configuración de sesión persistente (PWA 365 Días)
+// Configuración optimizada de sesiones (Evita saturación de inodes en servidor)
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_lifetime', 31536000); // 1 año en segundos
-ini_set('session.gc_maxlifetime', 31536000);  // 1 año en segundos
+ini_set('session.cookie_lifetime', 2592000); // 30 días en cookie de navegador
+ini_set('session.gc_maxlifetime', 86400);    // 24 horas de inactividad para archivos en disco
+ini_set('session.gc_probability', 1);        // Activar recolección de basura automática
+ini_set('session.gc_divisor', 100);          // 1% de probabilidad de limpieza en cada carga
 
-// Iniciar sesión con parámetros persistentes de 1 año
+// Iniciar sesión con parámetros seguros
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
-        'lifetime' => 31536000,
+        'lifetime' => 2592000,
         'path' => '/',
         'domain' => '',
         'secure' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
