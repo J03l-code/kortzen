@@ -68,30 +68,34 @@
 /* =================== HEADER & MOBILE NAV UNIVERSAL FIX =================== */
 
 .header {
-    position: fixed;
+    position: fixed !important;
     top: 42px !important;
-    left: 0;
-    right: 0;
-    height: 52px !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 56px !important;
     z-index: 10000 !important;
     display: flex !important;
     align-items: center !important;
     padding: 0 !important;
-    background-color: transparent;
+    background: #FFFFFF !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
     transition: all var(--transition-base);
 }
 
-/* En todas las páginas secundarias (no home), el header siempre tiene fondo blanco sólido/translúcido con borde */
-body:not(.page-home) .header {
-    background-color: rgba(255, 255, 255, 0.98) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+body.page-home .header:not(.header--scrolled):not(.header--menu-open):not(.menu-open) {
+    background: transparent !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
+body:not(.page-home) main {
+    padding-top: 98px !important; /* 42px (Top Bar) + 56px (Header) */
 }
 
 .header--scrolled {
     top: 42px !important;
-    background-color: rgba(255, 255, 255, 0.98) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
     backdrop-filter: blur(10px);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
 }
@@ -939,28 +943,53 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
     }
 }
 
-/* =================== PAGE HEADER =================== */
+/* =================== PAGE HEADER LUXURY DESIGN =================== */
 
 .page-header {
-    padding: calc(42px + 52px + 3rem) 0 var(--space-12) !important;
-    background-color: var(--color-charcoal);
-    text-align: center;
+    padding: 3.5rem 1.5rem 3rem !important;
+    background-color: #F8F8F8 !important;
+    border-bottom: 1px solid #ECECEC !important;
+    text-align: center !important;
+    position: relative !important;
+    z-index: 1 !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+.page-header .container {
+    max-width: 900px !important;
+    margin: 0 auto !important;
+    text-align: center !important;
 }
 
 .page-header__subtitle {
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-widest);
-    color: var(--color-gold);
-    margin-bottom: var(--space-4);
+    display: block !important;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif) !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 3px !important;
+    color: #8C8C8C !important;
+    margin: 0 auto 0.5rem auto !important;
+    text-align: center !important;
 }
 
 .page-header__title {
-    margin-bottom: var(--space-4);
+    font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif) !important;
+    font-size: clamp(2.5rem, 5vw, 3.5rem) !important;
+    font-weight: 700 !important;
+    color: #111111 !important;
+    line-height: 1.15 !important;
+    margin: 0 auto 0.75rem auto !important;
+    text-align: center !important;
 }
 
 .page-header__description {
-    max-width: 600px;
-    margin-inline: auto;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif) !important;
+    font-size: 1.05rem !important;
+    color: #666666 !important;
+    max-width: 580px !important;
+    margin: 0 auto !important;
+    line-height: 1.6 !important;
+    text-align: center !important;
 }
