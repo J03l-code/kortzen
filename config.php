@@ -26,8 +26,8 @@ if (file_exists(__DIR__ . '/.env')) {
 // Configuración de la Base de Datos
 $db_host = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false) ? '195.35.61.92' : 'localhost';
 define('DB_HOST', getenv('DB_HOST') ?: $db_host);
-define('DB_NAME', getenv('DB_NAME') ?: 'u434851126_kortzen');
-define('DB_USER', getenv('DB_USER') ?: 'u434851126_kortzenusr');
+define('DB_NAME', getenv('DB_NAME') ?: 'u434851126_barb');
+define('DB_USER', getenv('DB_USER') ?: 'u434851126_barb_usr');
 define('DB_PASS', getenv('DB_PASS') ?: 'Kortzen2026!');
 define('DB_CHARSET', 'utf8mb4');
 
