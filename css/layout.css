@@ -77,8 +77,16 @@
     display: flex !important;
     align-items: center !important;
     padding: 0 !important;
-    background-color: transparent !important;
+    background-color: transparent;
     transition: all var(--transition-base);
+}
+
+/* En todas las páginas secundarias (no home), el header siempre tiene fondo blanco sólido/translúcido con borde */
+body:not(.page-home) .header {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 .header--scrolled {
@@ -934,7 +942,7 @@ body:has(.mobile-nav--active) .header .header__logo-text span,
 /* =================== PAGE HEADER =================== */
 
 .page-header {
-    padding: calc(var(--space-32) + 80px) 0 var(--space-16);
+    padding: calc(42px + 52px + 3rem) 0 var(--space-12) !important;
     background-color: var(--color-charcoal);
     text-align: center;
 }
