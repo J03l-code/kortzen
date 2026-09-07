@@ -1,15 +1,50 @@
 <?php
 require_once 'config.php';
 requireLogin();
-requirePermission(canManageSchedules());
+
+// Permisos seguros
+if (!canManageSchedules() && !isAdminTecnico() && !in_array($_SESSION['user_rol'] ?? '', ['admin', 'superadmin', 'administrador', 'admin_local'])) {
+    header('Location: dashboard.php?error=' . urlencode('No tienes permiso para gestionar horarios.'));
+    exit;
+}
+
+$pdo = getConnection();
+
+// Auto-migración segura de bloqueos_horas
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS bloqueos_horas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            barbero_id INT NOT NULL,
+            fecha DATE NOT NULL,
+            hora_inicio TIME NOT NULL,
+            hora_fin TIME NOT NULL,
+            motivo VARCHAR(255) DEFAULT 'Bloqueo temporal',
+            creado_por INT NULL,
+            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_barbero (barbero_id),
+            INDEX idx_fecha (fecha)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+} catch (Exception $e_bh) {}
 
 $currentUser = getCurrentUser();
 
-// Obtener todos los barberos
-$barberos = query("SELECT id, nombre, email, sucursal_id FROM usuarios WHERE rol = 'barbero' ORDER BY nombre ASC");
+// Obtener todos los barberos o usuarios del personal
+$barberos = [];
+try {
+    $barberos = query("SELECT id, nombre, email, sucursal_id, rol FROM usuarios WHERE rol IN ('barbero', 'admin_local', 'admin') ORDER BY nombre ASC");
+} catch (Exception $e) {
+    $barberos = [];
+}
 
 // Obtener sucursales para filtro
-$sucursales = query("SELECT id, nombre FROM sucursales ORDER BY nombre ASC");
+$sucursales = [];
+try {
+    $sucursales = query("SELECT id, nombre FROM sucursales ORDER BY nombre ASC");
+} catch (Exception $e) {
+    $sucursales = [];
+}
 
 // Días de la semana
 $diasSemana = [
@@ -30,27 +65,32 @@ if ($barberoId <= 0) {
 $barberoSeleccionado = null;
 $horarios = [];
 $diasBloqueados = [];
+$bloqueosHoras = [];
 
 if ($barberoId) {
     // Obtener datos del barbero o staff
-    $result = query("SELECT * FROM usuarios WHERE id = ?", [$barberoId]);
-    if (!empty($result)) {
-        $barberoSeleccionado = $result[0];
-        
-        // Obtener horarios
-        $horarios = query("SELECT * FROM horarios_barberos WHERE barbero_id = ? ORDER BY dia_semana ASC", [$barberoId]);
-        
-        // Obtener días bloqueados (próximos 60 días)
-        $diasBloqueados = query(
-            "SELECT * FROM dias_bloqueados WHERE barbero_id = ? AND fecha >= CURDATE() ORDER BY fecha ASC",
-            [$barberoId]
-        );
+    try {
+        $result = query("SELECT * FROM usuarios WHERE id = ?", [$barberoId]);
+        if (!empty($result)) {
+            $barberoSeleccionado = $result[0];
+            
+            // Obtener horarios
+            $horarios = query("SELECT * FROM horarios_barberos WHERE barbero_id = ? ORDER BY dia_semana ASC", [$barberoId]);
+            
+            // Obtener días bloqueados (próximos 60 días)
+            $diasBloqueados = query(
+                "SELECT * FROM dias_bloqueados WHERE barbero_id = ? AND fecha >= CURDATE() ORDER BY fecha ASC",
+                [$barberoId]
+            );
 
-        // Obtener BLOQUEOS POR HORA (próximos 60 días)
-        $bloqueosHoras = query(
-            "SELECT * FROM bloqueos_horas WHERE barbero_id = ? AND fecha >= CURDATE() ORDER BY fecha ASC, hora_inicio ASC",
-            [$barberoId]
-        );
+            // Obtener BLOQUEOS POR HORA (próximos 60 días)
+            $bloqueosHoras = query(
+                "SELECT * FROM bloqueos_horas WHERE barbero_id = ? AND fecha >= CURDATE() ORDER BY fecha ASC, hora_inicio ASC",
+                [$barberoId]
+            );
+        }
+    } catch (Exception $e_queries) {
+        // En caso de cualquier error en una consulta secundaria, aseguramos que la página cargue limpiamente
     }
 }
 

@@ -307,6 +307,23 @@ try {
     ");
     $status[] = "✓ Tabla `ventas_productos` lista";
 
+    // 17. BLOQUEOS HORAS
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `bloqueos_horas` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `barbero_id` INT NOT NULL,
+            `fecha` DATE NOT NULL,
+            `hora_inicio` TIME NOT NULL,
+            `hora_fin` TIME NOT NULL,
+            `motivo` VARCHAR(255) DEFAULT 'Bloqueo temporal',
+            `creado_por` INT NULL,
+            `fecha_creacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_barbero (`barbero_id`),
+            INDEX idx_fecha (`fecha`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    $status[] = "✓ Tabla `bloqueos_horas` lista";
+
     // Reestablecer foreign keys
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
 
