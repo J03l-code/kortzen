@@ -7,7 +7,10 @@ require_once 'config.php';
 requireLogin();
 
 $currentUser = getCurrentUser();
-if (!isAdminTecnico() && $currentUser['rol'] !== 'admin_local') {
+$userRol = $currentUser['rol'] ?? '';
+$isAllowed = isLoggedIn() && (isAdminTecnico() || canManageUsers() || in_array($userRol, ['admin', 'superadmin', 'administrador', 'admin_local']));
+
+if (!$isAllowed) {
     header('Location: dashboard.php?error=' . urlencode('Solo la administración puede ver el perfil completo del barbero.'));
     exit;
 }
@@ -21,7 +24,7 @@ if ($barbero_id <= 0) {
 
 $pdo = getConnection();
 
-// Auto-migración tabla inventario_barbero
+// Auto-migración segura de tablas y columnas requeridas
 try {
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS inventario_barbero (
@@ -39,6 +42,32 @@ try {
     ");
 } catch (Exception $e_invb) {}
 
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS ventas_productos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            cita_id INT NULL,
+            producto_id INT NOT NULL,
+            cantidad INT NOT NULL DEFAULT 1,
+            precio_unitario DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+            sucursal_id INT NOT NULL DEFAULT 1,
+            usuario_id INT NOT NULL,
+            INDEX idx_usuario (usuario_id),
+            INDEX idx_fecha (fecha)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+} catch (Exception $e_vp) {}
+
+try {
+    $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) DEFAULT 0.00 AFTER precio_final");
+} catch (Exception $e_prop) {}
+
+try {
+    $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_fin_semana DECIMAL(5,2) DEFAULT 50.00");
+    $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_productos DECIMAL(5,2) DEFAULT 10.00");
+} catch (Exception $e_com) {}
+
 // Obtener datos del barbero/usuario
 $stmtB = $pdo->prepare("
     SELECT u.*, s.nombre as sucursal_nombre 
@@ -55,27 +84,42 @@ if (!$barbero) {
 }
 
 // 1. Obtener Stock e Inventario Asignado al Barbero
-$stmtStock = $pdo->prepare("SELECT * FROM inventario_barbero WHERE barbero_id = ? ORDER BY producto ASC");
-$stmtStock->execute([$barbero_id]);
-$stockBarbero = $stmtStock->fetchAll(PDO::FETCH_ASSOC);
+$stockBarbero = [];
+try {
+    $stmtStock = $pdo->prepare("SELECT * FROM inventario_barbero WHERE barbero_id = ? ORDER BY producto ASC");
+    $stmtStock->execute([$barbero_id]);
+    $stockBarbero = $stmtStock->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $stockBarbero = [];
+}
 
 // Obtener inventario general central de la sucursal (para debitar automáticamente)
-$stmtCentral = $pdo->prepare("SELECT * FROM inventario WHERE (sucursal_id = ? OR sucursal_id IS NULL) ORDER BY producto ASC");
-$stmtCentral->execute([$barbero['sucursal_id']]);
-$inventarioCentral = $stmtCentral->fetchAll(PDO::FETCH_ASSOC);
+$inventarioCentral = [];
+try {
+    $stmtCentral = $pdo->prepare("SELECT * FROM inventario WHERE (sucursal_id = ? OR sucursal_id IS NULL) ORDER BY producto ASC");
+    $stmtCentral->execute([$barbero['sucursal_id']]);
+    $inventarioCentral = $stmtCentral->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $inventarioCentral = [];
+}
 
 // 2. Historial de Citas Atendidas por este Barbero
-$stmtCitas = $pdo->prepare("
-    SELECT c.*, cl.nombre as cliente_nombre, cl.telefono as cliente_telefono, s.nombre as servicio_nombre, suc.nombre as sucursal_nombre
-    FROM citas c
-    INNER JOIN clientes cl ON c.cliente_id = cl.id
-    INNER JOIN servicios s ON c.servicio_id = s.id
-    LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
-    WHERE c.barbero_id = ?
-    ORDER BY c.fecha_hora DESC
-");
-$stmtCitas->execute([$barbero_id]);
-$historialCitas = $stmtCitas->fetchAll(PDO::FETCH_ASSOC);
+$historialCitas = [];
+try {
+    $stmtCitas = $pdo->prepare("
+        SELECT c.*, cl.nombre as cliente_nombre, cl.telefono as cliente_telefono, s.nombre as servicio_nombre, suc.nombre as sucursal_nombre
+        FROM citas c
+        INNER JOIN clientes cl ON c.cliente_id = cl.id
+        INNER JOIN servicios s ON c.servicio_id = s.id
+        LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
+        WHERE c.barbero_id = ?
+        ORDER BY c.fecha_hora DESC
+    ");
+    $stmtCitas->execute([$barbero_id]);
+    $historialCitas = $stmtCitas->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $historialCitas = [];
+}
 
 // 3. Cálculos Financieros del Barbero
 $com_diaria = floatval($barbero['comision_porcentaje'] ?? 50);
@@ -85,31 +129,47 @@ $com_productos = floatval($barbero['comision_productos'] ?? 10.00);
 $monthStart = date('Y-m-01');
 $monthEnd = date('Y-m-t');
 
-// Ganancia Servicios + Productos Mes
-$stmtGanMesServ = $pdo->prepare("
-    SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN ? ELSE ? END) / 100)) as total
-    FROM citas 
-    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
-");
-$stmtGanMesServ->execute([$com_finde, $com_diaria, $barbero_id, $monthStart, $monthEnd]);
-$gananciaMesServicios = floatval($stmtGanMesServ->fetchColumn() ?? 0);
+// Ganancia Servicios Mes
+$gananciaMesServicios = 0.00;
+try {
+    $stmtGanMesServ = $pdo->prepare("
+        SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN ? ELSE ? END) / 100)) as total
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+    ");
+    $stmtGanMesServ->execute([$com_finde, $com_diaria, $barbero_id, $monthStart, $monthEnd]);
+    $gananciaMesServicios = floatval($stmtGanMesServ->fetchColumn() ?? 0);
+} catch (Exception $e) {
+    $gananciaMesServicios = 0.00;
+}
 
-$stmtGanMesProd = $pdo->prepare("
-    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * ? / 100)) as total
-    FROM ventas_productos 
-    WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
-");
-$stmtGanMesProd->execute([$com_productos, $barbero_id, $monthStart, $monthEnd]);
-$gananciaMesVentas = floatval($stmtGanMesProd->fetchColumn() ?? 0);
+// Ganancia Ventas Productos Mes
+$gananciaMesVentas = 0.00;
+try {
+    $stmtGanMesProd = $pdo->prepare("
+        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * ? / 100)) as total
+        FROM ventas_productos 
+        WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
+    ");
+    $stmtGanMesProd->execute([$com_productos, $barbero_id, $monthStart, $monthEnd]);
+    $gananciaMesVentas = floatval($stmtGanMesProd->fetchColumn() ?? 0);
+} catch (Exception $e) {
+    $gananciaMesVentas = 0.00;
+}
 
-// Propinas Mes (Rubro Aparte)
-$stmtPropMes = $pdo->prepare("
-    SELECT SUM(IFNULL(propina, 0)) as total
-    FROM citas 
-    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
-");
-$stmtPropMes->execute([$barbero_id, $monthStart, $monthEnd]);
-$propinasMes = floatval($stmtPropMes->fetchColumn() ?? 0);
+// Propinas Mes
+$propinasMes = 0.00;
+try {
+    $stmtPropMes = $pdo->prepare("
+        SELECT SUM(IFNULL(propina, 0)) as total
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+    ");
+    $stmtPropMes->execute([$barbero_id, $monthStart, $monthEnd]);
+    $propinasMes = floatval($stmtPropMes->fetchColumn() ?? 0);
+} catch (Exception $e) {
+    $propinasMes = 0.00;
+}
 
 $gananciaMesTotal = $gananciaMesServicios + $gananciaMesVentas + $propinasMes;
 
@@ -118,14 +178,19 @@ $totalCitas = count($historialCitas);
 $citasCompletadas = 0;
 $citasCanceladas = 0;
 foreach ($historialCitas as $c) {
-    if ($c['estado'] === 'completada') $citasCompletadas++;
-    if ($c['estado'] === 'cancelada') $citasCanceladas++;
+    if (($c['estado'] ?? '') === 'completada') $citasCompletadas++;
+    if (($c['estado'] ?? '') === 'cancelada') $citasCanceladas++;
 }
 
 // 4. Horarios Semanales del Barbero
-$stmtHorarios = $pdo->prepare("SELECT * FROM horarios_barberos WHERE barbero_id = ? ORDER BY dia_semana ASC");
-$stmtHorarios->execute([$barbero_id]);
-$horarios = $stmtHorarios->fetchAll(PDO::FETCH_ASSOC);
+$horarios = [];
+try {
+    $stmtHorarios = $pdo->prepare("SELECT * FROM horarios_barberos WHERE barbero_id = ? ORDER BY dia_semana ASC");
+    $stmtHorarios->execute([$barbero_id]);
+    $horarios = $stmtHorarios->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $horarios = [];
+}
 
 $diasNombres = [0 => 'Domingo', 1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado'];
 

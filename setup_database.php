@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * KORTZEN - Instalador Automático de Base de Datos
  * Ejecuta este script desde el navegador para crear todas las tablas y datos iniciales.
@@ -272,6 +272,40 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
     $status[] = "✓ Tabla `notificaciones_pwa` lista";
+
+    // 15. INVENTARIO BARBERO
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `inventario_barbero` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `barbero_id` INT NOT NULL,
+            `sucursal_id` INT DEFAULT NULL,
+            `producto` VARCHAR(255) NOT NULL,
+            `cantidad` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            `unidad` VARCHAR(50) DEFAULT 'unidades',
+            `precio` DECIMAL(10,2) DEFAULT 0.00,
+            `descripcion` TEXT NULL,
+            `fecha_actualizacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_barbero (`barbero_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    $status[] = "✓ Tabla `inventario_barbero` lista";
+
+    // 16. VENTAS PRODUCTOS
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `ventas_productos` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `cita_id` INT NULL,
+            `producto_id` INT NOT NULL,
+            `cantidad` INT NOT NULL DEFAULT 1,
+            `precio_unitario` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            `fecha` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            `sucursal_id` INT NOT NULL DEFAULT 1,
+            `usuario_id` INT NOT NULL,
+            INDEX idx_usuario (`usuario_id`),
+            INDEX idx_fecha (`fecha`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    $status[] = "✓ Tabla `ventas_productos` lista";
 
     // Reestablecer foreign keys
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
