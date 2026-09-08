@@ -25,19 +25,24 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-    $barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $raw_barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Add placeholder image and bio fallback
-    foreach ($barberos as &$barbero) {
-        $barbero['cargo'] = ($barbero['rol'] === 'admin_local') ? 'Gerente / Master Barber' : 'Barbero Profesional';
-        $foto = !empty($barbero['foto_url']) ? $barbero['foto_url'] : (!empty($barbero['foto']) ? $barbero['foto'] : '');
-        $barbero['foto'] = !empty($foto) ? $foto : '/assets/images/barber-placeholder.jpg';
-        $barbero['foto_url'] = $barbero['foto'];
-        $barbero['foto_perfil'] = $barbero['foto'];
-        $barbero['biografia'] = !empty($barbero['biografia']) ? $barbero['biografia'] : (!empty($barbero['bio']) ? $barbero['bio'] : '');
-        $barbero['bio'] = $barbero['biografia'];
+    $barberos = [];
+    $seen = [];
+    foreach ($raw_barberos as $barbero) {
+        $nameKey = strtolower(trim($barbero['nombre']));
+        if (!isset($seen[$nameKey])) {
+            $seen[$nameKey] = true;
+            $barbero['cargo'] = ($barbero['rol'] === 'admin_local') ? 'Gerente / Master Barber' : 'Barbero Profesional';
+            $foto = !empty($barbero['foto_url']) ? $barbero['foto_url'] : (!empty($barbero['foto']) ? $barbero['foto'] : '');
+            $barbero['foto'] = !empty($foto) ? $foto : '/assets/images/barber-placeholder.jpg';
+            $barbero['foto_url'] = $barbero['foto'];
+            $barbero['foto_perfil'] = $barbero['foto'];
+            $barbero['biografia'] = !empty($barbero['biografia']) ? $barbero['biografia'] : (!empty($barbero['bio']) ? $barbero['bio'] : '');
+            $barbero['bio'] = $barbero['biografia'];
+            $barberos[] = $barbero;
+        }
     }
-
 
     echo json_encode(['success' => true, 'data' => $barberos]);
 

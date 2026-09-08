@@ -11,10 +11,19 @@ require_once 'config.php';
 $barberos = [];
 try {
     $pdo = getConnection();
-    $stmt = $pdo->query("SELECT * FROM usuarios WHERE activo = 1 AND rol = 'barbero' ORDER BY id ASC");
-    $barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    foreach ($barberos as &$b) {
-        $b['biografia'] = !empty($b['biografia']) ? $b['biografia'] : (!empty($b['bio']) ? $b['bio'] : '');
+    $stmt = $pdo->query("SELECT * FROM usuarios WHERE activo = 1 AND (rol = 'barbero' OR rol = 'admin_local') ORDER BY id ASC");
+    $raw_barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $seen = [];
+    foreach ($raw_barberos as $b) {
+        $nameKey = strtolower(trim($b['nombre']));
+        if (!isset($seen[$nameKey])) {
+            $seen[$nameKey] = true;
+            $foto = !empty($b['foto_url']) ? $b['foto_url'] : (!empty($b['foto']) ? $b['foto'] : (!empty($b['foto_perfil']) ? $b['foto_perfil'] : ''));
+            $b['foto_url'] = $foto;
+            $b['foto'] = $foto;
+            $b['biografia'] = !empty($b['biografia']) ? $b['biografia'] : (!empty($b['bio']) ? $b['bio'] : '');
+            $barberos[] = $b;
+        }
     }
 } catch (Exception $e) {
 }

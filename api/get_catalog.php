@@ -12,7 +12,7 @@ try {
         $sucursalId = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
 
         // Return user photo if available
-        $sql = "SELECT u.id, u.nombre, s.nombre as sucursal_nombre, u.foto_url as foto_perfil
+        $sql = "SELECT u.*, s.nombre as sucursal_nombre
                 FROM usuarios u 
                 LEFT JOIN sucursales s ON u.sucursal_id = s.id 
                 WHERE (u.rol = 'barbero' OR u.rol = 'admin_local') AND u.activo = 1";
@@ -22,13 +22,25 @@ try {
         }
         $sql .= " ORDER BY u.id ASC";
 
-        $data = query($sql);
+        $raw_data = query($sql);
+        $data = [];
+        $seen = [];
+        foreach ($raw_data as $b) {
+            $nameKey = strtolower(trim($b['nombre']));
+            if (!isset($seen[$nameKey])) {
+                $seen[$nameKey] = true;
+                $foto = !empty($b['foto_url']) ? $b['foto_url'] : (!empty($b['foto']) ? $b['foto'] : (!empty($b['foto_perfil']) ? $b['foto_perfil'] : ''));
+                $b['foto_perfil'] = $foto;
+                $b['foto_url'] = $foto;
+                $b['biografia'] = !empty($b['biografia']) ? $b['biografia'] : (!empty($b['bio']) ? $b['bio'] : '');
+                $data[] = $b;
+            }
+        }
         echo json_encode(['barberos' => $data]);
     } else {
         $sucursalId = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
 
-        $sql = "SELECT s.id, s.nombre, s.descripcion, s.precio, s.duracion_minutos, s.foto_url, s.categoria 
-                FROM servicios s";
+        $sql = "SELECT s.* FROM servicios s";
 
         if ($sucursalId > 0) {
             try {
@@ -47,7 +59,15 @@ try {
 
         $sql .= " ORDER BY s.id ASC";
 
-        $data = query($sql);
+        $raw_data = query($sql);
+        $data = [];
+        foreach ($raw_data as $s) {
+            $foto = !empty($s['foto_url']) ? $s['foto_url'] : (!empty($s['imagen_url']) ? $s['imagen_url'] : (!empty($s['foto']) ? $s['foto'] : ''));
+            $s['foto_url'] = $foto;
+            $s['imagen_url'] = $foto;
+            $s['categoria'] = !empty($s['categoria']) ? $s['categoria'] : 'General';
+            $data[] = $s;
+        }
         echo json_encode(['servicios' => $data]);
     }
 

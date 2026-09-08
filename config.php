@@ -324,6 +324,20 @@ function asegurarTablaCategorias($pdo = null)
                 }
             } catch (Throwable $e) {}
         }
+
+        // Auto-reparar columnas en tabla servicios si no existen
+        try {
+            $colsServicios = $pdo->query("SHOW COLUMNS FROM servicios")->fetchAll(PDO::FETCH_COLUMN);
+            if (!in_array('foto_url', $colsServicios)) {
+                $pdo->exec("ALTER TABLE servicios ADD COLUMN foto_url VARCHAR(500) DEFAULT NULL");
+            }
+            if (!in_array('imagen_url', $colsServicios)) {
+                $pdo->exec("ALTER TABLE servicios ADD COLUMN imagen_url VARCHAR(500) DEFAULT NULL");
+            }
+            if (!in_array('categoria', $colsServicios)) {
+                $pdo->exec("ALTER TABLE servicios ADD COLUMN categoria VARCHAR(50) NOT NULL DEFAULT 'General'");
+            }
+        } catch (Throwable $e) {}
     } catch (Throwable $e) {
         error_log("Error in asegurarTablaCategorias: " . $e->getMessage());
     }
