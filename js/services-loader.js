@@ -1,6 +1,6 @@
 /**
  * KORTZEN - Services Loader (100% Dinámico desde el Dashboard)
- * Carga dinámicamente las categorías y servicios configurados en el Dashboard
+ * Carga dinámicamente todas las categorías y servicios configurados en el Dashboard
  */
 
 const ServicesLoader = {
@@ -30,9 +30,9 @@ const ServicesLoader = {
             const response = await fetch('/api/get_servicios_public.php');
             const result = await response.json();
 
-            if (result.success && result.data && result.data.length > 0) {
+            if (result.success) {
                 // Si estamos en la página de inicio (Index)
-                if (indexContainer) {
+                if (indexContainer && result.data && result.data.length > 0) {
                     let featuredServices = result.data.filter(s => s.destacado == 1);
                     if (featuredServices.length === 0) {
                         featuredServices = result.data.slice(0, 3);
@@ -44,8 +44,8 @@ const ServicesLoader = {
 
                 // Si estamos en la página de servicios (servicios.html) con contenedor dinámico
                 if (dynamicContainer) {
-                    this.renderDynamicCategories(result.categories || [], result.data, dynamicContainer);
-                } else {
+                    this.renderDynamicCategories(result.categories || [], result.data || [], dynamicContainer);
+                } else if (result.data && result.data.length > 0) {
                     // Fallback a contenedores legacy
                     this.renderCategorizedServices(result.data, legacyContainers);
                 }
@@ -63,7 +63,7 @@ const ServicesLoader = {
         const grouped = {};
         const catMeta = {};
 
-        // 1. Inicializar con las categorías del dashboard en su orden exacto
+        // 1. Inicializar con todas las categorías activas del dashboard en su orden exacto
         categoriesList.forEach(c => {
             grouped[c.nombre] = [];
             catMeta[c.nombre] = c;
@@ -83,12 +83,12 @@ const ServicesLoader = {
             grouped[cat].push(service);
         });
 
-        // 3. Renderizar cada sección de categoría
-        const categoriesWithServices = Object.keys(grouped).filter(k => grouped[k].length > 0);
+        // 3. Renderizar cada categoría del dashboard (incluso si tiene 0 servicios)
+        const allCategoryKeys = Object.keys(grouped);
         let sectionIndex = 0;
 
-        categoriesWithServices.forEach(catName => {
-            const services = grouped[catName];
+        allCategoryKeys.forEach(catName => {
+            const services = grouped[catName] || [];
             const meta = catMeta[catName] || {};
             const slug = this.slugify(catName);
             const isCharcoalBg = (sectionIndex % 2 === 1);
@@ -106,7 +106,19 @@ const ServicesLoader = {
 
             let descHtml = '';
             if (meta.descripcion && meta.descripcion.trim() !== '') {
-                descHtml = `<p style="text-align: center; max-width: 600px; margin: -1.5rem auto 2.5rem auto; color: var(--color-gray, #999999); font-size: 0.95rem; line-height: 1.5;">${meta.descripcion}</p>`;
+                descHtml = `<p style="color: var(--color-gray, #999999); font-size: 0.95rem; line-height: 1.5; margin-top: -1rem; margin-bottom: 2rem;">${meta.descripcion}</p>`;
+            }
+
+            let contentHtml = '';
+            if (services.length > 0) {
+                contentHtml = `<div class="services-grid" id="services-${slug}"></div>`;
+            } else {
+                contentHtml = `
+                    <div style="text-align: center; color: var(--color-gray, #888888); padding: 3rem 1.5rem; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.12); border-radius: 12px; margin: 1rem 0;">
+                        <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--color-white, #FFFFFF); margin: 0 0 0.5rem 0; font-family: var(--font-display, 'Playfair Display', serif);">Próximamente nuevos tratamientos</h4>
+                        <p style="font-size: 0.9rem; color: var(--color-gray, #999999); max-width: 440px; margin: 0 auto; line-height: 1.5;">Estamos configurando los servicios para esta categoría.</p>
+                    </div>
+                `;
             }
 
             containerDiv.innerHTML = `
@@ -114,13 +126,15 @@ const ServicesLoader = {
                     <span>${meta.nombre || catName}</span>
                 </h2>
                 ${descHtml}
-                <div class="services-grid" id="services-${slug}"></div>
+                ${contentHtml}
             `;
 
-            const grid = containerDiv.querySelector(`#services-${slug}`);
-            services.forEach(service => {
-                this.renderServiceCard(service, grid);
-            });
+            if (services.length > 0) {
+                const grid = containerDiv.querySelector(`#services-${slug}`);
+                services.forEach(service => {
+                    this.renderServiceCard(service, grid);
+                });
+            }
 
             section.appendChild(containerDiv);
             mainContainer.appendChild(section);
