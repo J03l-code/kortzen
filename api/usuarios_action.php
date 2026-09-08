@@ -139,7 +139,8 @@ try {
             if (in_array('foto_url', $columns)) $dataToInsert['foto_url'] = $foto_url;
             if (in_array('especialidades', $columns)) $dataToInsert['especialidades'] = $especialidades;
             if (in_array('bio', $columns)) $dataToInsert['bio'] = $biografia;
-            elseif (in_array('biografia', $columns)) $dataToInsert['biografia'] = $biografia;
+            if (in_array('biografia', $columns)) $dataToInsert['biografia'] = $biografia;
+
             
             if (in_array('comision_porcentaje', $columns)) $dataToInsert['comision_porcentaje'] = $comision_porcentaje;
             if (in_array('comision_fin_semana', $columns)) $dataToInsert['comision_fin_semana'] = $comision_fin_semana;
@@ -249,7 +250,8 @@ try {
             }
             if (in_array('especialidades', $columns)) $dataToUpdate['especialidades'] = $especialidades;
             if (in_array('bio', $columns)) $dataToUpdate['bio'] = $biografia;
-            elseif (in_array('biografia', $columns)) $dataToUpdate['biografia'] = $biografia;
+            if (in_array('biografia', $columns)) $dataToUpdate['biografia'] = $biografia;
+
 
             if (in_array('comision_porcentaje', $columns)) $dataToUpdate['comision_porcentaje'] = $comision_porcentaje;
             if (in_array('comision_fin_semana', $columns)) $dataToUpdate['comision_fin_semana'] = $comision_fin_semana;
