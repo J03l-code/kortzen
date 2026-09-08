@@ -2,36 +2,58 @@
 require_once 'config.php';
 requireLogin();
 
-// Solo Admin Técnico
-if (!isAdminTecnico()) {
-    header('Location: dashboard.php?error=Acceso denegado');
+// Permitir acceso a Administradores (Técnico y Locales)
+if (!isAdminTecnico() && !isAdminLocal() && !in_array($_SESSION['user_rol'] ?? '', ['admin', 'admin_local', 'administrador', 'superadmin'])) {
+    header('Location: dashboard.php?error=' . urlencode('Acceso denegado a la gestión de galería.'));
     exit;
 }
 
 $error = '';
 $success = '';
 
+// Asegurar tabla galeria_imagenes
+try {
+    $pdo = getConnection();
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `galeria_imagenes` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `titulo` VARCHAR(150) NOT NULL,
+            `descripcion` TEXT DEFAULT NULL,
+            `imagen_url` VARCHAR(500) NOT NULL,
+            `categoria` VARCHAR(50) NOT NULL DEFAULT 'corte',
+            `sucursal_id` INT UNSIGNED DEFAULT 1,
+            `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+} catch (Exception $e) {}
+
 // Procesar Subida
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['imagen'])) {
     try {
-        $titulo = sanitize($_POST['titulo']);
-        $descripcion = sanitize($_POST['descripcion']);
+        $titulo = sanitize($_POST['titulo'] ?? '');
+        $descripcion = sanitize($_POST['descripcion'] ?? '');
+        $categoria = sanitize($_POST['categoria'] ?? 'corte');
 
-        $targetDir = "assets/uploads/galeria/";
-        if (!file_exists($targetDir))
-            mkdir($targetDir, 0777, true);
+        if (empty($titulo)) {
+            throw new Exception("El título de la fotografía es obligatorio.");
+        }
 
-        $fileName = uniqid() . '_' . basename($_FILES["imagen"]["name"]);
+        $targetDir = __DIR__ . "/assets/uploads/galeria/";
+        if (!file_exists($targetDir)) {
+            @mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = uniqid('gal_') . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', basename($_FILES["imagen"]["name"]));
         $targetFilePath = $targetDir . $fileName;
         $fileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
 
-        $allowTypes = array('jpg', 'png', 'jpeg', 'gif', 'webp');
+        $allowTypes = ['jpg', 'png', 'jpeg', 'gif', 'webp'];
 
         if (in_array($fileType, $allowTypes)) {
             if (move_uploaded_file($_FILES["imagen"]["tmp_name"], $targetFilePath)) {
                 // Insertar en DB
-                $categoria = sanitize($_POST['categoria'] ?? 'corte');
-                $url = "/" . $targetFilePath; // Ruta web relativa
+                $url = "/assets/uploads/galeria/" . $fileName; // Ruta web relativa
                 $sql = "INSERT INTO galeria_imagenes (titulo, descripcion, categoria, imagen_url) VALUES (?, ?, ?, ?)";
                 $stmt = getConnection()->prepare($sql);
                 $stmt->execute([$titulo, $descripcion, $categoria, $url]);
@@ -41,10 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['imagen'])) {
                 registrarLog('SUBIR_FOTO', 'galeria', $newId, "Nueva foto '$titulo' subida a la Galería Web (Categoría: '$categoria', Archivo: '$origName')");
 
                 // Redirect to prevent re-submission
-                header('Location: galeria_admin.php?success=uploaded');
+                header('Location: galeria_admin.php?success=' . urlencode('Imagen subida correctamente a la galería'));
                 exit;
             } else {
-                $error = "Error al mover el archivo subido.";
+                $error = "Error al mover el archivo subido al servidor.";
             }
         } else {
             $error = "Solo se permiten archivos JPG, JPEG, PNG, GIF, y WEBP.";
@@ -54,9 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['imagen'])) {
     }
 }
 
-// Mensajes de éxito via URL
-if (isset($_GET['success']) && $_GET['success'] == 'uploaded') {
-    $success = "Imagen subida correctamente.";
+// Mensajes via URL
+if (isset($_GET['success'])) {
+    $success = htmlspecialchars($_GET['success']);
+}
+if (isset($_GET['error'])) {
+    $error = htmlspecialchars($_GET['error']);
 }
 
 // Procesar Eliminación
@@ -65,13 +90,14 @@ if (isset($_GET['delete'])) {
     try {
         // Obtener ruta para borrar archivo
         $img = query("SELECT titulo, categoria, imagen_url FROM galeria_imagenes WHERE id = ?", [$id]);
-        if ($img) {
+        if (!empty($img)) {
             $gTitle = !empty($img[0]['titulo']) ? $img[0]['titulo'] : "ID #$id";
             $gCat = !empty($img[0]['categoria']) ? $img[0]['categoria'] : "corte";
 
-            $path = ltrim($img[0]['imagen_url'], '/'); // Remove leading slash
-            if (file_exists($path)) {
-                unlink($path);
+            $relPath = ltrim($img[0]['imagen_url'], '/');
+            $fullPath = __DIR__ . '/' . $relPath;
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
             }
 
             // Borrar de DB
@@ -79,15 +105,20 @@ if (isset($_GET['delete'])) {
             $stmt->execute([$id]);
 
             registrarLog('ELIMINAR_FOTO', 'galeria', $id, "Foto '$gTitle' (Categoría: '$gCat') fue eliminada de la Galería Web");
-            $success = "Imagen eliminada.";
+            header('Location: galeria_admin.php?success=' . urlencode('Imagen eliminada correctamente'));
+            exit;
         }
     } catch (Exception $e) {
-        $error = "Error al eliminar.";
+        $error = "Error al eliminar la imagen: " . $e->getMessage();
     }
 }
 
 // Obtener Imágenes
-$imagenes = query("SELECT * FROM galeria_imagenes ORDER BY id DESC");
+try {
+    $imagenes = query("SELECT * FROM galeria_imagenes ORDER BY id DESC");
+} catch (PDOException $e) {
+    $imagenes = [];
+}
 
 $pageTitle = 'Gestión de Galería';
 include 'includes/header.php';

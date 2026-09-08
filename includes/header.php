@@ -252,6 +252,26 @@
         <!-- Main Content -->
         <main class="main-content">
 
+            <?php if (!empty($_GET['success'])): ?>
+                <div class="alert-banner alert-success" style="background: rgba(46, 204, 113, 0.12); border: 1px solid #2ECC71; color: #27ae60; padding: 14px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.15);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px; font-weight: 900;">✓</span> 
+                        <span><?php echo htmlspecialchars($_GET['success']); ?></span>
+                    </div>
+                    <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 20px; color: #27ae60; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($_GET['error'])): ?>
+                <div class="alert-banner alert-danger" style="background: rgba(231, 76, 60, 0.12); border: 1px solid #E74C3C; color: #c0392b; padding: 14px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px; font-weight: 900;">⚠</span> 
+                        <span><?php echo htmlspecialchars($_GET['error']); ?></span>
+                    </div>
+                    <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 20px; color: #c0392b; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
+                </div>
+            <?php endif; ?>
+
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
                     const sidebar = document.getElementById('sidebar');
@@ -272,3 +292,4 @@
                     }
                 });
             </script>
+

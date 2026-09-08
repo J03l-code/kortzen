@@ -226,11 +226,21 @@ include 'includes/header.php';
             </select>
         </div>
 
+        <div class="form-group">
+            <label class="form-label" style="display:flex; align-items:center; cursor:pointer;">
+                <input type="checkbox" name="destacado" value="1" <?php echo ($isEdit && isset($servicio['destacado']) && $servicio['destacado']) ? 'checked' : ''; ?>
+                    style="margin-right: 10px; width: auto; transform: scale(1.5);">
+                Destacado en Inicio (Se mostrará en la portada)
+            </label>
+            <small style="color: var(--text-muted); margin-left: 28px;">Máximo 3 servicios aparecerán en la portada.</small>
+        </div>
+
         <div class="form-actions">
             <a href="servicios.php" class="btn-cancel">Cancelar</a>
             <button type="submit" class="btn-confirm">Confirmar</button>
         </div>
     </form>
 </div>
+
 
 <?php include 'includes/footer.php'; ?>

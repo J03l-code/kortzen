@@ -49,8 +49,14 @@ try {
             `telefono` VARCHAR(30) DEFAULT NULL,
             `foto_url` VARCHAR(500) DEFAULT NULL,
             `bio` TEXT DEFAULT NULL,
+            `biografia` TEXT DEFAULT NULL,
             `especialidades` VARCHAR(255) DEFAULT NULL,
             `comision_porcentaje` DECIMAL(5,2) DEFAULT 50.00,
+            `comision_fin_semana` DECIMAL(5,2) DEFAULT 50.00,
+            `comision_productos` DECIMAL(5,2) DEFAULT 10.00,
+            `almuerzo_inicio` TIME DEFAULT '13:00:00',
+            `almuerzo_fin` TIME DEFAULT '14:00:00',
+            `almuerzo_activo` TINYINT DEFAULT 1,
             `activo` TINYINT(1) NOT NULL DEFAULT 1,
             `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `fecha_actualizacion` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -95,8 +101,11 @@ try {
             `descripcion` TEXT DEFAULT NULL,
             `precio` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
             `duracion_minutos` INT UNSIGNED NOT NULL DEFAULT 30,
-            `sucursal_id` INT UNSIGNED DEFAULT NULL,
+            `categoria` VARCHAR(50) NOT NULL DEFAULT 'General',
+            `foto_url` VARCHAR(500) DEFAULT NULL,
             `imagen_url` VARCHAR(500) DEFAULT NULL,
+            `destacado` TINYINT(1) DEFAULT 0,
+            `sucursal_id` INT UNSIGNED DEFAULT 1,
             `activo` TINYINT(1) NOT NULL DEFAULT 1,
             `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `fecha_actualizacion` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -105,6 +114,18 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
     $status[] = "✓ Tabla `servicios` lista";
+
+    // 4.1 SERVICIOS_SUCURSALES
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `servicios_sucursales` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `servicio_id` INT UNSIGNED NOT NULL,
+            `sucursal_id` INT UNSIGNED NOT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uk_servicio_sucursal` (`servicio_id`, `sucursal_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    $status[] = "✓ Tabla `servicios_sucursales` lista";
 
     // 5. INVENTARIO
     $pdo->exec("
@@ -115,6 +136,9 @@ try {
             `precio` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
             `stock_minimo` INT NOT NULL DEFAULT 5,
             `sucursal_id` INT UNSIGNED NOT NULL DEFAULT 1,
+            `unidad` VARCHAR(50) DEFAULT 'unidades',
+            `categoria` VARCHAR(100) DEFAULT 'General',
+            `descripcion` TEXT DEFAULT NULL,
             `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `fecha_actualizacion` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
@@ -135,6 +159,9 @@ try {
             `estado` ENUM('pendiente','confirmada','completada','cancelada') NOT NULL DEFAULT 'pendiente',
             `notas` TEXT DEFAULT NULL,
             `precio_final` DECIMAL(10, 2) DEFAULT NULL,
+            `propina` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+            `asistencia_confirmada` TINYINT(1) DEFAULT 0,
+            `recordatorio_2h_enviado` TINYINT(1) DEFAULT 0,
             `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `fecha_actualizacion` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
@@ -324,8 +351,41 @@ try {
     ");
     $status[] = "✓ Tabla `bloqueos_horas` lista";
 
+    // 18. PUSH SUBSCRIPTIONS
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `push_subscriptions` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `cliente_id` INT NULL,
+            `endpoint` TEXT NOT NULL,
+            `p256dh` TEXT NULL,
+            `auth` TEXT NULL,
+            `fecha_creacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_cliente (`cliente_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+    $status[] = "✓ Tabla `push_subscriptions` lista";
+
+    // 19. RESEÑAS
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `resenas` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `cliente_id` INT UNSIGNED NOT NULL,
+            `barbero_id` INT UNSIGNED DEFAULT NULL,
+            `servicio_id` INT UNSIGNED DEFAULT NULL,
+            `calificacion` INT NOT NULL DEFAULT 5,
+            `comentario` TEXT DEFAULT NULL,
+            `visible` TINYINT(1) NOT NULL DEFAULT 0,
+            `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            INDEX idx_resena_barbero (`barbero_id`),
+            INDEX idx_resena_visible (`visible`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    $status[] = "✓ Tabla `resenas` lista";
+
     // Reestablecer foreign keys
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+
 
     // ==========================================
     // SEMBRAR DATOS INICIALES (SI ESTÁ VACÍO)

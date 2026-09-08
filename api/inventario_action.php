@@ -2,16 +2,59 @@
 require_once '../config.php';
 
 if (!isLoggedIn()) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'No autorizado']);
+    $isJson = (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
+              (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strpos($_SERVER['HTTP_X_REQUESTED_WITH'], 'XMLHttpRequest') !== false);
+    if ($isJson) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'No autorizado']);
+    } else {
+        header('Location: ../login.php');
+    }
     exit;
 }
 
 $action = $_POST['action'] ?? '';
 
+// Validar que solo administradores puedan crear/editar/eliminar (los barberos solo pueden retirar)
+if (in_array($action, ['create', 'update', 'delete'])) {
+    if (!canManageInventory() && !isAdminTecnico() && !isAdminLocal() && !in_array($_SESSION['user_rol'] ?? '', ['admin', 'admin_local', 'administrador', 'superadmin'])) {
+        header('Location: ../inventario.php?error=' . urlencode('No tienes permisos suficientes para gestionar el inventario.'));
+        exit;
+    }
+}
+
 try {
     $pdo = getConnection();
 
+    // Helper: asegurar columnas en 'inventario'
+    $ensureInventarioSchema = function() use ($pdo) {
+        $neededCols = [
+            'cantidad' => "INT NOT NULL DEFAULT 0",
+            'precio' => "DECIMAL(10, 2) NOT NULL DEFAULT 0.00",
+            'stock_minimo' => "INT NOT NULL DEFAULT 5",
+            'sucursal_id' => "INT UNSIGNED NOT NULL DEFAULT 1",
+            'unidad' => "VARCHAR(50) DEFAULT 'unidades'",
+            'categoria' => "VARCHAR(100) DEFAULT 'General'",
+            'descripcion' => "TEXT DEFAULT NULL"
+        ];
+
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM inventario");
+        $existingCols = $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+
+        foreach ($neededCols as $col => $ddl) {
+            if (!in_array($col, $existingCols)) {
+                try {
+                    $pdo->exec("ALTER TABLE inventario ADD COLUMN `$col` $ddl");
+                } catch (Exception $e) {}
+            }
+        }
+
+        // Re-leer columnas actualizadas
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM inventario");
+        return $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+    };
+
+    $columns = $ensureInventarioSchema();
 
     switch ($action) {
         case 'withdraw':
@@ -19,7 +62,7 @@ try {
             $cantidad = intval($_POST['cantidad'] ?? 0);
 
             if ($id <= 0) {
-                throw new Exception('ID de producto inválido.');
+                throw new Exception('ID de producto no válido.');
             }
 
             if ($cantidad <= 0) {
@@ -29,7 +72,7 @@ try {
             // Verificar stock actual
             $product = query("SELECT producto, cantidad FROM inventario WHERE id = ?", [$id]);
             if (empty($product)) {
-                throw new Exception('El producto no existe.');
+                throw new Exception('El producto no existe en el inventario.');
             }
 
             $currentStock = intval($product[0]['cantidad']);
@@ -45,16 +88,18 @@ try {
             $stmt->execute([$cantidad, $id]);
 
             registrarLog('RETIRAR', 'inventario', $id, "Se retiraron $cantidad unidades de '$productName'");
-
-            header('Location: ../inventario.php?success=Se retiraron ' . $cantidad . ' unidades de ' . urlencode($productName));
+            header('Location: ../inventario.php?success=' . urlencode("Se retiraron {$cantidad} unidades de '{$productName}' exitosamente"));
             exit;
 
         case 'create':
             $producto = trim($_POST['producto'] ?? '');
             $cantidad = intval($_POST['cantidad'] ?? 0);
             $precio = floatval($_POST['precio'] ?? 0);
-            $stock_minimo = intval($_POST['stock_minimo'] ?? 5); // Default 5
-            $sucursal_id = intval($_POST['sucursal_id'] ?? 0);
+            $stock_minimo = intval($_POST['stock_minimo'] ?? 5);
+            $sucursal_id = intval($_POST['sucursal_id'] ?? 1);
+            $unidad = trim($_POST['unidad'] ?? 'unidades');
+            $categoria = trim($_POST['categoria'] ?? 'General');
+            $descripcion = trim($_POST['descripcion'] ?? '');
 
             // Validaciones
             if (empty($producto)) {
@@ -62,7 +107,7 @@ try {
             }
 
             if ($sucursal_id <= 0) {
-                throw new Exception('Debes seleccionar una sucursal.');
+                $sucursal_id = 1;
             }
 
             if ($cantidad < 0) {
@@ -74,23 +119,33 @@ try {
             }
 
             if ($stock_minimo < 0) {
-                throw new Exception('El stock mínimo no puede ser negativo.');
+                $stock_minimo = 0;
             }
 
-            // Verificar que la sucursal existe
-            $check = query("SELECT COUNT(*) as count FROM sucursales WHERE id = ?", [$sucursal_id]);
-            if ($check[0]['count'] == 0) {
-                throw new Exception('La sucursal seleccionada no existe.');
-            }
+            // Construir inserción dinámica
+            $dataToInsert = [
+                'producto' => $producto,
+                'cantidad' => $cantidad
+            ];
 
-            $sql = "INSERT INTO inventario (producto, cantidad, precio, stock_minimo, sucursal_id) VALUES (?, ?, ?, ?, ?)";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$producto, $cantidad, $precio, $stock_minimo, $sucursal_id]);
+            if (in_array('precio', $columns)) $dataToInsert['precio'] = $precio;
+            if (in_array('stock_minimo', $columns)) $dataToInsert['stock_minimo'] = $stock_minimo;
+            if (in_array('sucursal_id', $columns)) $dataToInsert['sucursal_id'] = $sucursal_id;
+            if (in_array('unidad', $columns)) $dataToInsert['unidad'] = $unidad;
+            if (in_array('categoria', $columns)) $dataToInsert['categoria'] = $categoria;
+            if (in_array('descripcion', $columns)) $dataToInsert['descripcion'] = $descripcion;
+
+            $colNames = array_keys($dataToInsert);
+            $colPlaceholders = array_fill(0, count($colNames), '?');
+            $insertSql = "INSERT INTO inventario (`" . implode('`, `', $colNames) . "`) VALUES (" . implode(', ', $colPlaceholders) . ")";
+
+            $stmt = $pdo->prepare($insertSql);
+            $stmt->execute(array_values($dataToInsert));
 
             $newInvId = $pdo->lastInsertId();
             registrarLog('CREAR', 'inventario', $newInvId, "Producto '$producto' agregado al inventario ($cantidad unidades)");
 
-            header('Location: ../inventario.php?success=Producto agregado exitosamente');
+            header('Location: ../inventario.php?success=' . urlencode("Producto '$producto' agregado exitosamente"));
             exit;
 
         case 'update':
@@ -99,10 +154,13 @@ try {
             $cantidad = intval($_POST['cantidad'] ?? 0);
             $precio = floatval($_POST['precio'] ?? 0);
             $stock_minimo = intval($_POST['stock_minimo'] ?? 5);
-            $sucursal_id = intval($_POST['sucursal_id'] ?? 0);
+            $sucursal_id = intval($_POST['sucursal_id'] ?? 1);
+            $unidad = trim($_POST['unidad'] ?? 'unidades');
+            $categoria = trim($_POST['categoria'] ?? 'General');
+            $descripcion = trim($_POST['descripcion'] ?? '');
 
             if ($id <= 0) {
-                throw new Exception('ID de producto inválido.');
+                throw new Exception('ID de producto no válido.');
             }
 
             if (empty($producto)) {
@@ -110,7 +168,7 @@ try {
             }
 
             if ($sucursal_id <= 0) {
-                throw new Exception('Debes seleccionar una sucursal.');
+                $sucursal_id = 1;
             }
 
             if ($cantidad < 0) {
@@ -122,68 +180,67 @@ try {
             }
 
             if ($stock_minimo < 0) {
-                throw new Exception('El stock mínimo no puede ser negativo.');
+                $stock_minimo = 0;
             }
 
-            // Obtener datos anteriores para comparar cambios
-            $oldInv = query("SELECT * FROM inventario WHERE id = ?", [$id]);
-            $old = !empty($oldInv) ? $oldInv[0] : [];
+            // Construir actualización dinámica
+            $dataToUpdate = [
+                'producto' => $producto,
+                'cantidad' => $cantidad
+            ];
 
-            $cambios = [];
-            if (!empty($old)) {
-                if (($old['producto'] ?? '') !== $producto) {
-                    $cambios[] = "Nombre: '" . ($old['producto'] ?? '') . "' ➔ '$producto'";
-                }
-                if (($old['cantidad'] ?? 0) != $cantidad) {
-                    $cambios[] = "Stock: " . intval($old['cantidad'] ?? 0) . " ➔ $cantidad u.";
-                }
-                if (($old['precio'] ?? 0) != $precio) {
-                    $cambios[] = "Precio: $" . number_format(floatval($old['precio'] ?? 0), 2) . " ➔ $" . number_format($precio, 2);
-                }
-                if (($old['stock_minimo'] ?? 0) != $stock_minimo) {
-                    $cambios[] = "Stock Mín.: " . intval($old['stock_minimo'] ?? 0) . " ➔ $stock_minimo u.";
-                }
+            if (in_array('precio', $columns)) $dataToUpdate['precio'] = $precio;
+            if (in_array('stock_minimo', $columns)) $dataToUpdate['stock_minimo'] = $stock_minimo;
+            if (in_array('sucursal_id', $columns)) $dataToUpdate['sucursal_id'] = $sucursal_id;
+            if (in_array('unidad', $columns)) $dataToUpdate['unidad'] = $unidad;
+            if (in_array('categoria', $columns)) $dataToUpdate['categoria'] = $categoria;
+            if (in_array('descripcion', $columns)) $dataToUpdate['descripcion'] = $descripcion;
+
+            $updateSets = [];
+            $updateValues = [];
+            foreach ($dataToUpdate as $col => $val) {
+                $updateSets[] = "`$col` = ?";
+                $updateValues[] = $val;
             }
+            $updateValues[] = $id;
 
-            $sql = "UPDATE inventario SET producto = ?, cantidad = ?, precio = ?, stock_minimo = ?, sucursal_id = ? WHERE id = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$producto, $cantidad, $precio, $stock_minimo, $sucursal_id, $id]);
+            $updateSql = "UPDATE inventario SET " . implode(', ', $updateSets) . " WHERE id = ?";
+            $stmt = $pdo->prepare($updateSql);
+            $stmt->execute($updateValues);
 
-            $descCambios = !empty($cambios) ? implode('; ', $cambios) : 'Guardado sin modificaciones de texto';
-            registrarLog('EDITAR', 'inventario', $id, "Producto '$producto' (#$id) actualizado. [$descCambios]");
-
-            header('Location: ../inventario.php?success=Producto actualizado exitosamente');
+            registrarLog('EDITAR', 'inventario', $id, "Producto '$producto' (#$id) actualizado exitosamente");
+            header('Location: ../inventario.php?success=' . urlencode("Producto '$producto' actualizado exitosamente"));
             exit;
 
         case 'delete':
             $id = intval($_POST['id'] ?? 0);
 
             if ($id <= 0) {
-                throw new Exception('ID de producto inválido.');
+                throw new Exception('ID de producto no válido.');
             }
 
             // Verificar que el producto existe
-            $check = query("SELECT COUNT(*) as count FROM inventario WHERE id = ?", [$id]);
-            if ($check[0]['count'] == 0) {
-                throw new Exception('El producto no existe.');
+            $check = query("SELECT producto FROM inventario WHERE id = ?", [$id]);
+            if (empty($check)) {
+                throw new Exception('El producto que deseas eliminar no existe.');
             }
+            $prodName = $check[0]['producto'];
 
             $sql = "DELETE FROM inventario WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
 
-            registrarLog('ELIMINAR', 'inventario', $id, "Producto #$id eliminado del inventario");
-
-            header('Location: ../inventario.php?success=Producto eliminado exitosamente');
+            registrarLog('ELIMINAR', 'inventario', $id, "Producto '$prodName' (#$id) eliminado del inventario");
+            header('Location: ../inventario.php?success=' . urlencode("Producto '$prodName' eliminado exitosamente"));
             exit;
 
         default:
-            throw new Exception('Acción no válida.');
+            throw new Exception('Acción no válida solicitada.');
     }
 
 } catch (PDOException $e) {
     error_log("Error en inventario_action.php: " . $e->getMessage());
-    header('Location: ../inventario.php?error=' . urlencode('Error de base de datos: ' . $e->getMessage()));
+    header('Location: ../inventario.php?error=' . urlencode('Error en base de datos: ' . $e->getMessage()));
     exit;
 
 } catch (Exception $e) {

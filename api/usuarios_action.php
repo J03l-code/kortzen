@@ -1,9 +1,16 @@
 <?php
 require_once '../config.php';
 
-if (!isLoggedIn() || !in_array($_SESSION['user_rol'] ?? '', ['admin', 'admin_local'])) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Acceso no autorizado.']);
+// Validar permisos (Admin Técnico, Admin Local, o Administrador)
+if (!isLoggedIn() || (!isAdminTecnico() && !canManageUsers() && !in_array($_SESSION['user_rol'] ?? '', ['admin', 'admin_local', 'administrador', 'superadmin']))) {
+    $isJson = (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
+              (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strpos($_SERVER['HTTP_X_REQUESTED_WITH'], 'XMLHttpRequest') !== false);
+    if ($isJson) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Acceso no autorizado.']);
+    } else {
+        header('Location: ../usuarios.php?error=' . urlencode('Acceso no autorizado.'));
+    }
     exit;
 }
 
@@ -12,28 +19,67 @@ $action = $_POST['action'] ?? '';
 try {
     $pdo = getConnection();
 
+    // Helper: asegurar columnas y obtener columnas existentes en 'usuarios'
+    $ensureUsuariosColumns = function() use ($pdo) {
+        $neededCols = [
+            'telefono' => "VARCHAR(30) DEFAULT NULL",
+            'foto_url' => "VARCHAR(500) DEFAULT NULL",
+            'bio' => "TEXT DEFAULT NULL",
+            'biografia' => "TEXT DEFAULT NULL",
+            'especialidades' => "VARCHAR(255) DEFAULT NULL",
+            'comision_porcentaje' => "DECIMAL(5,2) DEFAULT 50.00",
+            'comision_fin_semana' => "DECIMAL(5,2) DEFAULT 50.00",
+            'comision_productos' => "DECIMAL(5,2) DEFAULT 10.00",
+            'almuerzo_inicio' => "TIME DEFAULT '13:00:00'",
+            'almuerzo_fin' => "TIME DEFAULT '14:00:00'",
+            'almuerzo_activo' => "TINYINT DEFAULT 1",
+            'sucursal_id' => "INT UNSIGNED DEFAULT NULL",
+            'activo' => "TINYINT(1) NOT NULL DEFAULT 1"
+        ];
+
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM usuarios");
+        $existingCols = $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+
+        foreach ($neededCols as $col => $ddl) {
+            // Si falta 'bio' y 'biografia', agregamos al menos uno
+            if ($col === 'biografia' && in_array('bio', $existingCols)) continue;
+            if ($col === 'bio' && in_array('biografia', $existingCols)) continue;
+
+            if (!in_array($col, $existingCols)) {
+                try {
+                    $pdo->exec("ALTER TABLE usuarios ADD COLUMN `$col` $ddl");
+                } catch (Exception $e) {}
+            }
+        }
+
+        // Re-leer columnas actualizadas
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM usuarios");
+        return $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+    };
+
+    $columns = $ensureUsuariosColumns();
+
     // Procesar foto de perfil si se subió un archivo
     $foto_url = trim($_POST['foto_url'] ?? '');
     if (isset($_FILES['foto_perfil']) && $_FILES['foto_perfil']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['foto_perfil']['tmp_name'];
         $fileName = $_FILES['foto_perfil']['name'];
-        $fileNameCmps = explode(".", $fileName);
-        $fileExtension = strtolower(end($fileNameCmps));
+        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
-        $allowedfileExtensions = array('jpg', 'jpeg', 'png', 'gif', 'webp');
+        $allowedfileExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         if (in_array($fileExtension, $allowedfileExtensions)) {
             $newFileName = 'barber_' . uniqid() . '.' . $fileExtension;
-            $uploadFileDir = '../assets/images/barbers/';
+            $uploadFileDir = __DIR__ . '/../assets/images/barbers/';
             
             if (!file_exists($uploadFileDir)) {
-                mkdir($uploadFileDir, 0777, true);
+                @mkdir($uploadFileDir, 0777, true);
             }
             
             $dest_path = $uploadFileDir . $newFileName;
             if (move_uploaded_file($fileTmpPath, $dest_path)) {
                 $foto_url = '/assets/images/barbers/' . $newFileName;
             } else {
-                throw new Exception('Error al mover la foto de perfil al directorio de destino.');
+                throw new Exception('Error al guardar la foto de perfil en el servidor.');
             }
         } else {
             throw new Exception('Formato de imagen no permitido (solo JPG, JPEG, PNG, GIF, WEBP).');
@@ -48,7 +94,7 @@ try {
             $rol = $_POST['rol'] ?? 'barbero';
             $sucursal_id = !empty($_POST['sucursal_id']) ? intval($_POST['sucursal_id']) : null;
 
-            $biografia = trim($_POST['biografia'] ?? '');
+            $biografia = trim($_POST['biografia'] ?? ($_POST['bio'] ?? ''));
             $especialidades = trim($_POST['especialidades'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
@@ -56,15 +102,15 @@ try {
             $comision_productos = floatval($_POST['comision_productos'] ?? 10.00);
             $almuerzo_inicio = trim($_POST['almuerzo_inicio'] ?? '13:00');
             $almuerzo_fin = trim($_POST['almuerzo_fin'] ?? '14:00');
-            $almuerzo_activo = intval($_POST['almuerzo_activo'] ?? 1);
+            $almuerzo_activo = isset($_POST['almuerzo_activo']) ? intval($_POST['almuerzo_activo']) : 1;
 
             // Validaciones
             if (empty($nombre) || empty($email) || empty($password)) {
-                throw new Exception('Todos los campos son obligatorios.');
+                throw new Exception('El nombre, correo electrónico y contraseña son obligatorios.');
             }
 
             if (!isValidEmail($email)) {
-                throw new Exception('El email no es válido.');
+                throw new Exception('El correo electrónico no tiene un formato válido.');
             }
 
             if (strlen($password) < 6) {
@@ -73,25 +119,70 @@ try {
 
             // Verificar que el email no exista
             $check = query("SELECT COUNT(*) as count FROM usuarios WHERE email = ?", [$email]);
-            if ($check[0]['count'] > 0) {
-                throw new Exception('El email ya está registrado.');
+            if (!empty($check) && $check[0]['count'] > 0) {
+                throw new Exception('El correo electrónico ya se encuentra registrado en el sistema.');
             }
 
             // Hash de contraseña con BCRYPT
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-            // Asegurar columnas
-            try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_productos DECIMAL(5,2) DEFAULT 10.00 AFTER comision_fin_semana"); } catch (Exception $ex) {}
-            try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '15:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1"); } catch (Exception $ex_a) {}
+            // Mapeo dinámico de datos según columnas existentes
+            $dataToInsert = [
+                'nombre' => $nombre,
+                'email' => $email,
+                'password' => $passwordHash,
+                'rol' => $rol,
+                'sucursal_id' => $sucursal_id
+            ];
 
-            $sql = "INSERT INTO usuarios (nombre, email, password, rol, sucursal_id, biografia, especialidades, foto_url, telefono, comision_porcentaje, comision_fin_semana, comision_productos, almuerzo_inicio, almuerzo_fin, almuerzo_activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo]);
+            if (in_array('telefono', $columns)) $dataToInsert['telefono'] = $telefono;
+            if (in_array('foto_url', $columns)) $dataToInsert['foto_url'] = $foto_url;
+            if (in_array('especialidades', $columns)) $dataToInsert['especialidades'] = $especialidades;
+            if (in_array('bio', $columns)) $dataToInsert['bio'] = $biografia;
+            elseif (in_array('biografia', $columns)) $dataToInsert['biografia'] = $biografia;
+            
+            if (in_array('comision_porcentaje', $columns)) $dataToInsert['comision_porcentaje'] = $comision_porcentaje;
+            if (in_array('comision_fin_semana', $columns)) $dataToInsert['comision_fin_semana'] = $comision_fin_semana;
+            if (in_array('comision_productos', $columns)) $dataToInsert['comision_productos'] = $comision_productos;
+            if (in_array('almuerzo_inicio', $columns)) $dataToInsert['almuerzo_inicio'] = $almuerzo_inicio;
+            if (in_array('almuerzo_fin', $columns)) $dataToInsert['almuerzo_fin'] = $almuerzo_fin;
+            if (in_array('almuerzo_activo', $columns)) $dataToInsert['almuerzo_activo'] = $almuerzo_activo;
+            if (in_array('activo', $columns)) $dataToInsert['activo'] = 1;
 
+            $colNames = array_keys($dataToInsert);
+            $colPlaceholders = array_fill(0, count($colNames), '?');
+            $insertSql = "INSERT INTO usuarios (`" . implode('`, `', $colNames) . "`) VALUES (" . implode(', ', $colPlaceholders) . ")";
+            
+            $stmt = $pdo->prepare($insertSql);
+            $stmt->execute(array_values($dataToInsert));
             $newUserId = $pdo->lastInsertId();
-            registrarLog('CREAR', 'usuarios', $newUserId, "Usuario '$nombre' ($rol) registrado exitosamente");
 
-            header('Location: ../usuarios.php?success=Usuario creado exitosamente');
+            // Si es un barbero, inicializar horarios semanales (Lun a Dom de 10:00 a 20:00)
+            if ($rol === 'barbero' && $newUserId) {
+                try {
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS `horarios_barberos` (
+                            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                            `barbero_id` INT UNSIGNED NOT NULL,
+                            `dia_semana` TINYINT UNSIGNED NOT NULL,
+                            `hora_inicio` TIME NOT NULL DEFAULT '10:00:00',
+                            `hora_fin` TIME NOT NULL DEFAULT '20:00:00',
+                            `activo` TINYINT(1) NOT NULL DEFAULT 1,
+                            PRIMARY KEY (`id`),
+                            UNIQUE KEY `uk_barbero_dia` (`barbero_id`, `dia_semana`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                    ");
+                    $stmtH = $pdo->prepare("INSERT IGNORE INTO horarios_barberos (barbero_id, dia_semana, hora_inicio, hora_fin, activo) VALUES (?, ?, '10:00:00', '20:00:00', 1)");
+                    for ($d = 0; $d <= 6; $d++) {
+                        $stmtH->execute([$newUserId, $d]);
+                    }
+                } catch (Exception $e_horarios) {
+                    error_log("Error inicializando horarios de barbero: " . $e_horarios->getMessage());
+                }
+            }
+
+            registrarLog('CREAR', 'usuarios', $newUserId, "Usuario '$nombre' ($rol) creado exitosamente");
+            header('Location: ../usuarios.php?success=' . urlencode("Usuario '$nombre' creado exitosamente"));
             exit;
 
         case 'update':
@@ -101,7 +192,8 @@ try {
             $password = $_POST['password'] ?? '';
             $rol = $_POST['rol'] ?? 'barbero';
             $sucursal_id = !empty($_POST['sucursal_id']) ? intval($_POST['sucursal_id']) : null;
-            $biografia = trim($_POST['biografia'] ?? '');
+
+            $biografia = trim($_POST['biografia'] ?? ($_POST['bio'] ?? ''));
             $especialidades = trim($_POST['especialidades'] ?? '');
             $telefono = trim($_POST['telefono'] ?? '');
             $comision_porcentaje = floatval($_POST['comision_porcentaje'] ?? 50.00);
@@ -109,127 +201,132 @@ try {
             $comision_productos = floatval($_POST['comision_productos'] ?? 10.00);
             $almuerzo_inicio = trim($_POST['almuerzo_inicio'] ?? '13:00');
             $almuerzo_fin = trim($_POST['almuerzo_fin'] ?? '14:00');
-            $almuerzo_activo = intval($_POST['almuerzo_activo'] ?? 1);
+            $almuerzo_activo = isset($_POST['almuerzo_activo']) ? intval($_POST['almuerzo_activo']) : 1;
 
             if ($id <= 0) {
-                throw new Exception('ID de usuario inválido.');
+                throw new Exception('ID de usuario no válido.');
             }
 
             if (empty($nombre) || empty($email)) {
-                throw new Exception('El nombre y email son obligatorios.');
+                throw new Exception('El nombre y correo electrónico son obligatorios.');
             }
 
             if (!isValidEmail($email)) {
-                throw new Exception('El email no es válido.');
+                throw new Exception('El correo electrónico no tiene un formato válido.');
             }
 
             // Verificar que el email no esté en uso por otro usuario
             $check = query("SELECT COUNT(*) as count FROM usuarios WHERE email = ? AND id != ?", [$email, $id]);
-            if ($check[0]['count'] > 0) {
-                throw new Exception('El email ya está registrado por otro usuario.');
+            if (!empty($check) && $check[0]['count'] > 0) {
+                throw new Exception('El correo electrónico ya está en uso por otro usuario.');
             }
 
-            // Asegurar columnas
-            try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_productos DECIMAL(5,2) DEFAULT 10.00 AFTER comision_fin_semana"); } catch (Exception $ex) {}
-            try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '15:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1"); } catch (Exception $ex_a) {}
-
-            // Obtener datos anteriores para registrar el cambio exacto
+            // Obtener datos anteriores para registrar el log
             $oldU = query("SELECT * FROM usuarios WHERE id = ?", [$id]);
             $old = !empty($oldU) ? $oldU[0] : [];
 
-            $cambios = [];
-            if (!empty($old)) {
-                if (($old['nombre'] ?? '') !== $nombre) {
-                    $cambios[] = "Nombre: '" . ($old['nombre'] ?? '') . "' ➔ '$nombre'";
-                }
-                if (($old['email'] ?? '') !== $email) {
-                    $cambios[] = "Email: '" . ($old['email'] ?? '') . "' ➔ '$email'";
-                }
-                if (($old['rol'] ?? '') !== $rol) {
-                    $cambios[] = "Rol: '" . ($old['rol'] ?? '') . "' ➔ '$rol'";
-                }
-                if (!empty($password)) {
-                    $cambios[] = "Contraseña de acceso actualizada";
-                }
-                if (($old['comision_porcentaje'] ?? 0) != $comision_porcentaje) {
-                    $cambios[] = "Comisión: " . floatval($old['comision_porcentaje'] ?? 0) . "% ➔ {$comision_porcentaje}%";
-                }
-                if (!empty($foto_url) && ($old['foto_url'] ?? '') !== $foto_url) {
-                    $cambios[] = "Foto de perfil del barbero actualizada";
-                }
-            }
+            // Mapeo dinámico de datos según columnas existentes
+            $dataToUpdate = [
+                'nombre' => $nombre,
+                'email' => $email,
+                'rol' => $rol,
+                'sucursal_id' => $sucursal_id
+            ];
 
-            // Si se proporcionó contraseña, actualizarla
             if (!empty($password)) {
                 if (strlen($password) < 6) {
-                    throw new Exception('La contraseña debe tener al menos 6 caracteres.');
+                    throw new Exception('La nueva contraseña debe tener al menos 6 caracteres.');
                 }
-                $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-                $sql = "UPDATE usuarios SET nombre = ?, email = ?, password = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ?, comision_fin_semana = ?, comision_productos = ?, almuerzo_inicio = ?, almuerzo_fin = ?, almuerzo_activo = ? WHERE id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$nombre, $email, $passwordHash, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo, $id]);
-            } else {
-                // No actualizar contraseña
-                $sql = "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, sucursal_id = ?, biografia = ?, especialidades = ?, foto_url = ?, telefono = ?, comision_porcentaje = ?, comision_fin_semana = ?, comision_productos = ?, almuerzo_inicio = ?, almuerzo_fin = ?, almuerzo_activo = ? WHERE id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$nombre, $email, $rol, $sucursal_id, $biografia, $especialidades, $foto_url, $telefono, $comision_porcentaje, $comision_fin_semana, $comision_productos, $almuerzo_inicio, $almuerzo_fin, $almuerzo_activo, $id]);
+                $dataToUpdate['password'] = password_hash($password, PASSWORD_DEFAULT);
             }
 
-            $descCambios = !empty($cambios) ? implode('; ', $cambios) : 'Guardado sin modificaciones de texto';
-            registrarLog('EDITAR', 'usuarios', $id, "Usuario '$nombre' (#$id) actualizado. [$descCambios]");
+            if (in_array('telefono', $columns)) $dataToUpdate['telefono'] = $telefono;
+            if (in_array('foto_url', $columns)) {
+                // Solo actualizar foto_url si se subió nueva foto o si ya se envió un valor
+                if (!empty($foto_url) || isset($_POST['foto_url'])) {
+                    $dataToUpdate['foto_url'] = $foto_url;
+                }
+            }
+            if (in_array('especialidades', $columns)) $dataToUpdate['especialidades'] = $especialidades;
+            if (in_array('bio', $columns)) $dataToUpdate['bio'] = $biografia;
+            elseif (in_array('biografia', $columns)) $dataToUpdate['biografia'] = $biografia;
 
-            header('Location: ../usuarios.php?success=Usuario actualizado exitosamente');
+            if (in_array('comision_porcentaje', $columns)) $dataToUpdate['comision_porcentaje'] = $comision_porcentaje;
+            if (in_array('comision_fin_semana', $columns)) $dataToUpdate['comision_fin_semana'] = $comision_fin_semana;
+            if (in_array('comision_productos', $columns)) $dataToUpdate['comision_productos'] = $comision_productos;
+            if (in_array('almuerzo_inicio', $columns)) $dataToUpdate['almuerzo_inicio'] = $almuerzo_inicio;
+            if (in_array('almuerzo_fin', $columns)) $dataToUpdate['almuerzo_fin'] = $almuerzo_fin;
+            if (in_array('almuerzo_activo', $columns)) $dataToUpdate['almuerzo_activo'] = $almuerzo_activo;
+
+            $updateSets = [];
+            $updateValues = [];
+            foreach ($dataToUpdate as $col => $val) {
+                $updateSets[] = "`$col` = ?";
+                $updateValues[] = $val;
+            }
+            $updateValues[] = $id;
+
+            $updateSql = "UPDATE usuarios SET " . implode(', ', $updateSets) . " WHERE id = ?";
+            $stmt = $pdo->prepare($updateSql);
+            $stmt->execute($updateValues);
+
+            registrarLog('EDITAR', 'usuarios', $id, "Usuario '$nombre' (#$id) actualizado exitosamente");
+            header('Location: ../usuarios.php?success=' . urlencode("Usuario '$nombre' actualizado exitosamente"));
             exit;
 
         case 'delete':
             $id = intval($_POST['id'] ?? 0);
 
             if ($id <= 0) {
-                throw new Exception('ID de usuario inválido.');
+                throw new Exception('ID de usuario no válido.');
             }
 
             // No permitir eliminar al usuario actual
             if ($id == $_SESSION['user_id']) {
-                throw new Exception('No puedes eliminar tu propia cuenta.');
+                throw new Exception('No puedes eliminar tu propia cuenta de usuario en sesión.');
             }
 
-            // Obtener nombre del usuario antes de eliminarlo para el registro de log
+            // Obtener nombre del usuario antes de eliminarlo
             $stmtU = $pdo->prepare("SELECT nombre, rol FROM usuarios WHERE id = ?");
             $stmtU->execute([$id]);
             $uData = $stmtU->fetch(PDO::FETCH_ASSOC);
             $uNombre = $uData ? $uData['nombre'] : "ID #$id";
 
-            // Primero desvincular las citas del barbero (poner barbero_id en NULL)
-            $sqlCitas = "UPDATE citas SET barbero_id = NULL WHERE barbero_id = ?";
-            $stmtCitas = $pdo->prepare($sqlCitas);
-            $stmtCitas->execute([$id]);
+            // Desvincular citas del barbero
+            try {
+                $pdo->prepare("UPDATE citas SET barbero_id = NULL WHERE barbero_id = ?")->execute([$id]);
+            } catch (Exception $e) {}
 
             // Eliminar horarios del barbero
-            $sqlHorarios = "DELETE FROM horarios_barberos WHERE barbero_id = ?";
-            $stmtHorarios = $pdo->prepare($sqlHorarios);
-            $stmtHorarios->execute([$id]);
+            try {
+                $pdo->prepare("DELETE FROM horarios_barberos WHERE barbero_id = ?")->execute([$id]);
+            } catch (Exception $e) {}
 
-            // Eliminar días bloqueados del barbero
-            $sqlBloqueos = "DELETE FROM dias_bloqueados WHERE barbero_id = ?";
-            $stmtBloqueos = $pdo->prepare($sqlBloqueos);
-            $stmtBloqueos->execute([$id]);
+            // Eliminar días bloqueados
+            try {
+                $pdo->prepare("DELETE FROM dias_bloqueados WHERE barbero_id = ?")->execute([$id]);
+            } catch (Exception $e) {}
 
-            // Ahora eliminar el usuario
-            $sql = "DELETE FROM usuarios WHERE id = ?";
-            $stmt = $pdo->prepare($sql);
+            // Eliminar bloqueos de horas
+            try {
+                $pdo->prepare("DELETE FROM bloqueos_horas WHERE barbero_id = ?")->execute([$id]);
+            } catch (Exception $e) {}
+
+            // Eliminar usuario
+            $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id = ?");
             $stmt->execute([$id]);
 
             registrarLog('ELIMINAR', 'usuarios', $id, "Usuario '$uNombre' fue eliminado del sistema");
-            header('Location: ../usuarios.php?success=Usuario eliminado exitosamente');
+            header('Location: ../usuarios.php?success=' . urlencode("Usuario '$uNombre' eliminado exitosamente"));
             exit;
 
         default:
-            throw new Exception('Acción no válida.');
+            throw new Exception('Acción no válida solicitada.');
     }
 
 } catch (PDOException $e) {
     error_log("Error en usuarios_action.php: " . $e->getMessage());
-    header('Location: ../usuarios.php?error=' . urlencode('Error de base de datos: ' . $e->getMessage()));
+    header('Location: ../usuarios.php?error=' . urlencode('Error en base de datos: ' . $e->getMessage()));
     exit;
 
 } catch (Exception $e) {
