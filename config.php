@@ -280,6 +280,84 @@ function execute($sql, $params = [])
 }
 
 /**
+ * Asegura la existencia y contenido inicial de la tabla categorias_servicios
+ */
+function asegurarTablaCategorias($pdo = null)
+{
+    if (!$pdo) $pdo = getConnection();
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `categorias_servicios` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `nombre` VARCHAR(100) NOT NULL UNIQUE,
+            `descripcion` TEXT DEFAULT NULL,
+            `icono` VARCHAR(50) DEFAULT 'scissors',
+            `orden` INT NOT NULL DEFAULT 0,
+            `activo` TINYINT(1) NOT NULL DEFAULT 1,
+            `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `fecha_actualizacion` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            INDEX `idx_cat_activo_orden` (`activo`, `orden`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+        // Seed default categories if empty
+        $count = $pdo->query("SELECT COUNT(*) FROM categorias_servicios")->fetchColumn();
+        if ($count == 0) {
+            $defaultCats = [
+                ['nombre' => 'Corte', 'descripcion' => 'Cortes clásicos, degradados modernos y estilos de autor.', 'orden' => 1],
+                ['nombre' => 'Afeitado', 'descripcion' => 'Ritual clásico de afeitado a navaja libre con toalla caliente.', 'orden' => 2],
+                ['nombre' => 'Barba', 'descripcion' => 'Diseño, perfilado, recorte y tratamientos de hidratación para barba.', 'orden' => 3],
+                ['nombre' => 'Spa', 'descripcion' => 'Tratamientos faciales, exfoliación y relajación profunda.', 'orden' => 4],
+                ['nombre' => 'Otros', 'descripcion' => 'Servicios adicionales y paquetes especiales.', 'orden' => 5],
+            ];
+            $stmt = $pdo->prepare("INSERT IGNORE INTO categorias_servicios (nombre, descripcion, orden, activo) VALUES (?, ?, ?, 1)");
+            foreach ($defaultCats as $dc) {
+                $stmt->execute([$dc['nombre'], $dc['descripcion'], $dc['orden']]);
+            }
+
+            // Also import any existing categories from servicios table
+            try {
+                $existing = $pdo->query("SELECT DISTINCT categoria FROM servicios WHERE categoria IS NOT NULL AND TRIM(categoria) != ''")->fetchAll(PDO::FETCH_COLUMN);
+                $orderOffset = 10;
+                foreach ($existing as $exCat) {
+                    $exCat = trim($exCat);
+                    $stmt->execute([$exCat, 'Servicios de categoría ' . $exCat, $orderOffset++]);
+                }
+            } catch (Throwable $e) {}
+        }
+    } catch (Throwable $e) {
+        error_log("Error in asegurarTablaCategorias: " . $e->getMessage());
+    }
+}
+
+/**
+ * Obtener listado de categorías de servicios
+ */
+function getCategoriasServicios($pdo = null, $onlyActive = true)
+{
+    if (!$pdo) $pdo = getConnection();
+    asegurarTablaCategorias($pdo);
+    try {
+        $sql = "SELECT cs.*, (SELECT COUNT(*) FROM servicios s WHERE s.categoria = cs.nombre) as total_servicios 
+                FROM categorias_servicios cs";
+        if ($onlyActive) {
+            $sql .= " WHERE cs.activo = 1";
+        }
+        $sql .= " ORDER BY cs.orden ASC, cs.nombre ASC";
+
+        return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        error_log("Error in getCategoriasServicios: " . $e->getMessage());
+        return [
+            ['id' => 1, 'nombre' => 'Corte', 'descripcion' => 'Corte & Estilo', 'orden' => 1, 'activo' => 1, 'total_servicios' => 0],
+            ['id' => 2, 'nombre' => 'Afeitado', 'descripcion' => 'Afeitado Tradicional', 'orden' => 2, 'activo' => 1, 'total_servicios' => 0],
+            ['id' => 3, 'nombre' => 'Barba', 'descripcion' => 'Cuidado de Barba', 'orden' => 3, 'activo' => 1, 'total_servicios' => 0],
+            ['id' => 4, 'nombre' => 'Spa', 'descripcion' => 'Tratamientos Spa', 'orden' => 4, 'activo' => 1, 'total_servicios' => 0],
+            ['id' => 5, 'nombre' => 'Otros', 'descripcion' => 'Otros Servicios', 'orden' => 5, 'activo' => 1, 'total_servicios' => 0],
+        ];
+    }
+}
+
+/**
  * Verificar si el usuario está autenticado
  * @return bool
  */

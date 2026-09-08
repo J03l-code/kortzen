@@ -11,7 +11,11 @@ require_once 'config.php';
 $servicios_por_cat = [];
 try {
     $pdo = getConnection();
-    $stmt = $pdo->query("SELECT * FROM servicios WHERE activo = 1 ORDER BY categoria ASC, id ASC");
+    asegurarTablaCategorias($pdo);
+    $stmt = $pdo->query("SELECT s.* FROM servicios s 
+                         LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
+                         WHERE s.activo = 1 
+                         ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, s.id ASC");
     $todos_servicios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($todos_servicios)) {

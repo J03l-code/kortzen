@@ -191,16 +191,39 @@ include 'includes/header.php';
         </div>
 
         <div class="form-group">
-            <label class="form-label">Categoría</label>
-            <select name="categoria" class="form-select" required>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" style="margin-bottom: 0;">Categoría *</label>
+                <a href="categorias_servicios.php" target="_blank" style="font-size: 12px; color: #2563EB; text-decoration: none; font-weight: 600;">
+                    ⚙️ Gestionar Categorías
+                </a>
+            </div>
+            <select name="categoria" id="categoriaSelect" class="form-select" required>
                 <?php
-                $cats = ['Corte', 'Barba', 'Afeitado', 'Spa', 'Otros'];
-                $currentCat = $isEdit ? ($servicio['categoria'] ?? 'General') : 'Corte';
-                foreach ($cats as $cat): ?>
-                    <option value="<?php echo $cat; ?>" <?php echo ($currentCat == $cat) ? 'selected' : ''; ?>>
-                        <?php echo $cat; ?>
+                $categoriasDB = getCategoriasServicios($pdo, true);
+                $currentCat = $isEdit ? ($servicio['categoria'] ?? 'Corte') : 'Corte';
+                
+                // Ensure current category is in list even if not active
+                $foundCurrent = false;
+                foreach ($categoriasDB as $catObj) {
+                    if (strcasecmp($catObj['nombre'], $currentCat) === 0) {
+                        $foundCurrent = true;
+                        break;
+                    }
+                }
+                
+                foreach ($categoriasDB as $catObj): 
+                    $cat = $catObj['nombre'];
+                ?>
+                    <option value="<?php echo htmlspecialchars($cat); ?>" <?php echo (strcasecmp($currentCat, $cat) === 0) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($cat); ?>
                     </option>
                 <?php endforeach; ?>
+
+                <?php if (!$foundCurrent && !empty($currentCat)): ?>
+                    <option value="<?php echo htmlspecialchars($currentCat); ?>" selected>
+                        <?php echo htmlspecialchars($currentCat); ?>
+                    </option>
+                <?php endif; ?>
             </select>
         </div>
 

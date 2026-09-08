@@ -8,7 +8,12 @@ try {
 
     $sucursal_id = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
 
-    $sql = "SELECT * FROM servicios WHERE activo = 1";
+    $categoriesList = getCategoriasServicios($pdo, true);
+
+    $sql = "SELECT s.*, cs.orden as cat_orden, cs.descripcion as cat_descripcion 
+            FROM servicios s 
+            LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
+            WHERE s.activo = 1";
     $params = [];
 
     if ($sucursal_id > 0) {
@@ -16,21 +21,25 @@ try {
         try {
             $checkSS = $pdo->query("SELECT COUNT(*) FROM servicios_sucursales WHERE sucursal_id = $sucursal_id")->fetchColumn();
             if ($checkSS > 0) {
-                $sql = "SELECT s.* FROM servicios s 
+                $sql = "SELECT s.*, cs.orden as cat_orden, cs.descripcion as cat_descripcion 
+                        FROM servicios s 
                         INNER JOIN servicios_sucursales ss ON s.id = ss.servicio_id 
+                        LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
                         WHERE s.activo = 1 AND ss.sucursal_id = ? 
-                        ORDER BY s.id ASC";
+                        ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, s.id ASC";
                 $params = [$sucursal_id];
             } else {
-                $sql = "SELECT * FROM servicios WHERE activo = 1 AND (sucursal_id = ? OR sucursal_id IS NULL OR sucursal_id = 0) ORDER BY id ASC";
+                $sql .= " AND (s.sucursal_id = ? OR s.sucursal_id IS NULL OR s.sucursal_id = 0) 
+                          ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, s.id ASC";
                 $params = [$sucursal_id];
             }
         } catch (Throwable $e) {
-            $sql = "SELECT * FROM servicios WHERE activo = 1 AND (sucursal_id = ? OR sucursal_id IS NULL OR sucursal_id = 0) ORDER BY id ASC";
+            $sql .= " AND (s.sucursal_id = ? OR s.sucursal_id IS NULL OR s.sucursal_id = 0) 
+                      ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, s.id ASC";
             $params = [$sucursal_id];
         }
     } else {
-        $sql .= " ORDER BY id ASC";
+        $sql .= " ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, s.id ASC";
     }
 
     $stmt = $pdo->prepare($sql);
@@ -49,7 +58,11 @@ try {
         }
     }
 
-    echo json_encode(['success' => true, 'data' => $servicios]);
+    echo json_encode([
+        'success' => true, 
+        'data' => $servicios,
+        'categories' => $categoriesList
+    ]);
 
 } catch (Exception $e) {
     http_response_code(500);

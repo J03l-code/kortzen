@@ -7,12 +7,21 @@ $currentUser = getCurrentUser();
 // Si es barbero, tiene acceso pero solo lectura
 $isReadOnly = isBarbero();
 
-// Obtener servicios
+// Obtener categorías y servicios
 try {
-    $servicios = query("SELECT * FROM servicios ORDER BY activo DESC, nombre ASC");
+    $pdo = getConnection();
+    asegurarTablaCategorias($pdo);
+    $categoriasList = getCategoriasServicios($pdo, false);
+
+    $sql = "SELECT s.*, cs.orden as cat_orden 
+            FROM servicios s 
+            LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
+            ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, s.activo DESC, s.nombre ASC";
+    $servicios = query($sql);
 } catch (PDOException $e) {
     error_log("Error al obtener servicios: " . $e->getMessage());
     $servicios = [];
+    $categoriasList = [];
 }
 
 $pageTitle = 'Servicios';
@@ -20,11 +29,46 @@ include 'includes/header.php';
 ?>
 
 <div class="page-header">
-    <h1 class="page-title">Catálogo de Servicios</h1>
+    <div>
+        <h1 class="page-title" style="margin-bottom: 4px;">Catálogo de Servicios</h1>
+        <p style="color: var(--text-muted, #6B7280); font-size: 14px; margin: 0;">
+            Administra los servicios, precios, duraciones y categorías de tu barbería.
+        </p>
+    </div>
     <?php if (!$isReadOnly): ?>
-        <button onclick="window.location.href='servicios_crear.php'" class="btn btn-primary">+ AÑADIR SERVICIO</button>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <a href="categorias_servicios.php" class="btn-secondary-custom" style="padding: 10px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 6px; background: #FFFFFF; color: #374151; transition: all 0.2s ease;">
+                <span>🏷️</span> GESTIONAR CATEGORÍAS
+            </a>
+            <button onclick="window.location.href='servicios_crear.php'" class="btn btn-primary">+ AÑADIR SERVICIO</button>
+        </div>
     <?php endif; ?>
 </div>
+
+<?php if (isset($_GET['success'])): ?>
+    <div style="background: rgba(46, 204, 113, 0.12); border: 1px solid #2ECC71; color: #27ae60; padding: 14px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 18px;">✓</span> <?php echo htmlspecialchars($_GET['success']); ?>
+    </div>
+<?php endif; ?>
+
+<?php if (isset($_GET['error'])): ?>
+    <div style="background: rgba(231, 76, 60, 0.12); border: 1px solid #E74C3C; color: #c0392b; padding: 14px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 18px;">⚠</span> <?php echo htmlspecialchars($_GET['error']); ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($categoriasList)): ?>
+    <div style="display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px;">
+        <button type="button" onclick="filterByCategory('all')" class="cat-filter-pill active" id="pill-all">
+            Todos (<?php echo count($servicios); ?>)
+        </button>
+        <?php foreach ($categoriasList as $cl): ?>
+            <button type="button" onclick="filterByCategory('<?php echo htmlspecialchars(addslashes($cl['nombre'])); ?>')" class="cat-filter-pill" id="pill-<?php echo md5($cl['nombre']); ?>">
+                <?php echo htmlspecialchars($cl['nombre']); ?> (<?php echo intval($cl['total_servicios'] ?? 0); ?>)
+            </button>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 
 <style>
     .page-header {
@@ -111,6 +155,34 @@ include 'includes/header.php';
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    .cat-filter-pill {
+        padding: 8px 16px;
+        background: #FFFFFF;
+        border: 1px solid #D1D5DB;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #4B5563;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+    }
+
+    .cat-filter-pill:hover {
+        background: #F3F4F6;
+        color: #111827;
+        border-color: #9CA3AF;
+    }
+
+    .cat-filter-pill.active {
+        background: #111827;
+        color: #FFFFFF;
+        border-color: #111827;
+    }
+
+    .service-row.hidden-by-cat {
+        display: none !important;
+    }
 </style>
 
 <div class="table-container">
@@ -127,10 +199,12 @@ include 'includes/header.php';
                 <?php endif; ?>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="servicesTableBody">
             <?php if (count($servicios) > 0): ?>
-                <?php foreach ($servicios as $servicio): ?>
-                    <tr>
+                <?php foreach ($servicios as $servicio): 
+                    $catVal = trim($servicio['categoria'] ?? 'General');
+                ?>
+                    <tr class="service-row" data-category="<?php echo htmlspecialchars($catVal); ?>">
                         <td>
                             <div>
                                 <strong>
@@ -143,11 +217,10 @@ include 'includes/header.php';
                                 <?php endif; ?>
                             </div>
                         </td>
-                        </td>
                         <td>
                             <span class="status-badge"
-                                style="background: rgba(51, 51, 51, 0.1); color: #333333; border: 1px solid rgba(51, 51, 51, 0.3);">
-                                <?php echo htmlspecialchars($servicio['categoria'] ?? 'General'); ?>
+                                style="background: rgba(51, 51, 51, 0.08); color: #111827; border: 1px solid rgba(51, 51, 51, 0.2); font-weight: 700;">
+                                <?php echo htmlspecialchars($catVal); ?>
                             </span>
                         </td>
                         <td>$
@@ -175,7 +248,7 @@ include 'includes/header.php';
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
                         No hay servicios registrados
                     </td>
                 </tr>
@@ -185,6 +258,23 @@ include 'includes/header.php';
 </div>
 
 <script>
+    function filterByCategory(cat) {
+        document.querySelectorAll('.cat-filter-pill').forEach(p => p.classList.remove('active'));
+        if (cat === 'all') {
+            document.getElementById('pill-all')?.classList.add('active');
+            document.querySelectorAll('.service-row').forEach(row => row.classList.remove('hidden-by-cat'));
+        } else {
+            event.target.classList.add('active');
+            document.querySelectorAll('.service-row').forEach(row => {
+                if (row.getAttribute('data-category') === cat) {
+                    row.classList.remove('hidden-by-cat');
+                } else {
+                    row.classList.add('hidden-by-cat');
+                }
+            });
+        }
+    }
+
     function confirmarEliminar(id, nombre) {
         if (confirm('¿Estás seguro de eliminar el servicio "' + nombre + '"?')) {
             const form = document.createElement('form');

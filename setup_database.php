@@ -127,6 +127,23 @@ try {
     ");
     $status[] = "✓ Tabla `servicios_sucursales` lista";
 
+    // 4.2 CATEGORIAS_SERVICIOS
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `categorias_servicios` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `nombre` VARCHAR(100) NOT NULL UNIQUE,
+            `descripcion` TEXT DEFAULT NULL,
+            `icono` VARCHAR(50) DEFAULT 'scissors',
+            `orden` INT NOT NULL DEFAULT 0,
+            `activo` TINYINT(1) NOT NULL DEFAULT 1,
+            `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `fecha_actualizacion` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            INDEX `idx_cat_activo_orden` (`activo`, `orden`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    $status[] = "✓ Tabla `categorias_servicios` lista";
+
     // 5. INVENTARIO
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS `inventario` (
