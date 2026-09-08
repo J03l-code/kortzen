@@ -11,10 +11,14 @@ require_once 'config.php';
 $barberos = [];
 try {
     $pdo = getConnection();
-    $stmt = $pdo->query("SELECT id, nombre, rol, email, biografia, especialidades, foto_url FROM usuarios WHERE activo = 1 AND rol = 'barbero' ORDER BY id ASC");
+    $stmt = $pdo->query("SELECT * FROM usuarios WHERE activo = 1 AND rol = 'barbero' ORDER BY id ASC");
     $barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($barberos as &$b) {
+        $b['biografia'] = !empty($b['biografia']) ? $b['biografia'] : (!empty($b['bio']) ? $b['bio'] : '');
+    }
 } catch (Exception $e) {
 }
+
 
 // Fallback por si no hay barberos creados aún en BD
 if (empty($barberos)) {

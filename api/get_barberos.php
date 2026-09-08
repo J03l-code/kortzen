@@ -16,25 +16,23 @@ try {
     $whereAuto = "activo = 1 AND rol = 'barbero'";
 
     if ($sucursal_id > 0) {
-        $sql = "SELECT id, nombre, rol, email, biografia, especialidades, foto_url FROM usuarios WHERE $whereAuto AND sucursal_id = ?";
+        $sql = "SELECT * FROM usuarios WHERE $whereAuto AND sucursal_id = ?";
         $params[] = $sucursal_id;
     } else {
-        // Fallback: Return all barbers if no specific branch requested (or handle as error)
-        // ideally we always want a branch.
-        $sql = "SELECT id, nombre, rol, email, biografia, especialidades, foto_url FROM usuarios WHERE $whereAuto";
+        $sql = "SELECT * FROM usuarios WHERE $whereAuto";
     }
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Add placeholder image logic if needed (frontend can handle it too)
+    // Add placeholder image and bio fallback
     foreach ($barberos as &$barbero) {
-        // Simple role formatting
         $barbero['cargo'] = ($barbero['rol'] === 'admin_local') ? 'Gerente / Master Barber' : 'Barbero Profesional';
-        // Placeholder image or real URL
         $barbero['foto'] = !empty($barbero['foto_url']) ? $barbero['foto_url'] : '/assets/images/barber-placeholder.jpg';
+        $barbero['biografia'] = !empty($barbero['biografia']) ? $barbero['biografia'] : (!empty($barbero['bio']) ? $barbero['bio'] : '');
     }
+
 
     echo json_encode(['success' => true, 'data' => $barberos]);
 

@@ -177,8 +177,9 @@ include 'includes/header.php';
 
         <div class="form-group">
             <label class="form-label">Biografía</label>
-            <textarea name="biografia" class="form-input" rows="4" placeholder="Breve descripción del barbero..."><?php echo $isEdit && isset($usuario['biografia']) ? htmlspecialchars($usuario['biografia']) : ''; ?></textarea>
+            <textarea name="biografia" class="form-input" rows="4" placeholder="Breve descripción del barbero..."><?php echo $isEdit ? htmlspecialchars(!empty($usuario['biografia']) ? $usuario['biografia'] : ($usuario['bio'] ?? '')) : ''; ?></textarea>
         </div>
+
 
         <div class="form-group">
             <label class="form-label">Especialidades</label>

@@ -107,13 +107,69 @@ function getConnection()
                 $pdo->exec("SET time_zone = '-05:00'");
             } catch (Exception $e_tz) {}
 
-            // Auto-migraciones ejecutadas 1 sola vez por sesión activa para máxima velocidad de carga
+            // Auto-migraciones ejecutadas en cada inicio para máxima compatibilidad con cualquier base de datos
+            try {
+                // Sincronizar y asegurar columnas en usuarios (evita Unknown column 'biografia' o 'bio')
+                $colsU = $pdo->query("SHOW COLUMNS FROM usuarios")->fetchAll(PDO::FETCH_COLUMN);
+                if (!in_array('biografia', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN biografia TEXT NULL"); } catch (Exception $e) {}
+                }
+                if (!in_array('bio', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN bio TEXT NULL"); } catch (Exception $e) {}
+                }
+                if (!in_array('telefono', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN telefono VARCHAR(30) NULL"); } catch (Exception $e) {}
+                }
+                if (!in_array('foto_url', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN foto_url VARCHAR(500) NULL"); } catch (Exception $e) {}
+                }
+                if (!in_array('especialidades', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN especialidades VARCHAR(255) NULL"); } catch (Exception $e) {}
+                }
+                if (!in_array('comision_porcentaje', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_porcentaje DECIMAL(5,2) DEFAULT 50.00"); } catch (Exception $e) {}
+                }
+                if (!in_array('comision_fin_semana', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_fin_semana DECIMAL(5,2) DEFAULT 50.00"); } catch (Exception $e) {}
+                }
+                if (!in_array('comision_productos', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN comision_productos DECIMAL(5,2) DEFAULT 10.00"); } catch (Exception $e) {}
+                }
+                if (!in_array('almuerzo_inicio', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '13:00:00'"); } catch (Exception $e) {}
+                }
+                if (!in_array('almuerzo_fin', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_fin TIME DEFAULT '14:00:00'"); } catch (Exception $e) {}
+                }
+                if (!in_array('almuerzo_activo', $colsU)) {
+                    try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_activo TINYINT DEFAULT 1"); } catch (Exception $e) {}
+                }
+
+                // Sincronizar valores entre bio y biografia si alguno está vacío
+                try {
+                    $pdo->exec("UPDATE usuarios SET biografia = bio WHERE (biografia IS NULL OR biografia = '') AND (bio IS NOT NULL AND bio != '')");
+                    $pdo->exec("UPDATE usuarios SET bio = biografia WHERE (bio IS NULL OR bio = '') AND (biografia IS NOT NULL AND biografia != '')");
+                } catch (Exception $e) {}
+
+            } catch (Exception $e_u_cols) {}
+
             if (empty($_SESSION['kortzen_schema_migrated'])) {
                 $_SESSION['kortzen_schema_migrated'] = true;
 
                 try {
                     $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
                 } catch (Exception $e_prop) {}
+
+                try {
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS servicios_sucursales (
+                            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                            servicio_id INT UNSIGNED NOT NULL,
+                            sucursal_id INT UNSIGNED NOT NULL,
+                            UNIQUE KEY uk_servicio_sucursal (servicio_id, sucursal_id)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                    ");
+                } catch (Exception $e_ss) {}
 
                 try {
                     $pdo->exec("
@@ -131,14 +187,6 @@ function getConnection()
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                     ");
                 } catch (Exception $e_invb) {}
-
-                try {
-                    $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_inicio TIME DEFAULT '13:00:00', ADD COLUMN almuerzo_fin TIME DEFAULT '14:00:00', ADD COLUMN almuerzo_activo TINYINT DEFAULT 1");
-                } catch (Exception $e_almuerzo) {}
-
-                try {
-                    $pdo->exec("UPDATE usuarios SET almuerzo_inicio = '13:00:00', almuerzo_fin = '14:00:00' WHERE almuerzo_inicio = '14:00:00' OR almuerzo_inicio IS NULL");
-                } catch (Exception $e_updalm) {}
 
                 try {
                     $pdo->exec("ALTER TABLE citas ADD COLUMN recordatorio_2h_enviado TINYINT(1) DEFAULT 0");
@@ -162,6 +210,7 @@ function getConnection()
                     ");
                 } catch (Exception $e_psub) {}
             }
+
 
         } catch (PDOException $e) {
             // Log del error (en producción, usa error_log)
