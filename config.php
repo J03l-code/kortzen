@@ -150,17 +150,9 @@ function getConnection()
                     if (!in_array('almuerzo_activo', $colsU)) {
                         try { $pdo->exec("ALTER TABLE usuarios ADD COLUMN almuerzo_activo TINYINT DEFAULT 1"); } catch (Throwable $e) {}
                     }
-
-                    // Re-comprobar columnas antes de cualquier UPDATE de sincronización
-                    $colsUpdated = $pdo->query("SHOW COLUMNS FROM usuarios")->fetchAll(PDO::FETCH_COLUMN);
-                    if (in_array('biografia', $colsUpdated) && in_array('bio', $colsUpdated)) {
-                        try {
-                            $pdo->exec("UPDATE usuarios SET biografia = bio WHERE (biografia IS NULL OR biografia = '') AND (bio IS NOT NULL AND bio != '')");
-                            $pdo->exec("UPDATE usuarios SET bio = biografia WHERE (bio IS NULL OR bio = '') AND (biografia IS NOT NULL AND biografia != '')");
-                        } catch (Throwable $e) {}
-                    }
                 }
             } catch (Throwable $e_u_cols) {}
+
 
             if (empty($_SESSION['kortzen_schema_migrated'])) {
                 $_SESSION['kortzen_schema_migrated'] = true;

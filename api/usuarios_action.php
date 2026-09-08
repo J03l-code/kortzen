@@ -37,8 +37,12 @@ try {
             'activo' => "TINYINT(1) NOT NULL DEFAULT 1"
         ];
 
-        $colsStmt = $pdo->query("SHOW COLUMNS FROM usuarios");
-        $existingCols = $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        try {
+            $colsStmt = $pdo->query("SHOW COLUMNS FROM usuarios");
+            $existingCols = $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        } catch (Throwable $e) {
+            $existingCols = [];
+        }
 
         foreach ($neededCols as $col => $ddl) {
             // Si falta 'bio' y 'biografia', agregamos al menos uno
@@ -48,14 +52,19 @@ try {
             if (!in_array($col, $existingCols)) {
                 try {
                     $pdo->exec("ALTER TABLE usuarios ADD COLUMN `$col` $ddl");
-                } catch (Exception $e) {}
+                } catch (Throwable $e) {}
             }
         }
 
         // Re-leer columnas actualizadas
-        $colsStmt = $pdo->query("SHOW COLUMNS FROM usuarios");
-        return $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        try {
+            $colsStmt = $pdo->query("SHOW COLUMNS FROM usuarios");
+            return $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        } catch (Throwable $e) {
+            return $existingCols;
+        }
     };
+
 
     $columns = $ensureUsuariosColumns();
 
