@@ -13,14 +13,15 @@ try {
     // If not, we might return empty or all. Let's return empty if no branch ID to be safe, or allow 0 for all.
 
     $params = [];
-    $whereAuto = "activo = 1 AND rol = 'barbero'";
+    $whereAuto = "activo = 1 AND (rol = 'barbero' OR rol = 'admin_local')";
 
     if ($sucursal_id > 0) {
-        $sql = "SELECT * FROM usuarios WHERE $whereAuto AND sucursal_id = ?";
+        $sql = "SELECT * FROM usuarios WHERE $whereAuto AND (sucursal_id = ? OR sucursal_id IS NULL OR sucursal_id = 0) ORDER BY id ASC";
         $params[] = $sucursal_id;
     } else {
-        $sql = "SELECT * FROM usuarios WHERE $whereAuto";
+        $sql = "SELECT * FROM usuarios WHERE $whereAuto ORDER BY id ASC";
     }
+
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
@@ -29,8 +30,12 @@ try {
     // Add placeholder image and bio fallback
     foreach ($barberos as &$barbero) {
         $barbero['cargo'] = ($barbero['rol'] === 'admin_local') ? 'Gerente / Master Barber' : 'Barbero Profesional';
-        $barbero['foto'] = !empty($barbero['foto_url']) ? $barbero['foto_url'] : '/assets/images/barber-placeholder.jpg';
+        $foto = !empty($barbero['foto_url']) ? $barbero['foto_url'] : (!empty($barbero['foto']) ? $barbero['foto'] : '');
+        $barbero['foto'] = !empty($foto) ? $foto : '/assets/images/barber-placeholder.jpg';
+        $barbero['foto_url'] = $barbero['foto'];
+        $barbero['foto_perfil'] = $barbero['foto'];
         $barbero['biografia'] = !empty($barbero['biografia']) ? $barbero['biografia'] : (!empty($barbero['bio']) ? $barbero['bio'] : '');
+        $barbero['bio'] = $barbero['biografia'];
     }
 
 
