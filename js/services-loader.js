@@ -83,36 +83,10 @@ const ServicesLoader = {
             grouped[cat].push(service);
         });
 
-        // 3. Crear barra de navegación / filtros por categorías si hay más de 1 categoría
+        // 3. Renderizar cada sección de categoría
         const categoriesWithServices = Object.keys(grouped).filter(k => grouped[k].length > 0);
-
-        if (categoriesWithServices.length > 1) {
-            const filterBar = document.createElement('div');
-            filterBar.className = 'services-category-nav';
-            filterBar.style.cssText = 'display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: -1.5rem auto 3.5rem auto; padding: 0 1.5rem; max-width: 1000px;';
-
-            filterBar.innerHTML = `
-                <button type="button" class="service-nav-pill is-active" onclick="ServicesLoader.filterView('all', this)" style="padding: 10px 22px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border: 1px solid var(--color-gold, #C5A880); background: var(--color-gold, #C5A880); color: #111111; transition: all 0.25s ease;">
-                    Todos
-                </button>
-            `;
-
-            categoriesWithServices.forEach(catName => {
-                const slug = this.slugify(catName);
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'service-nav-pill';
-                btn.style.cssText = 'padding: 10px 22px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); color: var(--color-white, #FFFFFF); transition: all 0.25s ease;';
-                btn.textContent = catName;
-                btn.onclick = () => ServicesLoader.filterView(slug, btn);
-                filterBar.appendChild(btn);
-            });
-
-            mainContainer.appendChild(filterBar);
-        }
-
-        // 4. Renderizar cada sección de categoría
         let sectionIndex = 0;
+
         categoriesWithServices.forEach(catName => {
             const services = grouped[catName];
             const meta = catMeta[catName] || {};
@@ -121,8 +95,8 @@ const ServicesLoader = {
 
             const section = document.createElement('section');
             section.className = 'section service-category';
-            section.id = `cat-${slug}`;
-            section.setAttribute('data-category-slug', slug);
+            section.id = slug;
+            section.setAttribute('aria-labelledby', `${slug}-title`);
             if (isCharcoalBg) {
                 section.style.backgroundColor = 'var(--color-charcoal, #1A1A1A)';
             }
@@ -132,18 +106,18 @@ const ServicesLoader = {
 
             let descHtml = '';
             if (meta.descripcion && meta.descripcion.trim() !== '') {
-                descHtml = `<p style="text-align: center; max-width: 650px; margin: -1.5rem auto 3rem auto; color: var(--color-gray, #999999); font-size: 0.95rem; line-height: 1.6;">${meta.descripcion}</p>`;
+                descHtml = `<p style="text-align: center; max-width: 600px; margin: -1.5rem auto 2.5rem auto; color: var(--color-gray, #999999); font-size: 0.95rem; line-height: 1.5;">${meta.descripcion}</p>`;
             }
 
             containerDiv.innerHTML = `
-                <h2 class="service-category__title">
+                <h2 id="${slug}-title" class="service-category__title">
                     <span>${meta.nombre || catName}</span>
                 </h2>
                 ${descHtml}
-                <div class="services-grid" id="services-grid-${slug}"></div>
+                <div class="services-grid" id="services-${slug}"></div>
             `;
 
-            const grid = containerDiv.querySelector(`#services-grid-${slug}`);
+            const grid = containerDiv.querySelector(`#services-${slug}`);
             services.forEach(service => {
                 this.renderServiceCard(service, grid);
             });
@@ -159,33 +133,6 @@ const ServicesLoader = {
                 const elements = mainContainer.querySelectorAll('[data-reveal]');
                 elements.forEach(el => el.classList.add('revealed'));
             }, 100);
-        }
-    },
-
-    // Filtra las categorías en pantalla o hace scroll suave
-    filterView: function (slug, clickedBtn) {
-        document.querySelectorAll('.service-nav-pill').forEach(btn => {
-            btn.style.background = 'rgba(255,255,255,0.03)';
-            btn.style.color = 'var(--color-white, #FFFFFF)';
-            btn.style.borderColor = 'rgba(255,255,255,0.15)';
-        });
-
-        clickedBtn.style.background = 'var(--color-gold, #C5A880)';
-        clickedBtn.style.color = '#111111';
-        clickedBtn.style.borderColor = 'var(--color-gold, #C5A880)';
-
-        const sections = document.querySelectorAll('.service-category[data-category-slug]');
-        if (slug === 'all') {
-            sections.forEach(s => s.style.display = 'block');
-        } else {
-            sections.forEach(s => {
-                if (s.getAttribute('data-category-slug') === slug) {
-                    s.style.display = 'block';
-                    s.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                    s.style.display = 'none';
-                }
-            });
         }
     },
 
