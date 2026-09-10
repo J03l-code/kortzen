@@ -20,11 +20,8 @@ $sucursal_id = $currentUser['sucursal_id'] ?? 1;
 // Asegurar columnas y tablas requeridas en la BD live
 try {
     $pdo = getConnection();
-    $pdo->exec("ALTER TABLE clientes ADD COLUMN notas_barbero TEXT NULL AFTER notas");
-} catch (Exception $exSchema) {}
-
-try {
-    $pdo = getConnection();
+    
+    // Tabla bloqueos_horas
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS bloqueos_horas (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,10 +30,65 @@ try {
             hora_inicio TIME NOT NULL,
             hora_fin TIME NOT NULL,
             motivo VARCHAR(255) NULL,
-            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_barbero (barbero_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
-} catch (Exception $exB) {}
+
+    // Tabla ventas_productos
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS ventas_productos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            cita_id INT NULL,
+            producto_id INT NOT NULL,
+            cantidad INT NOT NULL DEFAULT 1,
+            precio_unitario DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+            sucursal_id INT NOT NULL DEFAULT 1,
+            usuario_id INT NOT NULL,
+            INDEX idx_usuario (usuario_id),
+            INDEX idx_fecha (fecha)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+
+    // Columnas en citas
+    try {
+        $colsCitas = $pdo->query("SHOW COLUMNS FROM citas")->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('precio_final', $colsCitas)) {
+            $pdo->exec("ALTER TABLE citas ADD COLUMN precio_final DECIMAL(10,2) DEFAULT NULL");
+        }
+        if (!in_array('propina', $colsCitas)) {
+            $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) DEFAULT 0.00");
+        }
+        if (!in_array('asistencia_confirmada', $colsCitas)) {
+            $pdo->exec("ALTER TABLE citas ADD COLUMN asistencia_confirmada TINYINT(1) DEFAULT 0");
+        }
+    } catch (Throwable $eCitas) {}
+
+    // Columnas en clientes
+    try {
+        $colsClientes = $pdo->query("SHOW COLUMNS FROM clientes")->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('notas_barbero', $colsClientes)) {
+            $pdo->exec("ALTER TABLE clientes ADD COLUMN notas_barbero TEXT NULL");
+        }
+        if (!in_array('estilo_buscado', $colsClientes)) {
+            $pdo->exec("ALTER TABLE clientes ADD COLUMN estilo_buscado VARCHAR(255) NULL");
+        }
+        if (!in_array('ambiente_preferido', $colsClientes)) {
+            $pdo->exec("ALTER TABLE clientes ADD COLUMN ambiente_preferido VARCHAR(255) NULL");
+        }
+        if (!in_array('bebida_preferida', $colsClientes)) {
+            $pdo->exec("ALTER TABLE clientes ADD COLUMN bebida_preferida VARCHAR(255) NULL");
+        }
+        if (!in_array('puntos', $colsClientes)) {
+            $pdo->exec("ALTER TABLE clientes ADD COLUMN puntos INT DEFAULT 0");
+        }
+        if (!in_array('foto_perfil', $colsClientes)) {
+            $pdo->exec("ALTER TABLE clientes ADD COLUMN foto_perfil VARCHAR(500) NULL");
+        }
+    } catch (Throwable $eCli) {}
+
+} catch (Throwable $exSchema) {}
 
 // Mensajes de estado
 $mensaje = '';
@@ -70,43 +122,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             $cfgs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
                             $puntosPorCorte = intval($cfgs['puntos_por_corte'] ?? 100);
                             $puntosPorReferido = intval($cfgs['puntos_por_referido'] ?? 200);
-                        } catch (Exception $exCfg) {}
+                        } catch (Throwable $exCfg) {}
 
                         // Acreditar puntos al cliente por su corte
-                        $stmtPtsCliente = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
-                        $stmtPtsCliente->execute([$puntosPorCorte, $clienteId]);
+                        try {
+                            $stmtPtsCliente = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
+                            $stmtPtsCliente->execute([$puntosPorCorte, $clienteId]);
+                        } catch (Throwable $exPts) {}
 
-                        // Acreditar puntos por referido (tanto al referente como al cliente referido)
-                        $stmtRefCheck = $pdo->prepare("
-                            SELECT id, referente_id, referido_id, estado 
-                            FROM referidos 
-                            WHERE (cita_id = ? OR referido_id = ?) AND estado = 'pendiente'
-                            LIMIT 1
-                        ");
-                        $stmtRefCheck->execute([$citaId, $clienteId]);
-                        $refData = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
+                        // Acreditar puntos por referido
+                        try {
+                            $stmtRefCheck = $pdo->prepare("
+                                SELECT id, referente_id, referido_id, estado 
+                                FROM referidos 
+                                WHERE (cita_id = ? OR referido_id = ?) AND estado = 'pendiente'
+                                LIMIT 1
+                            ");
+                            $stmtRefCheck->execute([$citaId, $clienteId]);
+                            $refData = $stmtRefCheck->fetch(PDO::FETCH_ASSOC);
 
-                        if ($refData) {
-                            $referidosTableId = $refData['id'];
-                            $referenteId = intval($refData['referente_id']);
+                            if ($refData) {
+                                $referidosTableId = $refData['id'];
+                                $referenteId = intval($refData['referente_id']);
 
-                            // Actualizar registro de referido a completado
-                            $stmtUpdRef = $pdo->prepare("UPDATE referidos SET estado = 'completado', cita_id = ? WHERE id = ?");
-                            $stmtUpdRef->execute([$citaId, $referidosTableId]);
+                                $stmtUpdRef = $pdo->prepare("UPDATE referidos SET estado = 'completado', cita_id = ? WHERE id = ?");
+                                $stmtUpdRef->execute([$citaId, $referidosTableId]);
 
-                            // Acreditar al dueño del código (referente)
-                            if ($referenteId > 0) {
-                                $stmtPtsRef = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
-                                $stmtPtsRef->execute([$puntosPorReferido, $referenteId]);
+                                if ($referenteId > 0) {
+                                    $stmtPtsRef = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
+                                    $stmtPtsRef->execute([$puntosPorReferido, $referenteId]);
+                                }
+
+                                $stmtPtsReferido = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
+                                $stmtPtsReferido->execute([$puntosPorReferido, $clienteId]);
+
+                                $mensaje = "¡Corte completado! +$puntosPorCorte pts al cliente y +$puntosPorReferido pts acreditados por referido.";
+                            } else {
+                                $mensaje = "¡Corte completado! +$puntosPorCorte pts acreditados a la cuenta del cliente.";
                             }
-
-                            // Acreditar también al cliente referido
-                            $stmtPtsReferido = $pdo->prepare("UPDATE clientes SET puntos = IFNULL(puntos, 0) + ? WHERE id = ?");
-                            $stmtPtsReferido->execute([$puntosPorReferido, $clienteId]);
-
-                            $mensaje = "¡Corte completado! +$puntosPorCorte pts al cliente y +$puntosPorReferido pts acreditados por referido al dueño del código y al cliente.";
-                        } else {
-                            $mensaje = "¡Corte completado! +$puntosPorCorte pts acreditados a la cuenta del cliente.";
+                        } catch (Throwable $exRef) {
+                            $mensaje = "Cita marcada como COMPLETADA.";
                         }
                     } else {
                         $mensaje = 'Cita marcada como COMPLETADA. Ganancias actualizadas.';
@@ -115,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $mensaje = 'La cita ya fue marcada como completada anteriormente.';
                 }
                 $tipoMensaje = 'success';
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 $mensaje = 'Error al actualizar cita: ' . $e->getMessage();
                 $tipoMensaje = 'error';
             }
@@ -129,25 +184,37 @@ $com_finde = floatval($currentUser['comision_fin_semana'] ?? 50);
 $com_productos = floatval($currentUser['comision_productos'] ?? 10.00);
 
 // Ganancia Citas Hoy (Servicios)
-$gananciaHoyServicios = query("
-    SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
-    FROM citas 
-    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
-", [$barbero_id])[0]['total'] ?? 0;
+$gananciaHoyServicios = 0;
+try {
+    $r = query("
+        SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
+    ", [$barbero_id]);
+    $gananciaHoyServicios = floatval($r[0]['total'] ?? 0);
+} catch (Throwable $e) {}
 
 // Ganancia Ventas Productos Hoy
-$gananciaHoyVentas = query("
-    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
-    FROM ventas_productos 
-    WHERE usuario_id = ? AND DATE(fecha) = CURDATE()
-", [$barbero_id])[0]['total'] ?? 0;
+$gananciaHoyVentas = 0;
+try {
+    $r = query("
+        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
+        FROM ventas_productos 
+        WHERE usuario_id = ? AND DATE(fecha) = CURDATE()
+    ", [$barbero_id]);
+    $gananciaHoyVentas = floatval($r[0]['total'] ?? 0);
+} catch (Throwable $e) {}
 
 // Propinas Recibidas Hoy (Rubro Independiente)
-$propinasHoy = floatval(query("
-    SELECT SUM(IFNULL(propina, 0)) as total
-    FROM citas 
-    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
-", [$barbero_id])[0]['total'] ?? 0);
+$propinasHoy = 0;
+try {
+    $r = query("
+        SELECT SUM(IFNULL(propina, 0)) as total
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
+    ", [$barbero_id]);
+    $propinasHoy = floatval($r[0]['total'] ?? 0);
+} catch (Throwable $e) {}
 
 $gananciaServiciosVentasHoy = floatval($gananciaHoyServicios) + floatval($gananciaHoyVentas);
 $miGananciaDia = $gananciaServiciosVentasHoy + $propinasHoy;
@@ -156,35 +223,49 @@ $miGananciaDia = $gananciaServiciosVentasHoy + $propinasHoy;
 $monthStart = date('Y-m-01');
 $monthEnd = date('Y-m-t');
 
-$gananciaMesServicios = query("
-    SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
-    FROM citas 
-    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
-", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
+$gananciaMesServicios = 0;
+try {
+    $r = query("
+        SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+    ", [$barbero_id, $monthStart, $monthEnd]);
+    $gananciaMesServicios = floatval($r[0]['total'] ?? 0);
+} catch (Throwable $e) {}
 
-$gananciaMesVentas = query("
-    SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
-    FROM ventas_productos 
-    WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
-", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0;
+$gananciaMesVentas = 0;
+try {
+    $r = query("
+        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
+        FROM ventas_productos 
+        WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
+    ", [$barbero_id, $monthStart, $monthEnd]);
+    $gananciaMesVentas = floatval($r[0]['total'] ?? 0);
+} catch (Throwable $e) {}
 
-// Propinas Recibidas Mes (Rubro Independiente)
-$propinasMes = floatval(query("
-    SELECT SUM(IFNULL(propina, 0)) as total
-    FROM citas 
-    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
-", [$barbero_id, $monthStart, $monthEnd])[0]['total'] ?? 0);
+$propinasMes = 0;
+try {
+    $r = query("
+        SELECT SUM(IFNULL(propina, 0)) as total
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+    ", [$barbero_id, $monthStart, $monthEnd]);
+    $propinasMes = floatval($r[0]['total'] ?? 0);
+} catch (Throwable $e) {}
 
 $gananciaServiciosVentasMes = floatval($gananciaMesServicios) + floatval($gananciaMesVentas);
 $miGananciaMes = $gananciaServiciosVentasMes + $propinasMes;
 
 // Total de citas completadas hoy
-$countHoy = query("
-    SELECT COUNT(*) as total
-    FROM citas 
-    WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
-", [$barbero_id]);
-$totalCitasHoy = intval($countHoy[0]['total'] ?? 0);
+$totalCitasHoy = 0;
+try {
+    $countHoy = query("
+        SELECT COUNT(*) as total
+        FROM citas 
+        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
+    ", [$barbero_id]);
+    $totalCitasHoy = intval($countHoy[0]['total'] ?? 0);
+} catch (Throwable $e) {}
 
 // 2. Próximo Cliente (Garantiza incluir cualquier cita pendiente de HOY)
 $nextClient = [];
@@ -200,7 +281,7 @@ try {
         ORDER BY c.fecha_hora ASC 
         LIMIT 1
     ", [$barbero_id]);
-} catch (Exception $exNext) {
+} catch (Throwable $exNext) {
     try {
         $nextClient = query("
             SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.id as cliente_id_bd, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.foto_perfil
@@ -213,7 +294,7 @@ try {
             ORDER BY c.fecha_hora ASC 
             LIMIT 1
         ", [$barbero_id]);
-    } catch (Exception $exNext2) {
+    } catch (Throwable $exNext2) {
         $nextClient = [];
     }
 }
@@ -221,19 +302,38 @@ try {
 $proximo = $nextClient ? $nextClient[0] : null;
 
 // 3. Turnos de Hoy
-$turnosHoy = query("
-    SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.estilo_buscado, cli.ambiente_preferido, cli.bebida_preferida
-    FROM citas c
-    LEFT JOIN servicios s ON c.servicio_id = s.id
-    LEFT JOIN clientes cli ON c.cliente_id = cli.id
-    WHERE c.barbero_id = ? AND DATE(c.fecha_hora) = CURDATE()
-    ORDER BY c.fecha_hora ASC
-", [$barbero_id]);
+$turnosHoy = [];
+try {
+    $turnosHoy = query("
+        SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.nombre as cliente, cli.telefono as cliente_telefono, cli.estilo_buscado, cli.ambiente_preferido, cli.bebida_preferida
+        FROM citas c
+        LEFT JOIN servicios s ON c.servicio_id = s.id
+        LEFT JOIN clientes cli ON c.cliente_id = cli.id
+        WHERE c.barbero_id = ? AND DATE(c.fecha_hora) = CURDATE()
+        ORDER BY c.fecha_hora ASC
+    ", [$barbero_id]);
+} catch (Throwable $exTurnos) {
+    try {
+        $turnosHoy = query("
+            SELECT c.*, s.nombre as servicio, s.duracion_minutos, cli.nombre as cliente, cli.telefono as cliente_telefono
+            FROM citas c
+            LEFT JOIN servicios s ON c.servicio_id = s.id
+            LEFT JOIN clientes cli ON c.cliente_id = cli.id
+            WHERE c.barbero_id = ? AND DATE(c.fecha_hora) = CURDATE()
+            ORDER BY c.fecha_hora ASC
+        ", [$barbero_id]);
+    } catch (Throwable $exTurnos2) {
+        $turnosHoy = [];
+    }
+}
 
 // 4. Inventario de la Sucursal
-$inventarioItems = query("SELECT id, producto, cantidad, precio FROM inventario WHERE sucursal_id = ? ORDER BY producto ASC", [$sucursal_id]);
+$inventarioItems = [];
+try {
+    $inventarioItems = query("SELECT id, producto, cantidad, precio FROM inventario WHERE sucursal_id = ? ORDER BY producto ASC", [$sucursal_id]);
+} catch (Throwable $eInv) {}
 
-$nombreBarbero = explode(' ', trim($currentUser['nombre']))[0];
+$nombreBarbero = explode(' ', trim($currentUser['nombre'] ?? 'Barbero'))[0];
 $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
 ?>
 <!DOCTYPE html>
