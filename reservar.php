@@ -277,6 +277,290 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             }
         }
 
+        /* Services Compact Luxury List (Setmore-Inspired Elite UX) */
+        .services-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .services-category-block {
+            width: 100%;
+        }
+
+        .services-category-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 2px 8px 2px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        .services-category-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .services-card-group {
+            background: #111114;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .service-list-row {
+            display: flex;
+            align-items: center;
+            padding: 13px 15px;
+            gap: 14px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.18s ease, border-color 0.18s ease;
+            position: relative;
+            background: transparent;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .service-list-row:last-child {
+            border-bottom: none;
+        }
+
+        .service-list-row:hover {
+            background: rgba(255, 255, 255, 0.035);
+        }
+
+        .service-list-row:active {
+            background: rgba(192, 160, 98, 0.08);
+        }
+
+        .service-list-row.selected {
+            background: rgba(192, 160, 98, 0.14) !important;
+            border-left: 3.5px solid var(--gold) !important;
+        }
+
+        .service-list-row.selected .service-chevron-icon {
+            color: var(--gold);
+            transform: translateX(2px);
+        }
+
+        .service-row-thumb {
+            width: 52px;
+            height: 52px;
+            min-width: 52px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #1c1c1e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            display: block;
+        }
+
+        .service-row-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .service-row-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .service-row-title {
+            font-size: 0.94rem;
+            font-weight: 800;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .service-exclusive-pill {
+            font-size: 0.66rem;
+            font-weight: 800;
+            background: rgba(192, 160, 98, 0.18);
+            color: var(--gold);
+            border: 1px solid rgba(192, 160, 98, 0.35);
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .service-row-meta {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.84rem;
+            color: #9E9E9E;
+            line-height: 1.3;
+        }
+
+        .service-row-meta .duration {
+            color: #8E8E93;
+            font-weight: 500;
+        }
+
+        .service-row-meta .meta-dot {
+            color: #555555;
+            font-size: 0.8rem;
+        }
+
+        .service-row-meta .details-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            color: #D1D1D6;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            font-size: 0.84rem;
+            cursor: pointer;
+            transition: color 0.15s ease;
+            font-family: inherit;
+        }
+
+        .service-row-meta .details-btn:hover,
+        .service-row-meta .details-btn:active {
+            color: var(--gold);
+        }
+
+        .service-row-meta .price-val {
+            color: #FFFFFF;
+            font-weight: 800;
+            font-size: 0.92rem;
+            margin: 0;
+            display: inline;
+        }
+
+        .service-chevron-icon {
+            color: #666666;
+            flex-shrink: 0;
+            transition: transform 0.2s ease, color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .service-list-row:hover .service-chevron-icon {
+            color: #FFFFFF;
+            transform: translateX(2px);
+        }
+
+        /* Service Details Modal / Bottom Sheet */
+        .service-details-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .service-details-backdrop.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .service-details-drawer {
+            background: #141417;
+            border: 1px solid rgba(192, 160, 98, 0.35);
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-width: 480px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 22px 20px 30px 20px;
+            box-sizing: border-box;
+            position: relative;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .service-details-backdrop.open .service-details-drawer {
+            transform: translateY(0);
+        }
+
+        @media (min-width: 600px) {
+            .service-details-backdrop {
+                align-items: center;
+            }
+            .service-details-drawer {
+                border-radius: 20px;
+                max-height: 85vh;
+                transform: scale(0.95);
+                transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .service-details-backdrop.open .service-details-drawer {
+                transform: scale(1);
+            }
+        }
+
+        .service-details-drawer-handle {
+            width: 40px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 auto 16px auto;
+        }
+
+        @media (min-width: 600px) {
+            .service-details-drawer-handle {
+                display: none;
+            }
+        }
+
+        .service-details-close-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+            line-height: 1;
+        }
+
+        .service-details-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
         /* Cards Grid */
         .grid-options {
             display: grid;
@@ -535,8 +819,8 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
         <!-- Step 1: Services -->
         <div class="wizard-step active" id="step1">
             <h2 style="margin-bottom: 16px; font-size: 1.25rem; font-weight: 800; color: #FFFFFF;">1. Elige tu Servicio</h2>
-            <div class="grid-options" id="servicesGrid">
-                <p style="color:#888; grid-column:1/-1; text-align:center;">Cargando servicios...</p>
+            <div class="services-list-container" id="servicesGrid">
+                <p style="color:#888; text-align:center; padding: 25px 0;">Cargando servicios...</p>
             </div>
         </div>
 
@@ -827,7 +1111,7 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             if (urlServicioId && allServicesList.length > 0) {
                 const sObj = allServicesList.find(s => s.id == urlServicioId);
                 if (sObj) {
-                    const cardEl = document.querySelector(`#servicesGrid .option-card[data-service-id="${sObj.id}"]`);
+                    const cardEl = document.querySelector(`#servicesGrid [data-service-id="${sObj.id}"]`);
                     selectService(sObj.id, sObj.nombre, sObj.precio, sObj.duracion_minutos || 40, cardEl, sObj.barbero_id, sObj.barbero_nombre, sObj.barberos_ids);
                 }
             }
@@ -845,7 +1129,17 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             }
         });
 
-        // --- Services Loading ---
+        // Formateador de duración (ej: 60 -> 1 h, 85 -> 1 h 25 min, 30 -> 30 min)
+        function formatDuration(minutes) {
+            const m = parseInt(minutes) || 40;
+            if (m < 60) return `${m} min`;
+            const hours = Math.floor(m / 60);
+            const remMin = m % 60;
+            if (remMin === 0) return `${hours} h`;
+            return `${hours} h ${remMin} min`;
+        }
+
+        // --- Services Loading (Sleek Compact Luxury List) ---
         async function loadServices(branchId = 1) {
             const grid = document.getElementById('servicesGrid');
 
@@ -855,18 +1149,18 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
                 const data = await response.json();
 
                 if (data.error) {
-                    grid.innerHTML = `<p style="color:#cc0000; grid-column:1/-1;">Error: ${data.error}</p>`;
+                    grid.innerHTML = `<p style="color:#cc0000; text-align:center; padding:20px 0;">Error: ${data.error}</p>`;
                     return;
                 }
 
                 if (!data.servicios || data.servicios.length === 0) {
-                    grid.innerHTML = '<p style="color:#888; grid-column:1/-1;">No hay servicios disponibles.</p>';
+                    grid.innerHTML = '<p style="color:#888; text-align:center; padding:20px 0;">No hay servicios disponibles.</p>';
                     return;
                 }
 
                 allServicesList = data.servicios;
 
-                // Group by category
+                // Agrupar por categoría
                 const servicesByCategory = {};
                 data.servicios.forEach(s => {
                     const cat = s.categoria || 'Servicios';
@@ -879,66 +1173,158 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
                 grid.innerHTML = '';
 
                 for (const [category, services] of Object.entries(servicesByCategory)) {
-                    const catHeader = document.createElement('h3');
-                    catHeader.style.cssText = 'grid-column: 1/-1; margin: 15px 0 6px 0; color: var(--gold); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; text-transform: uppercase; font-size: 0.95rem; letter-spacing: 0.5px;';
-                    catHeader.textContent = category;
-                    grid.appendChild(catHeader);
+                    const categoryBlock = document.createElement('div');
+                    categoryBlock.className = 'services-category-block';
+
+                    const catTitle = document.createElement('div');
+                    catTitle.className = 'services-category-title';
+                    catTitle.innerHTML = `<span>${category}</span>`;
+                    categoryBlock.appendChild(catTitle);
+
+                    const cardGroup = document.createElement('div');
+                    cardGroup.className = 'services-card-group';
 
                     services.forEach(s => {
                         const el = document.createElement('div');
-                        el.className = 'option-card';
+                        el.className = 'service-list-row';
                         el.setAttribute('data-service-id', s.id);
                         if (bookingData.serviceId && bookingData.serviceId == s.id) {
                             el.classList.add('selected');
                         }
 
                         const thumb = s.foto_url || s.imagen_url || '/assets/images/service-corte-mateo.png';
-                        let imageHtml = `<div class="service-image" style="width:100%; height:130px; background-image:url('${thumb}'); background-size:cover; background-position:center; border-radius:8px; margin-bottom:10px;"></div>`;
-
-                        let exclusiveBadgeHtml = '';
                         const isMateo = s.nombre.toLowerCase().includes('mateo');
-                        if (s.barbero_nombre || isMateo) {
-                            const bName = s.barbero_nombre || 'Mateo Álvaro';
-                            exclusiveBadgeHtml = `<div style="font-size:0.75rem; color:var(--gold); font-weight:800; margin-top:2px;">★ Solo con ${bName}</div>`;
-                        }
-
-                        let descHtml = s.descripcion ? `<p style="font-size:0.8rem; color:#888888; margin:4px 0 6px 0; line-height:1.3;">${s.descripcion}</p>` : '';
-
-                        let incluyeHtml = '';
-                        if (s.que_incluye && s.que_incluye.trim() !== '') {
-                            const lines = s.que_incluye.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-                            const renderedList = lines.map(item => {
-                                const clean = item.replace(/^[•\-\*✓\s]+/, '').trim();
-                                return `<div style="display:flex; align-items:flex-start; gap:4px; margin-bottom:2px;"><span style="color:var(--gold); font-size:0.72rem; flex-shrink:0;">✓</span><span>${clean}</span></div>`;
-                            }).join('');
-                            
-                            incluyeHtml = `
-                                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:2.5px solid var(--gold); border-radius:4px; padding:6px 8px; margin:6px 0 8px 0; text-align:left; font-size:0.74rem; color:#CCCCCC; line-height:1.3;">
-                                    <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--gold); margin-bottom:3px; letter-spacing:0.4px;">Incluye:</div>
-                                    ${renderedList}
-                                </div>
-                            `;
-                        }
+                        const bName = s.barbero_nombre || (isMateo ? 'Mateo' : '');
+                        const exclusiveBadgeHtml = bName ? `<span class="service-exclusive-pill">★ ${bName}</span>` : '';
+                        const durFormatted = formatDuration(s.duracion_minutos || 40);
 
                         el.onclick = () => selectService(s.id, s.nombre, s.precio, s.duracion_minutos || 40, el, s.barbero_id, s.barbero_nombre, s.barberos_ids);
 
                         el.innerHTML = `
-                            ${imageHtml}
-                            <h3 style="margin:5px 0 2px 0;">${s.nombre}</h3>
-                            <p style="font-size:0.82rem; color:#777; margin-bottom:2px;">⏱️ ${s.duracion_minutos || 40} min</p>
-                            ${exclusiveBadgeHtml}
-                            ${descHtml}
-                            ${incluyeHtml}
-                            <span class="price" style="font-size:1.1rem; margin-top:4px; display:block; font-weight:800; color:#FFFFFF;">$${parseFloat(s.precio).toFixed(0)}</span>
+                            <img src="${thumb}" alt="${s.nombre}" class="service-row-thumb" onerror="this.onerror=null; this.src='/assets/images/service-corte-mateo.png';">
+                            <div class="service-row-info">
+                                <div class="service-row-title-wrap">
+                                    <span class="service-row-title">${s.nombre}</span>
+                                    ${exclusiveBadgeHtml}
+                                </div>
+                                <div class="service-row-meta">
+                                    <span class="duration">${durFormatted}</span>
+                                    <span class="meta-dot">·</span>
+                                    <button type="button" class="details-btn" onclick="openServiceDetails(event, ${s.id})">Detalles</button>
+                                    <span class="meta-dot">·</span>
+                                    <span class="price-val">$${parseFloat(s.precio).toFixed(0)}</span>
+                                </div>
+                            </div>
+                            <div class="service-chevron-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </div>
                         `;
-                        grid.appendChild(el);
+                        cardGroup.appendChild(el);
                     });
+
+                    categoryBlock.appendChild(cardGroup);
+                    grid.appendChild(categoryBlock);
                 }
             } catch (e) {
                 console.error('Error cargando servicios:', e);
-                grid.innerHTML = `<p style="color:#cc0000; grid-column:1/-1;">Error al cargar servicios.</p>`;
+                grid.innerHTML = `<p style="color:#cc0000; text-align:center; padding:20px 0;">Error al cargar servicios.</p>`;
             }
         }
+
+        // --- Detalle Modal de Servicio (Bottom-Sheet / Modal) ---
+        function openServiceDetails(e, serviceId) {
+            if (e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+            const s = allServicesList.find(item => item.id == serviceId);
+            if (!s) return;
+
+            const modal = document.getElementById('serviceDetailsModal');
+            const content = document.getElementById('serviceDetailsContent');
+            if (!modal || !content) return;
+
+            const thumb = s.foto_url || s.imagen_url || '/assets/images/service-corte-mateo.png';
+            const isMateo = s.nombre.toLowerCase().includes('mateo');
+            const bName = s.barbero_nombre || (isMateo ? 'Mateo Álvaro' : '');
+
+            let exclusiveHtml = '';
+            if (bName) {
+                exclusiveHtml = `<div style="display:inline-flex; align-items:center; gap:5px; background:rgba(192, 160, 98, 0.15); border:1px solid rgba(192, 160, 98, 0.35); color:var(--gold); font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:6px; margin-bottom:12px; text-transform:uppercase;">
+                    <span>★</span> Servicio Exclusivo con ${bName}
+                </div>`;
+            }
+
+            let descHtml = s.descripcion ? `<p style="font-size:0.88rem; color:#A3A3A3; line-height:1.55; margin:0 0 16px 0;">${s.descripcion}</p>` : '';
+
+            let incluyeHtml = '';
+            if (s.que_incluye && s.que_incluye.trim() !== '') {
+                const lines = s.que_incluye.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                const renderedList = lines.map(item => {
+                    const clean = item.replace(/^[•\-\*✓\s]+/, '').trim();
+                    return `<div style="display:flex; align-items:flex-start; gap:8px; margin-bottom:6px; font-size:0.84rem; color:#E5E5E5; line-height:1.35;">
+                        <span style="color:var(--gold); font-size:0.85rem; flex-shrink:0;">✓</span>
+                        <span>${clean}</span>
+                    </div>`;
+                }).join('');
+                
+                incluyeHtml = `
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:3px solid var(--gold); border-radius:8px; padding:12px 14px; margin-bottom:20px; text-align:left;">
+                        <div style="font-size:0.72rem; font-weight:900; text-transform:uppercase; color:var(--gold); margin-bottom:8px; letter-spacing:0.8px;">QUÉ INCLUYE:</div>
+                        ${renderedList}
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div style="position:relative; margin-bottom:14px;">
+                    <img src="${thumb}" alt="${s.nombre}" style="width:100%; height:180px; object-fit:cover; border-radius:12px; border:1px solid rgba(255,255,255,0.1); display:block;" onerror="this.onerror=null; this.src='/assets/images/service-corte-mateo.png';">
+                </div>
+                ${exclusiveHtml}
+                <h3 style="font-size:1.3rem; font-weight:900; color:#FFFFFF; margin:0 0 8px 0; text-transform:uppercase; letter-spacing:0.4px;">${s.nombre}</h3>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                    <span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:4px 10px; border-radius:6px; font-size:0.82rem; font-weight:700; color:#CCCCCC;">
+                        ⏱️ ${formatDuration(s.duracion_minutos)}
+                    </span>
+                    <span style="background:rgba(192, 160, 98, 0.15); border:1px solid rgba(192, 160, 98, 0.4); padding:4px 12px; border-radius:6px; font-size:0.95rem; font-weight:900; color:var(--gold);">
+                        $${parseFloat(s.precio).toFixed(0)}
+                    </span>
+                </div>
+                ${descHtml}
+                ${incluyeHtml}
+                <button type="button" onclick="selectFromDetails(${s.id})" style="width:100%; background:#FFFFFF; color:#111111; font-weight:900; font-size:0.9rem; padding:15px; border:none; border-radius:12px; text-transform:uppercase; letter-spacing:0.8px; cursor:pointer; box-shadow:0 6px 25px rgba(255,255,255,0.25); transition:transform 0.15s ease; box-sizing:border-box;">
+                    SELECCIONAR SERVICIO ($${parseFloat(s.precio).toFixed(0)}) ➔
+                </button>
+            `;
+
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeServiceDetails(e) {
+            if (e && e.target && e.target.closest('.service-details-drawer') && !e.target.classList.contains('service-details-close-btn')) {
+                return;
+            }
+            const modal = document.getElementById('serviceDetailsModal');
+            if (modal) {
+                modal.classList.remove('open');
+            }
+            document.body.style.overflow = '';
+        }
+
+        function selectFromDetails(serviceId) {
+            closeServiceDetails();
+            const s = allServicesList.find(item => item.id == serviceId);
+            if (!s) return;
+            const rowEl = document.querySelector(`.service-list-row[data-service-id="${serviceId}"]`);
+            selectService(s.id, s.nombre, s.precio, s.duracion_minutos || 40, rowEl, s.barbero_id, s.barbero_nombre, s.barberos_ids);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeServiceDetails();
+        });
 
         // --- Barbers Loading ---
         async function loadBarbers(branchId = 1) {
@@ -1004,7 +1390,7 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             bookingData.servicePrice = price;
             bookingData.serviceDuration = duration;
 
-            document.querySelectorAll('#servicesGrid .option-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('#servicesGrid [data-service-id]').forEach(c => c.classList.remove('selected'));
             if (el) el.classList.add('selected');
 
             // Determinar si hay barbero exclusivo
@@ -1557,5 +1943,15 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             <span>Perfil</span>
         </a>
     </nav>
+    <!-- Modal / Drawer de Detalles del Servicio (Luxury Dark) -->
+    <div id="serviceDetailsModal" class="service-details-backdrop" onclick="closeServiceDetails(event)">
+        <div class="service-details-drawer" onclick="event.stopPropagation()">
+            <div class="service-details-drawer-handle"></div>
+            <button type="button" class="service-details-close-btn" onclick="closeServiceDetails()" aria-label="Cerrar">&times;</button>
+            <div id="serviceDetailsContent">
+                <!-- Dinámico -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>
