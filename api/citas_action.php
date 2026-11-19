@@ -311,7 +311,7 @@ try {
                 throw new Exception('Acceso denegado. Solo la administración puede finalizar citas y registrar propinas.');
             }
 
-            if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            if (!is_string($_POST['csrf_token'] ?? null) || !verifyCSRFToken($_POST['csrf_token'])) {
                 throw new Exception('La sesión del formulario expiró. Actualiza la página.');
             }
 
@@ -390,8 +390,6 @@ try {
                 }
             } catch (Exception $exRef) {}
 
-            $pdo->commit();
-
             $stmtCDetails = $pdo->prepare("
                 SELECT c.nombre as cliente_nombre, s.nombre as servicio_nombre, b.nombre as barbero_nombre, cita.precio_final
                 FROM citas cita
@@ -402,6 +400,7 @@ try {
             ");
             $stmtCDetails->execute([$id]);
             $cD = $stmtCDetails->fetch(PDO::FETCH_ASSOC);
+            $pdo->commit();
 
             $cNombre = $cD ? $cD['cliente_nombre'] : "Cita #$id";
             $sNombre = $cD ? $cD['servicio_nombre'] : "Servicio";

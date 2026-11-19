@@ -65,7 +65,7 @@ try {
 
     switch ($action) {
         case 'registrar_venta':
-            if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            if (!is_string($_POST['csrf_token'] ?? null) || !verifyCSRFToken($_POST['csrf_token'])) {
                 throw new Exception('La sesión del formulario expiró. Actualiza la página.');
             }
             $venta = registrarVentaProductos($pdo, [[

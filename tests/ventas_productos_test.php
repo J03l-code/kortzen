@@ -106,6 +106,7 @@ $pruebas = [
         $pdo = fixtureVentas();
         rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 999, 'cantidad' => 1]], 2, 1));
         rechazarVenta(fn () => registrarVentaProductos($pdo, [], 2, 1));
+        rechazarVenta(fn () => registrarVentaProductos($pdo, ['fila inválida'], 2, 1));
         comprobarVenta((int) $pdo->query('SELECT SUM(cantidad) FROM inventario')->fetchColumn() === 16, 'El inventario debe permanecer intacto.');
     },
     'Stock insuficiente revierte también los productos procesados previamente' => function () {

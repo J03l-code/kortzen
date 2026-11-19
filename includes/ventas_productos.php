@@ -63,6 +63,9 @@ function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $opera
         // Consolidar productos repetidos y bloquear siempre en el mismo orden.
         $cantidades = [];
         foreach ($items as $item) {
+            if (!is_array($item)) {
+                throw new InvalidArgumentException('La lista de productos no es válida.');
+            }
             $productoId = filter_var($item['producto_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             $cantidad = filter_var($item['cantidad'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             if (!$productoId || !$cantidad) {
