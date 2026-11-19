@@ -81,7 +81,9 @@ try {
             ref.codigo_usado as referido_codigo,
             ref.descuento_aplicado as referido_descuento,
             ref.referente_id,
-            ref_cli.nombre as referente_nombre
+            ref_cli.nombre as referente_nombre,
+            COALESCE((SELECT SUM(vp.cantidad * vp.precio_unitario) FROM ventas_productos vp WHERE vp.cita_id = c.id), 0.00) as total_productos,
+            COALESCE((SELECT GROUP_CONCAT(CONCAT(i.producto, ' (x', vp.cantidad, ')') SEPARATOR ', ') FROM ventas_productos vp JOIN inventario i ON vp.producto_id = i.id WHERE vp.cita_id = c.id), '') as productos_vendidos_txt
             FROM citas c
             INNER JOIN clientes cl ON c.cliente_id = cl.id
             INNER JOIN servicios s ON c.servicio_id = s.id
@@ -587,8 +589,21 @@ function toggleFiltroHoy() {
                                     <i class="fas fa-plus-circle" style="font-size: 10px;"></i> <?php echo htmlspecialchars($cita['servicios_adicionales_txt']); ?>
                                 </div>
                             <?php endif; ?>
+                            <?php if (!empty($cita['productos_vendidos_txt'])): ?>
+                                <div style="margin-top: 3px; font-size: 11.5px; color: #166534; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-boxes" style="font-size: 10px;"></i> <?php echo htmlspecialchars($cita['productos_vendidos_txt']); ?> (+$<?php echo number_format(floatval($cita['total_productos']), 2); ?>)
+                                </div>
+                            <?php endif; ?>
+                            <?php 
+                                $srvMonto = floatval($cita['precio_final'] > 0 ? $cita['precio_final'] : $cita['servicio_precio']);
+                                $prodMonto = floatval($cita['total_productos'] ?? 0);
+                                $totalMontoCita = $srvMonto + $prodMonto;
+                            ?>
                             <div style="font-size: 12px; color: #4B5563; font-weight: 700; margin-top: 3px;">
-                                Total: <span style="color: #10B981; font-weight: 800;">$<?php echo number_format(floatval($cita['precio_final'] > 0 ? $cita['precio_final'] : $cita['servicio_precio']), 2); ?></span>
+                                Total: <span style="color: #10B981; font-weight: 800;">$<?php echo number_format($totalMontoCita, 2); ?></span>
+                                <?php if ($prodMonto > 0): ?>
+                                    <span style="font-size: 11px; color: #6B7280; font-weight: 600;">(Servicio: $<?php echo number_format($srvMonto, 2); ?> | Prod: $<?php echo number_format($prodMonto, 2); ?>)</span>
+                                <?php endif; ?>
                             </div>
                             <?php if (!empty($cita['referido_descuento']) && floatval($cita['referido_descuento']) > 0): ?>
                                 <div style="margin-top: 5px; display: flex; flex-direction: column; gap: 2px;">
@@ -790,6 +805,10 @@ function toggleFiltroHoy() {
                         <span>Total Servicios:</span>
                         <span id="desgloseTotalServicios">$0.00</span>
                     </div>
+                    <div id="desgloseProductosRow" style="display: none; justify-content: space-between; color: #166534; font-weight: 700;">
+                        <span>Productos / Insumos (<span id="desgloseCantProd">0</span>):</span>
+                        <span id="desgloseProductos">+$0.00</span>
+                    </div>
                     <div style="display: flex; justify-content: space-between; color: #4B5563;">
                         <span>Propina Barbero:</span>
                         <span id="desglosePropina">+$0.00</span>
@@ -829,10 +848,10 @@ function toggleFiltroHoy() {
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 65px;" min="1" step="1">
+                    <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 65px;" min="1" step="1" oninput="recalcularTotalesTerminar()">
                     <div style="position: relative; width: 110px;">
                         <span style="position: absolute; left: 8px; top: 8px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
-                        <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; padding-left: 20px; font-weight: 800; color: #10B981;" title="Precio unitario cobrado (editable si aplicas descuento)">
+                        <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; padding-left: 20px; font-weight: 800; color: #10B981;" title="Precio unitario cobrado (editable si aplicas descuento)" oninput="recalcularTotalesTerminar()">
                     </div>
                 </div>
             </div>
@@ -878,10 +897,26 @@ function toggleFiltroHoy() {
                 <div id="reciboItemsAdicionales"></div>
             </div>
 
+            <!-- Desglose de Productos / Insumos -->
+            <div id="reciboProductosSection" style="display: none; font-size: 0.82rem; margin-bottom: 12px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 10px;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                    <i class="fas fa-boxes"></i> Productos / Insumos Comprados
+                </div>
+                <div id="reciboItemsProductos"></div>
+                <div style="display: flex; justify-content: space-between; margin-top: 6px; font-weight: 800; color: #166534;">
+                    <span>Subtotal Productos:</span>
+                    <strong id="reciboSubtotalProductos">$0.00</strong>
+                </div>
+            </div>
+
             <div style="font-size: 0.85rem; line-height: 1.6;">
                 <div style="display: flex; justify-content: space-between;">
                     <span>Subtotal Servicios:</span>
                     <strong id="reciboSubtotal">$0.00</strong>
+                </div>
+                <div id="reciboFilaSubtotalProd" style="display: none; justify-content: space-between; color: #166534; font-weight: 700;">
+                    <span>Subtotal Productos:</span>
+                    <strong id="reciboSubtotalProdResumen">+$0.00</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; color: #B45309;">
                     <span>Propina Barbero:</span>
@@ -892,7 +927,7 @@ function toggleFiltroHoy() {
                     <strong id="reciboTotal" style="color: #10B981;">$0.00</strong>
                 </div>
                 <div style="margin-top: 8px; font-size: 0.72rem; color: #6B7280; border-top: 1px dotted #CBD5E1; padding-top: 6px; display: flex; justify-content: space-between;">
-                    <span>Comisión Barbero (<span id="reciboComisionPct">50</span>%):</span>
+                    <span>Comisión Barbero Servicios (<span id="reciboComisionPct">50</span>%):</span>
                     <strong id="reciboComisionBarbero">$0.00</strong>
                 </div>
             </div>
@@ -1089,9 +1124,26 @@ function toggleFiltroHoy() {
         serviciosAdicionalesSeleccionados.forEach(s => sumaAdicionales += s.precio);
 
         const totalServicios = precioBase + sumaAdicionales;
+
+        // Calcular total productos/materiales
+        let sumaProductos = 0;
+        let cantProductos = 0;
+        const rows = document.querySelectorAll('#materialesList .material-row');
+        rows.forEach(r => {
+            const sel = r.querySelector('select[name="materiales[]"]');
+            const cantInp = r.querySelector('input[name="cantidades[]"]');
+            const precInp = r.querySelector('input[name="precios_materiales[]"]');
+            if (sel && sel.value) {
+                const cant = parseFloat(cantInp ? cantInp.value : 1) || 1;
+                const prec = parseFloat(precInp ? precInp.value : 0) || 0;
+                sumaProductos += (cant * prec);
+                cantProductos++;
+            }
+        });
+
         const pInput = document.getElementById('inputPropinaTerminar');
         const propina = parseFloat(pInput && pInput.value ? pInput.value : 0);
-        const totalCobrar = totalServicios + (isNaN(propina) ? 0 : propina);
+        const totalCobrar = totalServicios + sumaProductos + (isNaN(propina) ? 0 : propina);
 
         let esFinde = false;
         if (citaActualTerminar.fecha_hora) {
@@ -1116,6 +1168,18 @@ function toggleFiltroHoy() {
         }
 
         document.getElementById('desgloseTotalServicios').innerText = '$' + totalServicios.toFixed(2);
+
+        const prodRow = document.getElementById('desgloseProductosRow');
+        if (prodRow) {
+            if (sumaProductos > 0) {
+                prodRow.style.display = 'flex';
+                document.getElementById('desgloseCantProd').innerText = cantProductos;
+                document.getElementById('desgloseProductos').innerText = '+$' + sumaProductos.toFixed(2);
+            } else {
+                prodRow.style.display = 'none';
+            }
+        }
+
         document.getElementById('labelComisionBarbero').innerText = `Comisión (${comPct}%): $${comisionBarbero.toFixed(2)}`;
         document.getElementById('desglosePropina').innerText = '+$' + (isNaN(propina) ? 0 : propina).toFixed(2);
         document.getElementById('desgloseTotalCobrar').innerText = '$' + totalCobrar.toFixed(2);
@@ -1201,9 +1265,33 @@ function toggleFiltroHoy() {
             adicCont.innerHTML = adicHtml;
         }
 
+        const prodSec = document.getElementById('reciboProductosSection');
+        const prodItemsCont = document.getElementById('reciboItemsProductos');
+        const filaProdResumen = document.getElementById('reciboFilaSubtotalProd');
+
+        if (r.productos && r.productos.length > 0) {
+            let prodHtml = '';
+            r.productos.forEach(p => {
+                prodHtml += `
+                    <div style="display: flex; justify-content: space-between; margin-top: 3px; color: #166534;">
+                        <span>• ${escapeHtml(p.nombre)} (x${p.cantidad}${p.precio_unitario ? ` a $${parseFloat(p.precio_unitario).toFixed(2)}` : ''})</span>
+                        <strong>+$${parseFloat(p.total).toFixed(2)}</strong>
+                    </div>
+                `;
+            });
+            if (prodItemsCont) prodItemsCont.innerHTML = prodHtml;
+            if (prodSec) prodSec.style.display = 'block';
+            if (filaProdResumen) filaProdResumen.style.display = 'flex';
+            document.getElementById('reciboSubtotalProductos').innerText = '$' + parseFloat(r.total_productos || 0).toFixed(2);
+            document.getElementById('reciboSubtotalProdResumen').innerText = '+$' + parseFloat(r.total_productos || 0).toFixed(2);
+        } else {
+            if (prodSec) prodSec.style.display = 'none';
+            if (filaProdResumen) filaProdResumen.style.display = 'none';
+        }
+
         document.getElementById('reciboSubtotal').innerText = '$' + parseFloat(r.total_servicios || 0).toFixed(2);
         document.getElementById('reciboPropina').innerText = '+$' + parseFloat(r.propina || 0).toFixed(2);
-        document.getElementById('reciboTotal').innerText = '$' + parseFloat(r.total_a_cobrar || 0).toFixed(2);
+        document.getElementById('reciboTotal').innerText = '$' + parseFloat(r.total_a_cobrar || r.total_pagado || 0).toFixed(2);
         document.getElementById('reciboComisionPct').innerText = r.comision_porcentaje || 50;
         document.getElementById('reciboComisionBarbero').innerText = '$' + parseFloat(r.comision_barbero || 0).toFixed(2);
 
@@ -1215,17 +1303,27 @@ function toggleFiltroHoy() {
 
             let msg = `*KORTZEN BARBERÍA - COMPROBANTE DE PAGO*\n`;
             msg += `Hola ${r.cliente_nombre ? r.cliente_nombre.split(' ')[0] : ''}, te compartimos el detalle de tu visita hoy:\n\n`;
-            msg += `✂️ *Servicio:* ${r.servicio_principal} ($${parseFloat(r.precio_principal || 0).toFixed(2)})\n`;
+            msg += `✂️ *Servicio Principal:* ${r.servicio_principal} ($${parseFloat(r.precio_principal || 0).toFixed(2)})\n`;
             if (r.servicios_adicionales && r.servicios_adicionales.length > 0) {
                 r.servicios_adicionales.forEach(ad => {
                     msg += `➕ *Adicional:* ${ad.nombre} ($${parseFloat(ad.precio || 0).toFixed(2)})\n`;
                 });
             }
-            msg += `💈 *Barbero:* ${r.barbero_nombre}\n`;
+            msg += `*Subtotal Servicios:* $${parseFloat(r.total_servicios || 0).toFixed(2)}\n`;
+
+            if (r.productos && r.productos.length > 0) {
+                msg += `\n🧴 *Productos / Insumos:* \n`;
+                r.productos.forEach(p => {
+                    msg += `• ${p.nombre} (x${p.cantidad}${p.precio_unitario ? ` a $${parseFloat(p.precio_unitario).toFixed(2)}` : ''}): $${parseFloat(p.total).toFixed(2)}\n`;
+                });
+                msg += `*Subtotal Productos:* $${parseFloat(r.total_productos || 0).toFixed(2)}\n`;
+            }
+
+            msg += `\n💈 *Barbero:* ${r.barbero_nombre}\n`;
             if (parseFloat(r.propina || 0) > 0) {
                 msg += `🎁 *Propina:* $${parseFloat(r.propina).toFixed(2)}\n`;
             }
-            msg += `\n💰 *TOTAL PAGADO:* $${parseFloat(r.total_a_cobrar || 0).toFixed(2)}\n\n`;
+            msg += `\n💰 *TOTAL PAGADO:* $${parseFloat(r.total_a_cobrar || r.total_pagado || 0).toFixed(2)}\n\n`;
             msg += `¡Muchas gracias por tu preferencia! Te esperamos pronto en Kortzen.`;
 
             waBtn.href = telLimpio ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
@@ -1286,6 +1384,7 @@ function toggleFiltroHoy() {
         } else {
             inputPrecio.value = '';
         }
+        recalcularTotalesTerminar();
     }
 
     function agregarFilaMaterial() {
@@ -1301,12 +1400,12 @@ function toggleFiltroHoy() {
                     </option>
                 <?php endforeach; ?>
             </select>
-            <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 65px;" min="1" step="1">
+            <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 65px;" min="1" step="1" oninput="recalcularTotalesTerminar()">
             <div style="position: relative; width: 110px;">
                 <span style="position: absolute; left: 8px; top: 8px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
-                <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; padding-left: 20px; font-weight: 800; color: #10B981;" title="Precio unitario cobrado (editable si aplicas descuento)">
+                <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; padding-left: 20px; font-weight: 800; color: #10B981;" title="Precio unitario cobrado (editable si aplicas descuento)" oninput="recalcularTotalesTerminar()">
             </div>
-            <button type="button" onclick="this.parentElement.remove()" style="background: #FEE2E2; color: #DC2626; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+            <button type="button" onclick="this.parentElement.remove(); recalcularTotalesTerminar();" style="background: #FEE2E2; color: #DC2626; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
         `;
         document.getElementById('materialesList').appendChild(div);
     }

@@ -609,7 +609,9 @@ try {
             ref.codigo_usado as referido_codigo,
             ref.descuento_aplicado as referido_descuento,
             ref.referente_id,
-            ref_cli.nombre as referente_nombre
+            ref_cli.nombre as referente_nombre,
+            COALESCE((SELECT SUM(vp.cantidad * vp.precio_unitario) FROM ventas_productos vp WHERE vp.cita_id = c.id), 0.00) as total_productos,
+            COALESCE((SELECT GROUP_CONCAT(CONCAT(i.producto, ' (x', vp.cantidad, ')') SEPARATOR ', ') FROM ventas_productos vp JOIN inventario i ON vp.producto_id = i.id WHERE vp.cita_id = c.id), '') as productos_vendidos_txt
             FROM citas c
             INNER JOIN clientes cl ON c.cliente_id = cl.id
             INNER JOIN servicios s ON c.servicio_id = s.id
@@ -3446,6 +3448,10 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                         <span>Total Servicios:</span>
                         <span id="pwaDesgloseTotalServicios">$0.00</span>
                     </div>
+                    <div id="pwaDesgloseProductosRow" style="display: none; justify-content: space-between; color: #166534; font-weight: 700;">
+                        <span>Productos / Insumos:</span>
+                        <span id="pwaDesgloseProductos">+$0.00</span>
+                    </div>
                     <div style="display: flex; justify-content: space-between; color: #4B5563;">
                         <span>Propina Barbero:</span>
                         <span id="pwaDesglosePropina">+$0.00</span>
@@ -3477,7 +3483,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <input type="number" name="cantidades[]" id="pwaTerminarMaterialCant" min="1" value="1" placeholder="Cant." style="width: 65px; padding: 8px 6px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem; text-align: center;">
+                    <input type="number" name="cantidades[]" id="pwaTerminarMaterialCant" min="1" value="1" placeholder="Cant." oninput="recalcularTotalesTerminarPwa()" style="width: 65px; padding: 8px 6px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem; text-align: center;">
                 </div>
                 <div id="pwaPrecioCobradoMaterialWrapper" style="display: none; margin-top: 6px; background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 8px; padding: 8px 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -3486,7 +3492,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                     </div>
                     <div style="position: relative;">
                         <span style="position: absolute; left: 10px; top: 6px; font-weight: 900; color: #166534;">$</span>
-                        <input type="number" step="0.01" min="0" name="precios_materiales[]" id="pwaTerminarMaterialPrecio" value="0.00" style="width: 100%; padding: 6px 10px 6px 24px; border-radius: 6px; border: 1.5px solid #86EFAC; font-weight: 800; font-size: 0.95rem; color: #166534;">
+                        <input type="number" step="0.01" min="0" name="precios_materiales[]" id="pwaTerminarMaterialPrecio" value="0.00" oninput="recalcularTotalesTerminarPwa()" style="width: 100%; padding: 6px 10px 6px 24px; border-radius: 6px; border: 1.5px solid #86EFAC; font-weight: 800; font-size: 0.95rem; color: #166534;">
                     </div>
                 </div>
             </div>
@@ -3528,10 +3534,26 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 <div id="pwaReciboItemsAdicionales"></div>
             </div>
 
+            <!-- Desglose de Productos PWA -->
+            <div id="pwaReciboProductosSection" style="display: none; font-size: 0.8rem; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                    <i class="fas fa-boxes"></i> Productos / Insumos Comprados
+                </div>
+                <div id="pwaReciboItemsProductos"></div>
+                <div style="display: flex; justify-content: space-between; margin-top: 4px; font-weight: 800; color: #166534;">
+                    <span>Subtotal Productos:</span>
+                    <strong id="pwaReciboSubtotalProductos">$0.00</strong>
+                </div>
+            </div>
+
             <div style="font-size: 0.82rem; line-height: 1.6;">
                 <div style="display: flex; justify-content: space-between;">
                     <span>Subtotal Servicios:</span>
                     <strong id="pwaReciboSubtotal">$0.00</strong>
+                </div>
+                <div id="pwaReciboFilaSubtotalProd" style="display: none; justify-content: space-between; color: #166534; font-weight: 700;">
+                    <span>Subtotal Productos:</span>
+                    <strong id="pwaReciboSubtotalProdResumen">+$0.00</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; color: #B45309;">
                     <span>Propina Barbero:</span>
@@ -5049,10 +5071,20 @@ function renderizarCitasTab() {
                                     <i class="fas fa-plus-circle" style="font-size: 0.65rem;"></i> ${escapeHtml(c.servicios_adicionales_txt)}
                                 </div>
                             ` : ''}
+                            ${c.productos_vendidos_txt ? `
+                                <div style="font-size: 0.72rem; color: #166534; font-weight: 700; margin-top: 2px;">
+                                    <i class="fas fa-boxes" style="font-size: 0.65rem;"></i> ${escapeHtml(c.productos_vendidos_txt)} (+` + (parseFloat(c.total_productos || 0) > 0 ? `$${parseFloat(c.total_productos).toFixed(2)}` : '') + `)
+                                </div>
+                            ` : ''}
                         </div>
-                        <span style="font-weight: 900; font-size: 0.95rem; color: var(--text-dark);">
-                            $${parseFloat(c.precio_final > 0 ? c.precio_final : (c.servicio_precio || 0)).toFixed(2)}
-                        </span>
+                        <div style="text-align: right;">
+                            <span style="font-weight: 900; font-size: 0.95rem; color: var(--text-dark);">
+                                $${(parseFloat(c.precio_final > 0 ? c.precio_final : (c.servicio_precio || 0)) + parseFloat(c.total_productos || 0)).toFixed(2)}
+                            </span>
+                            ${parseFloat(c.total_productos || 0) > 0 ? `
+                                <div style="font-size: 0.65rem; color: #64748B;">(Serv: $${parseFloat(c.precio_final > 0 ? c.precio_final : (c.servicio_precio || 0)).toFixed(2)} | Prod: $${parseFloat(c.total_productos).toFixed(2)})</div>
+                            ` : ''}
+                        </div>
                     </div>
 
                     ${descuentoVal > 0 ? `
@@ -5429,6 +5461,7 @@ function pwaActualizarMaterialPrecio(select) {
         if (input) input.value = '0.00';
         if (wrapper) wrapper.style.display = 'none';
     }
+    recalcularTotalesTerminarPwa();
 }
 
 function agregarServicioAdicionalPwa() {
@@ -5493,9 +5526,31 @@ function recalcularTotalesTerminarPwa() {
     serviciosAdicionalesSeleccionadosPwa.forEach(s => sumaAdicionales += s.precio);
 
     const totalServicios = precioBase + sumaAdicionales;
+
+    // Calcular productos / insumos seleccionados
+    const matSel = document.getElementById('pwaTerminarMaterialSelect');
+    const matCant = document.getElementById('pwaTerminarMaterialCant');
+    const matPrec = document.getElementById('pwaTerminarMaterialPrecio');
+    let totalProductos = 0;
+    if (matSel && matSel.value) {
+        const cant = parseFloat(matCant ? matCant.value : 1) || 1;
+        const prec = parseFloat(matPrec ? matPrec.value : 0) || 0;
+        totalProductos = cant * prec;
+    }
+
+    const prodRow = document.getElementById('pwaDesgloseProductosRow');
+    if (prodRow) {
+        if (totalProductos > 0) {
+            prodRow.style.display = 'flex';
+            document.getElementById('pwaDesgloseProductos').innerText = '+$' + totalProductos.toFixed(2);
+        } else {
+            prodRow.style.display = 'none';
+        }
+    }
+
     const pInput = document.getElementById('pwaTerminarPropina');
     const propina = parseFloat(pInput && pInput.value ? pInput.value : 0);
-    const totalCobrar = totalServicios + (isNaN(propina) ? 0 : propina);
+    const totalCobrar = totalServicios + totalProductos + (isNaN(propina) ? 0 : propina);
 
     let esFinde = false;
     if (citaActualTerminarPwa.fecha_hora) {
@@ -5557,8 +5612,14 @@ function guardarTerminarCitaPwa(e) {
                     if (data.nuevo_precio_final) {
                         target.precio_final = data.nuevo_precio_final;
                     }
+                    if (data.total_productos) {
+                        target.total_productos = data.total_productos;
+                    }
                     if (data.recibo && data.recibo.servicios_adicionales && data.recibo.servicios_adicionales.length > 0) {
                         target.servicios_adicionales_txt = data.recibo.servicios_adicionales.map(a => a.nombre + ' ($' + parseFloat(a.precio).toFixed(2) + ')').join(', ');
+                    }
+                    if (data.recibo && data.recibo.productos && data.recibo.productos.length > 0) {
+                        target.productos_vendidos_txt = data.recibo.productos.map(p => p.nombre + ' (x' + p.cantidad + ')').join(', ');
                     }
                 }
                 renderizarCitasTab();
@@ -5605,9 +5666,33 @@ function mostrarReciboEnModalPwa(r) {
         adicCont.innerHTML = adicHtml;
     }
 
+    const prodSec = document.getElementById('pwaReciboProductosSection');
+    const prodItemsCont = document.getElementById('pwaReciboItemsProductos');
+    const filaProdResumen = document.getElementById('pwaReciboFilaSubtotalProd');
+
+    if (r.productos && r.productos.length > 0) {
+        let prodHtml = '';
+        r.productos.forEach(p => {
+            prodHtml += `
+                <div style="display: flex; justify-content: space-between; margin-top: 3px; color: #166534;">
+                    <span>• ${escapeHtml(p.nombre)} (x${p.cantidad}${p.precio_unitario ? ` a $${parseFloat(p.precio_unitario).toFixed(2)}` : ''})</span>
+                    <strong>+$${parseFloat(p.total).toFixed(2)}</strong>
+                </div>
+            `;
+        });
+        if (prodItemsCont) prodItemsCont.innerHTML = prodHtml;
+        if (prodSec) prodSec.style.display = 'block';
+        if (filaProdResumen) filaProdResumen.style.display = 'flex';
+        document.getElementById('pwaReciboSubtotalProductos').innerText = '$' + parseFloat(r.total_productos || 0).toFixed(2);
+        document.getElementById('pwaReciboSubtotalProdResumen').innerText = '+$' + parseFloat(r.total_productos || 0).toFixed(2);
+    } else {
+        if (prodSec) prodSec.style.display = 'none';
+        if (filaProdResumen) filaProdResumen.style.display = 'none';
+    }
+
     document.getElementById('pwaReciboSubtotal').innerText = '$' + parseFloat(r.total_servicios || 0).toFixed(2);
     document.getElementById('pwaReciboPropina').innerText = '+$' + parseFloat(r.propina || 0).toFixed(2);
-    document.getElementById('pwaReciboTotal').innerText = '$' + parseFloat(r.total_a_cobrar || 0).toFixed(2);
+    document.getElementById('pwaReciboTotal').innerText = '$' + parseFloat(r.total_a_cobrar || r.total_pagado || 0).toFixed(2);
     document.getElementById('pwaReciboComisionPct').innerText = r.comision_porcentaje || 50;
     document.getElementById('pwaReciboComisionBarbero').innerText = '$' + parseFloat(r.comision_barbero || 0).toFixed(2);
 
@@ -5619,17 +5704,27 @@ function mostrarReciboEnModalPwa(r) {
 
         let msg = `*KORTZEN BARBERÍA - COMPROBANTE DE PAGO*\n`;
         msg += `Hola ${r.cliente_nombre ? r.cliente_nombre.split(' ')[0] : ''}, te compartimos el detalle de tu visita hoy:\n\n`;
-        msg += `✂️ *Servicio:* ${r.servicio_principal} ($${parseFloat(r.precio_principal || 0).toFixed(2)})\n`;
+        msg += `✂️ *Servicio Principal:* ${r.servicio_principal} ($${parseFloat(r.precio_principal || 0).toFixed(2)})\n`;
         if (r.servicios_adicionales && r.servicios_adicionales.length > 0) {
             r.servicios_adicionales.forEach(ad => {
                 msg += `➕ *Adicional:* ${ad.nombre} ($${parseFloat(ad.precio || 0).toFixed(2)})\n`;
             });
         }
-        msg += `💈 *Barbero:* ${r.barbero_nombre}\n`;
+        msg += `*Subtotal Servicios:* $${parseFloat(r.total_servicios || 0).toFixed(2)}\n`;
+
+        if (r.productos && r.productos.length > 0) {
+            msg += `\n🧴 *Productos / Insumos:* \n`;
+            r.productos.forEach(p => {
+                msg += `• ${p.nombre} (x${p.cantidad}${p.precio_unitario ? ` a $${parseFloat(p.precio_unitario).toFixed(2)}` : ''}): $${parseFloat(p.total).toFixed(2)}\n`;
+            });
+            msg += `*Subtotal Productos:* $${parseFloat(r.total_productos || 0).toFixed(2)}\n`;
+        }
+
+        msg += `\n💈 *Barbero:* ${r.barbero_nombre}\n`;
         if (parseFloat(r.propina || 0) > 0) {
             msg += `🎁 *Propina:* $${parseFloat(r.propina).toFixed(2)}\n`;
         }
-        msg += `\n💰 *TOTAL PAGADO:* $${parseFloat(r.total_a_cobrar || 0).toFixed(2)}\n\n`;
+        msg += `\n💰 *TOTAL PAGADO:* $${parseFloat(r.total_a_cobrar || r.total_pagado || 0).toFixed(2)}\n\n`;
         msg += `¡Muchas gracias por tu preferencia! Te esperamos pronto en Kortzen.`;
 
         waBtn.href = telLimpio ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;

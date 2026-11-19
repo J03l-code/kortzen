@@ -484,9 +484,12 @@ try {
             $usuario_id = $_SESSION['user_id'];
 
             // 2. Procesar inventario y Registrar Venta con precio real cobrado
+            $itemsProductos = [];
+            $totalProductos = 0.00;
+
             if (!empty($materiales)) {
                 $stmtStock = $pdo->prepare("UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?");
-                $stmtPrice = $pdo->prepare("SELECT precio FROM inventario WHERE id = ?");
+                $stmtPrice = $pdo->prepare("SELECT producto, precio FROM inventario WHERE id = ?");
                 $stmtVenta = $pdo->prepare("INSERT INTO ventas_productos (cita_id, producto_id, cantidad, precio_unitario, sucursal_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?)");
 
                 $preciosMateriales = $_POST['precios_materiales'] ?? $_POST['precios_venta'] ?? [];
@@ -500,6 +503,7 @@ try {
 
                         $stmtPrice->execute([$prodId]);
                         $prodInfo = $stmtPrice->fetch();
+                        $nombreProd = $prodInfo['producto'] ?? 'Producto';
                         $precioCatalogo = floatval($prodInfo['precio'] ?? 0);
 
                         // Si se envió un precio cobrado editable (ej: descuento de $13 a $11), usarlo; si no, catálogo
@@ -512,6 +516,16 @@ try {
                         if ($sucursal_id > 0) {
                             $stmtVenta->execute([$id, $prodId, $cant, $precioUnitario, $sucursal_id, $usuario_id]);
                         }
+
+                        $subtotalProd = $cant * $precioUnitario;
+                        $totalProductos += $subtotalProd;
+                        $itemsProductos[] = [
+                            'id' => $prodId,
+                            'nombre' => $nombreProd,
+                            'cantidad' => $cant,
+                            'precio_unitario' => $precioUnitario,
+                            'total' => $subtotalProd
+                        ];
                     }
                 }
             }
@@ -538,8 +552,10 @@ try {
                 : floatval($citaBase['barbero_comision'] ?? 50.0);
             $comisionTotalBarbero = ($nuevoPrecioFinal * $comPct / 100);
 
+            $totalCobrarFinal = $nuevoPrecioFinal + $totalProductos + $propina;
             $detalleAdicLog = !empty($txtAdicionales) ? " + Adicionales: [$txtAdicionales]" : "";
-            registrarLog('COMPLETAR', 'citas', $id, "Cita #$id finalizada para el cliente '$cNombre' (Servicio: '$sNombre'$detalleAdicLog, Barbero: '$bNombre', Valor Final: $$precioVal, Comisión Barbero ({$comPct}%): $$comisionTotalBarbero, Propina: $$propina, +$puntosPorCorte pts ganados)");
+            $detalleProdLog = ($totalProductos > 0) ? " + Productos: $" . number_format($totalProductos, 2) : "";
+            registrarLog('COMPLETAR', 'citas', $id, "Cita #$id finalizada para el cliente '$cNombre' (Servicio: '$sNombre'$detalleAdicLog$detalleProdLog, Barbero: '$bNombre', Servicios: $$precioVal, Productos: $$totalProductos, Comisión Barbero ({$comPct}%): $$comisionTotalBarbero, Propina: $$propina, Total Pagado: $$totalCobrarFinal, +$puntosPorCorte pts ganados)");
 
             $msgOk = 'Cita completada con éxito.';
             if ($propina > 0) {
@@ -558,8 +574,11 @@ try {
                 'servicios_adicionales' => $itemsAdicionales,
                 'suma_adicionales' => $sumaAdicionales,
                 'total_servicios' => $nuevoPrecioFinal,
+                'productos' => $itemsProductos,
+                'total_productos' => $totalProductos,
                 'propina' => $propina,
-                'total_a_cobrar' => $nuevoPrecioFinal + $propina,
+                'total_a_cobrar' => $totalCobrarFinal,
+                'total_pagado' => $totalCobrarFinal,
                 'comision_porcentaje' => $comPct,
                 'comision_barbero' => $comisionTotalBarbero,
                 'ganancia_neta_negocio' => $nuevoPrecioFinal - $comisionTotalBarbero
@@ -569,6 +588,8 @@ try {
                 'cita_id' => $id,
                 'propina' => $propina,
                 'nuevo_precio_final' => $nuevoPrecioFinal,
+                'total_productos' => $totalProductos,
+                'total_pagado' => $totalCobrarFinal,
                 'recibo' => $reciboData
             ]);
 
@@ -614,7 +635,35 @@ try {
                 $precioBase = $precioFinal - $sumaAdic;
             }
 
+            // Obtener productos asociados a la cita de ventas_productos
+            $stmtProd = $pdo->prepare("
+                SELECT vp.producto_id, vp.cantidad, vp.precio_unitario, i.producto as producto_nombre
+                FROM ventas_productos vp
+                LEFT JOIN inventario i ON vp.producto_id = i.id
+                WHERE vp.cita_id = ?
+                ORDER BY vp.id ASC
+            ");
+            $stmtProd->execute([$id]);
+            $prods = $stmtProd->fetchAll(PDO::FETCH_ASSOC);
+
+            $itemsProductos = [];
+            $totalProductos = 0.00;
+            foreach ($prods as $p) {
+                $cantP = floatval($p['cantidad']);
+                $precP = floatval($p['precio_unitario']);
+                $subtotalP = $cantP * $precP;
+                $totalProductos += $subtotalP;
+                $itemsProductos[] = [
+                    'id' => $p['producto_id'],
+                    'nombre' => $p['producto_nombre'] ?? 'Producto',
+                    'cantidad' => $cantP,
+                    'precio_unitario' => $precP,
+                    'total' => $subtotalP
+                ];
+            }
+
             $propina = floatval($citaR['propina'] ?? 0.00);
+            $totalCobrar = $precioFinal + $totalProductos + $propina;
             $esFinde = in_array(date('w', strtotime($citaR['fecha_hora'])), [0, 6]);
             $comPct = $esFinde ? floatval($citaR['barbero_comision_finde']) : floatval($citaR['barbero_comision']);
             $comisionBarbero = ($precioFinal * $comPct / 100);
@@ -634,8 +683,11 @@ try {
                     'servicios_adicionales' => $adicionales,
                     'suma_adicionales' => $sumaAdic,
                     'total_servicios' => $precioFinal,
+                    'productos' => $itemsProductos,
+                    'total_productos' => $totalProductos,
                     'propina' => $propina,
-                    'total_a_cobrar' => $precioFinal + $propina,
+                    'total_a_cobrar' => $totalCobrar,
+                    'total_pagado' => $totalCobrar,
                     'comision_porcentaje' => $comPct,
                     'comision_barbero' => $comisionBarbero,
                     'ganancia_neta_negocio' => $precioFinal - $comisionBarbero
