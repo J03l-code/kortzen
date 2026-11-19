@@ -315,10 +315,10 @@ if ($currentUser['rol'] === 'admin_local') {
     $netaProdMesRow = query("
         SELECT SUM(
             (IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) * (
-                100.0 - CASE 
+                100.0 - COALESCE(vp.comision_porcentaje, CASE
                     WHEN vp.usuario_id IS NOT NULL AND (u.rol = 'barbero' OR u.rol IS NULL) THEN IFNULL(u.comision_productos, 10.0)
                     ELSE 0.0
-                END
+                END)
             ) / 100.0
         ) as total_neto_productos
         FROM ventas_productos vp
@@ -351,10 +351,10 @@ if ($currentUser['rol'] === 'admin_local') {
     $netaProdHoyRow = query("
         SELECT SUM(
             (IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) * (
-                100.0 - CASE 
+                100.0 - COALESCE(vp.comision_porcentaje, CASE
                     WHEN vp.usuario_id IS NOT NULL AND (u.rol = 'barbero' OR u.rol IS NULL) THEN IFNULL(u.comision_productos, 10.0)
                     ELSE 0.0
-                END
+                END)
             ) / 100.0
         ) as total_neto_productos
         FROM ventas_productos vp
@@ -408,18 +408,18 @@ if ($currentUser['rol'] === 'admin_local') {
             SUM(IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) as bruto_productos,
             SUM(
                 (IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) * (
-                    CASE 
+                    COALESCE(vp.comision_porcentaje, CASE
                         WHEN vp.usuario_id IS NOT NULL AND (u.rol = 'barbero' OR u.rol IS NULL) THEN IFNULL(u.comision_productos, 10.0)
                         ELSE 0.0
-                    END
+                    END)
                 ) / 100.0
             ) as comision_barberos_productos,
             SUM(
                 (IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) * (
-                    100.0 - CASE 
+                    100.0 - COALESCE(vp.comision_porcentaje, CASE
                         WHEN vp.usuario_id IS NOT NULL AND (u.rol = 'barbero' OR u.rol IS NULL) THEN IFNULL(u.comision_productos, 10.0)
                         ELSE 0.0
-                    END
+                    END)
                 ) / 100.0
             ) as neto_negocio_productos
         FROM ventas_productos vp
@@ -1211,7 +1211,7 @@ if ($currentUser['rol'] === 'admin_local') {
                     Ganancias Netas del Negocio — Todos los Meses
                 </h2>
                 <p style="margin: 6px 0 0 0; color: #64748B; font-size: 0.88rem;">
-                    Desglose histórico consolidado mes a mes deduciendo automáticamente las comisiones pagadas a barberos en servicios y productos.
+                    Desglose histórico consolidado mes a mes deduciendo automáticamente las comisiones por servicios y ventas del personal.
                 </p>
             </div>
 
@@ -1230,7 +1230,7 @@ if ($currentUser['rol'] === 'admin_local') {
                 </div>
 
                 <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 16px;">
-                    <div style="font-size: 0.72rem; font-weight: 800; color: #92400E; text-transform: uppercase; letter-spacing: 0.5px;">Comisiones a Barberos</div>
+                    <div style="font-size: 0.72rem; font-weight: 800; color: #92400E; text-transform: uppercase; letter-spacing: 0.5px;">Comisiones al personal</div>
                     <div style="font-size: 1.6rem; font-weight: 900; color: #B45309; margin: 4px 0;">-$<?php echo number_format($histTotalComisiones, 2); ?></div>
                     <div style="font-size: 0.75rem; color: #92400E;">Repartido al personal</div>
                 </div>
@@ -1260,7 +1260,7 @@ if ($currentUser['rol'] === 'admin_local') {
                                 <th style="padding: 12px 16px;">Mes / Año</th>
                                 <th style="padding: 12px 16px; text-align: center;">Cortes & Ventas</th>
                                 <th style="padding: 12px 16px; text-align: right;">Facturación Bruta</th>
-                                <th style="padding: 12px 16px; text-align: right;">Comisiones Barberos</th>
+                                <th style="padding: 12px 16px; text-align: right;">Comisiones al personal</th>
                                 <th style="padding: 12px 16px; text-align: right; background: #F0FDF4; color: #047857;">Ganancia Neta Negocio</th>
                                 <th style="padding: 12px 16px; text-align: center;">Margen %</th>
                             </tr>

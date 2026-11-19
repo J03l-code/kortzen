@@ -54,44 +54,17 @@ try {
         exit;
 
     } elseif ($action === 'registrar_venta') {
-        // Registrar venta de producto con comisión para el barbero
-        $productoId = intval($_POST['producto_id'] ?? 0);
-        $cantidad = intval($_POST['cantidad'] ?? 1);
-
-        if ($productoId <= 0 || $cantidad <= 0) {
-            throw new Exception('Selecciona un producto y cantidad válida.');
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            throw new Exception('La sesión del formulario expiró. Actualiza la página.');
         }
-
-        // Verificar stock y precio
-        $stmtCheck = $pdo->prepare("SELECT producto, cantidad, precio FROM inventario WHERE id = ?");
-        $stmtCheck->execute([$productoId]);
-        $prod = $stmtCheck->fetch(PDO::FETCH_ASSOC);
-
-        if (!$prod) {
-            throw new Exception('Producto no encontrado.');
-        }
-
-        if ($prod['cantidad'] < $cantidad) {
-            throw new Exception("Stock insuficiente de '{$prod['producto']}'. Quedan solo {$prod['cantidad']} unidades.");
-        }
-
-        $precioUnitario = floatval($prod['precio']);
-
-        // 1. Debitar stock
-        $stmtUpdate = $pdo->prepare("UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?");
-        $stmtUpdate->execute([$cantidad, $productoId]);
-
-        // 2. Registrar venta vinculada al barbero
-        $stmtVenta = $pdo->prepare("
-            INSERT INTO ventas_productos (producto_id, cantidad, precio_unitario, sucursal_id, usuario_id, fecha)
-            VALUES (?, ?, ?, ?, ?, NOW())
-        ");
-        $stmtVenta->execute([$productoId, $cantidad, $precioUnitario, $sucursalId, $usuarioId]);
-
-        echo json_encode([
-            'success' => true,
-            'message' => "Venta de '{$prod['producto']}' registrada con éxito. ¡Tu comisión se ha sumado a tus ganancias!"
-        ]);
+        $venta = registrarVentaProductos($pdo, [[
+            'producto_id' => $_POST['producto_id'] ?? null,
+            'cantidad' => $_POST['cantidad'] ?? null
+        ]], $_POST['vendedor_id'] ?? null, (int) $usuarioId);
+        registrarLog('VENDER', 'inventario', (int) $_POST['producto_id'],
+            'Venta acreditada a ' . $venta['vendedor_nombre'] . ' (#' . $venta['vendedor_id'] . ')');
+        echo json_encode(['success' => true,
+            'message' => 'Venta registrada a nombre de ' . $venta['vendedor_nombre'] . '.']);
         exit;
 
     } else {

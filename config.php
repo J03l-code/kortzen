@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/ventas_productos.php';
 /**
  * Configuración de Conexión a Base de Datos
  * Sistema de Gestión de Barberías
@@ -107,6 +108,34 @@ function getConnection()
                 $pdo->exec("SET time_zone = '-05:00'");
             } catch (Exception $e_tz) {}
 
+            // Ventas por vendedor: conservar atribuciones históricas y datos existentes.
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS ventas_productos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    cita_id INT NULL, producto_id INT NOT NULL,
+                    cantidad INT NOT NULL DEFAULT 1,
+                    precio_unitario DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    sucursal_id INT NOT NULL DEFAULT 1, usuario_id INT NOT NULL,
+                    registrado_por INT NULL, vendedor_nombre VARCHAR(255) NULL,
+                    comision_porcentaje DECIMAL(5,2) NULL,
+                    INDEX idx_usuario (usuario_id), INDEX idx_fecha (fecha)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                $colsVentas = $pdo->query('SHOW COLUMNS FROM ventas_productos')->fetchAll(PDO::FETCH_COLUMN);
+                foreach (['registrado_por' => 'INT NULL', 'vendedor_nombre' => 'VARCHAR(255) NULL',
+                          'comision_porcentaje' => 'DECIMAL(5,2) NULL'] as $columna => $tipo) {
+                    if (!in_array($columna, $colsVentas, true)) {
+                        try {
+                            $pdo->exec("ALTER TABLE ventas_productos ADD COLUMN `$columna` $tipo");
+                        } catch (Throwable $e) {
+                            error_log('Migración de ventas por vendedor: ' . $e->getMessage());
+                        }
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log('Esquema de ventas por vendedor: ' . $e->getMessage());
+            }
+
             // Auto-migraciones silenciosas y seguras (nunca bloquean la conexión)
             try {
                 $colsStmt = $pdo->query("SHOW COLUMNS FROM usuarios");
@@ -157,6 +186,9 @@ function getConnection()
             try {
                 $colsCStmt = $pdo->query("SHOW COLUMNS FROM clientes");
                 $colsC = $colsCStmt ? $colsCStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+                if (!empty($colsC) && !in_array('puntos', $colsC)) {
+                    try { $pdo->exec("ALTER TABLE clientes ADD COLUMN puntos INT DEFAULT 0"); } catch (Throwable $e) {}
+                }
                 if (!empty($colsC) && !in_array('password', $colsC)) {
                     try { $pdo->exec("ALTER TABLE clientes ADD COLUMN password VARCHAR(255) NULL AFTER email"); } catch (Throwable $e) {}
                 }

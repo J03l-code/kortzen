@@ -311,6 +311,10 @@ try {
                 throw new Exception('Acceso denegado. Solo la administración puede finalizar citas y registrar propinas.');
             }
 
+            if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+                throw new Exception('La sesión del formulario expiró. Actualiza la página.');
+            }
+
             $id = intval($_POST['id'] ?? 0);
             $propina = floatval($_POST['propina'] ?? 0.00);
             if ($propina < 0) $propina = 0.00;
@@ -323,11 +327,30 @@ try {
                 throw new Exception('ID inválido');
             }
 
-            // 1. Marcar completada con propina
-            try {
-                $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
-            } catch (Exception $exP) {}
+            if (!is_array($materiales) || !is_array($cantidades)) {
+                throw new Exception('La lista de productos no es válida.');
+            }
+            $productosVenta = [];
+            foreach ($materiales as $indice => $productoId) {
+                if ($productoId !== '') {
+                    $productosVenta[] = ['producto_id' => $productoId, 'cantidad' => $cantidades[$indice] ?? null];
+                }
+            }
 
+            $pdo->beginTransaction();
+            $stmtCitaVenta = $pdo->prepare('SELECT sucursal_id, estado FROM citas WHERE id = ? FOR UPDATE');
+            $stmtCitaVenta->execute([$id]);
+            $citaVenta = $stmtCitaVenta->fetch(PDO::FETCH_ASSOC);
+            if (!$citaVenta || in_array($citaVenta['estado'], ['completada', 'cancelada'], true)) {
+                throw new Exception('La cita no existe, ya fue finalizada o está cancelada.');
+            }
+            validarSucursalVenta($pdo, getOperadorVenta($pdo, (int) $_SESSION['user_id']), (int) $citaVenta['sucursal_id']);
+            if ($productosVenta) {
+                registrarVentaProductos($pdo, $productosVenta, $_POST['vendedor_id'] ?? null,
+                    (int) $_SESSION['user_id'], $id, (int) $citaVenta['sucursal_id']);
+            }
+
+            // Completar cita y otorgar puntos en la misma transacción que sus ventas.
             $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', propina = ? WHERE id = ?");
             $stmtComp->execute([$propina, $id]);
 
@@ -341,9 +364,6 @@ try {
             $stmtCitaClient->execute([$id]);
             $clientRow = $stmtCitaClient->fetch();
             if ($clientRow && !empty($clientRow['cliente_id'])) {
-                try {
-                    $pdo->exec("ALTER TABLE clientes ADD COLUMN puntos INT DEFAULT 0 AFTER telefono");
-                } catch (Exception $ex) {}
                 $stmtAddPts = $pdo->prepare("UPDATE clientes SET puntos = COALESCE(puntos, 0) + ? WHERE id = ?");
                 $stmtAddPts->execute([$puntosPorCorte, $clientRow['cliente_id']]);
             }
@@ -370,36 +390,7 @@ try {
                 }
             } catch (Exception $exRef) {}
 
-            // Obtener sucursal de la cita
-            $stmtCitaInfo = $pdo->prepare("SELECT sucursal_id FROM citas WHERE id = ?");
-            $stmtCitaInfo->execute([$id]);
-            $citaInfo = $stmtCitaInfo->fetch();
-            $sucursal_id = $citaInfo['sucursal_id'] ?? 0;
-            $usuario_id = $_SESSION['user_id'];
-
-            // 2. Procesar inventario y Registrar Venta
-            if (!empty($materiales)) {
-                $stmtStock = $pdo->prepare("UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?");
-                $stmtPrice = $pdo->prepare("SELECT precio FROM inventario WHERE id = ?");
-                $stmtVenta = $pdo->prepare("INSERT INTO ventas_productos (cita_id, producto_id, cantidad, precio_unitario, sucursal_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?)");
-
-                for ($i = 0; $i < count($materiales); $i++) {
-                    $prodId = intval($materiales[$i]);
-                    $cant = floatval($cantidades[$i]);
-
-                    if ($prodId > 0 && $cant > 0) {
-                        $stmtStock->execute([$cant, $prodId]);
-
-                        $stmtPrice->execute([$prodId]);
-                        $prodInfo = $stmtPrice->fetch();
-                        $precioUnitario = $prodInfo['precio'] ?? 0;
-
-                        if ($sucursal_id > 0) {
-                            $stmtVenta->execute([$id, $prodId, $cant, $precioUnitario, $sucursal_id, $usuario_id]);
-                        }
-                    }
-                }
-            }
+            $pdo->commit();
 
             $stmtCDetails = $pdo->prepare("
                 SELECT c.nombre as cliente_nombre, s.nombre as servicio_nombre, b.nombre as barbero_nombre, cita.precio_final
@@ -607,6 +598,9 @@ try {
     }
 
 } catch (PDOException $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     error_log("Error en citas_action.php: " . $e->getMessage());
     if ($isAjax) {
         header('Content-Type: application/json');
@@ -623,6 +617,9 @@ try {
     exit;
 
 } catch (Exception $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     error_log("Error en citas_action.php: " . $e->getMessage());
     if ($isAjax) {
         header('Content-Type: application/json');

@@ -127,10 +127,10 @@ $netaServiciosMesRow = query("
 $netaProdMesRow = query("
     SELECT SUM(
         (IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) * (
-            100.0 - CASE 
+            100.0 - COALESCE(vp.comision_porcentaje, CASE
                 WHEN vp.usuario_id IS NOT NULL AND (u.rol = 'barbero' OR u.rol IS NULL) THEN IFNULL(u.comision_productos, 10.0)
                 ELSE 0.0
-            END
+            END)
         ) / 100.0
     ) as total_neto_productos
     FROM ventas_productos vp
@@ -163,10 +163,10 @@ $netaServiciosHoyRow = query("
 $netaProdHoyRow = query("
     SELECT SUM(
         (IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) * (
-            100.0 - CASE 
+            100.0 - COALESCE(vp.comision_porcentaje, CASE
                 WHEN vp.usuario_id IS NOT NULL AND (u.rol = 'barbero' OR u.rol IS NULL) THEN IFNULL(u.comision_productos, 10.0)
                 ELSE 0.0
-            END
+            END)
         ) / 100.0
     ) as total_neto_productos
     FROM ventas_productos vp
@@ -220,18 +220,18 @@ $netaHistProdRows = query("
         SUM(IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) as bruto_productos,
         SUM(
             (IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) * (
-                CASE 
+                COALESCE(vp.comision_porcentaje, CASE
                     WHEN vp.usuario_id IS NOT NULL AND (u.rol = 'barbero' OR u.rol IS NULL) THEN IFNULL(u.comision_productos, 10.0)
                     ELSE 0.0
-                END
+                END)
             ) / 100.0
         ) as comision_barberos_productos,
         SUM(
             (IFNULL(vp.cantidad, 1) * IFNULL(vp.precio_unitario, 0)) * (
-                100.0 - CASE 
+                100.0 - COALESCE(vp.comision_porcentaje, CASE
                     WHEN vp.usuario_id IS NOT NULL AND (u.rol = 'barbero' OR u.rol IS NULL) THEN IFNULL(u.comision_productos, 10.0)
                     ELSE 0.0
-                END
+                END)
             ) / 100.0
         ) as neto_negocio_productos
     FROM ventas_productos vp
@@ -2345,6 +2345,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                                 <?php echo number_format($inv['cantidad'], 0); ?> <span style="font-size: 0.75rem; font-weight: 600; color: #666;"><?php echo htmlspecialchars($inv['unidad'] ?? 'unid'); ?></span>
                             </span>
                             <div style="margin-top: 6px;">
+                                <button type="button" onclick="abrirVentaInventarioPwa(<?php echo (int) $inv['id']; ?>)" class="pwa-btn-secondary" style="font-size: 0.72rem; padding: 4px 8px;" <?php echo $inv['cantidad'] > 0 ? '' : 'disabled'; ?>>Vender</button>
                                 <button type="button" onclick="abrirModalInventarioPwa(<?php echo htmlspecialchars(json_encode($inv), ENT_QUOTES, 'UTF-8'); ?>)" class="pwa-btn-secondary" style="font-size: 0.72rem; padding: 4px 8px;">Editar</button>
                             </div>
                         </div>
@@ -2352,6 +2353,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 </div>
             <?php endforeach; ?>
         </div>
+        <?php include 'includes/ventas_resumen.php'; ?>
     </section>
 
     <!-- ========================================================================= -->
@@ -3327,6 +3329,23 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
     <span id="pwaToastText">Operación exitosa</span>
 </div>
 
+<div class="pwa-action-sheet" id="pwaVentaInventarioSheet" onclick="if(event.target===this) this.style.display='none'">
+    <div class="pwa-sheet-box">
+        <h2 style="font-size: 1.15rem;">Registrar venta de producto</h2>
+        <p id="pwaVentaProductoNombre" style="margin: 12px 0;"></p>
+        <form id="formPwaVentaInventario" onsubmit="guardarVentaInventarioPwa(event)">
+            <input type="hidden" name="action" value="registrar_venta">
+            <input type="hidden" name="ajax" value="1">
+            <input type="hidden" name="producto_id" id="pwaVentaProductoId">
+            <?php $vendedorSelectId = 'vendedorInventarioPwa'; $vendedorEsCobro = false; include 'includes/vendedor_select.php'; ?>
+            <label for="pwaVentaCantidadInventario">Cantidad</label>
+            <input type="number" name="cantidad" id="pwaVentaCantidadInventario" min="1" step="1" value="1" required style="width: 100%; padding: 12px; margin: 8px 0 16px;">
+            <button type="button" class="pwa-btn-secondary" onclick="document.getElementById('pwaVentaInventarioSheet').style.display='none'">Cancelar</button>
+            <button type="submit" class="pwa-btn-main">Registrar venta</button>
+        </form>
+    </div>
+</div>
+
 <!-- Modal Finalizar y Propina -->
 <div class="pwa-action-sheet" id="pwaTerminarCitaSheet" onclick="if(event.target===this) cerrarModalTerminarCitaPwa()">
     <div class="pwa-sheet-box">
@@ -3342,6 +3361,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
         <form id="formPwaTerminarCita" onsubmit="guardarTerminarCitaPwa(event)" style="display: flex; flex-direction: column; gap: 12px;">
             <input type="hidden" name="action" value="completar">
             <input type="hidden" name="id" id="pwaTerminarCitaId" value="">
+            <?php $vendedorSelectId = 'vendedorCobroPwa'; $vendedorEsCobro = true; include 'includes/vendedor_select.php'; ?>
             <input type="hidden" name="ajax" value="1">
 
             <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 12px; padding: 14px;">
@@ -3363,6 +3383,9 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                     <?php endforeach; ?>
                 </select>
             </div>
+
+            <label for="pwaVentaCantidad">Cantidad del producto</label>
+            <input id="pwaVentaCantidad" name="cantidades[]" type="number" min="1" step="1" value="1" required style="width: 100%; padding: 10px; border: 1px solid #CCC; border-radius: 8px;">
 
             <button type="submit" id="btnSubmitPwaTerminar" class="pwa-btn-main" style="background: #10B981; color: #FFF; font-weight: 900; margin-top: 8px;">Confirmar y Finalizar Cita</button>
         </form>
@@ -3406,7 +3429,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                         <span style="font-weight: 700;">$<?php echo number_format($brutoTotal, 2); ?></span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #D97706; margin-bottom: 4px;">
-                        <span>Comisiones Barberos:</span>
+                        <span>Comisiones al personal:</span>
                         <span style="font-weight: 700;">-$<?php echo number_format($comisionTotal, 2); ?></span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 900; color: #047857; border-top: 1px dashed #D1D5DB; padding-top: 6px;">
@@ -5000,6 +5023,7 @@ function agendarSlotPwa(targetDate, horaInicio, barberoId) {
 }
 
 function abrirModalTerminarCitaPwa(citaId, clienteNombre) {
+    document.getElementById('formPwaTerminarCita').reset();
     document.getElementById('pwaTerminarCitaId').value = citaId;
     document.getElementById('pwaTerminarSubtitle').innerText = 'Cliente: ' + (clienteNombre || 'Cliente');
     document.getElementById('pwaTerminarPropina').value = '0.00';
@@ -5012,6 +5036,9 @@ function cerrarModalTerminarCitaPwa() {
 
 function guardarTerminarCitaPwa(e) {
     e.preventDefault();
+    const form = document.getElementById('formPwaTerminarCita');
+    actualizarVendedorCobro(form);
+    if (!form.reportValidity()) return;
     const btn = document.getElementById('btnSubmitPwaTerminar');
     btn.disabled = true;
     btn.innerText = 'Finalizando...';
@@ -5333,7 +5360,7 @@ function abrirModalUsuarioPwa(u) {
         document.getElementById('pwaUserEspecialidades').value = u.especialidades || '';
         document.getElementById('pwaUserBio').value = u.bio || u.biografia || '';
         document.getElementById('pwaUserComision').value = u.comision_porcentaje || 50;
-        document.getElementById('pwaUserComisionProd').value = u.comision_productos || 10;
+        document.getElementById('pwaUserComisionProd').value = u.comision_productos ?? 10;
         btnDel.style.display = 'block';
     } else {
         title.innerText = 'Nuevo Usuario';
@@ -5807,6 +5834,37 @@ function seleccionarSucursalPredictivaPwa(s) {
             setTimeout(() => { card.style.boxShadow = ''; }, 2000);
         }
     }, 100);
+}
+
+// Venta desde Inventario, con vendedor seleccionado explícitamente.
+function abrirVentaInventarioPwa(id) {
+    const producto = allPwaInventarioData.find(item => Number(item.id) === Number(id));
+    if (!producto) return;
+    document.getElementById('formPwaVentaInventario').reset();
+    document.getElementById('pwaVentaProductoId').value = id;
+    document.getElementById('pwaVentaProductoNombre').textContent = producto.producto + ' - $' + Number(producto.precio).toFixed(2);
+    document.getElementById('pwaVentaCantidadInventario').max = producto.cantidad;
+    document.getElementById('pwaVentaInventarioSheet').style.display = 'flex';
+}
+
+async function guardarVentaInventarioPwa(event) {
+    event.preventDefault();
+    const form = event.target;
+    if (!form.reportValidity()) return;
+    const boton = form.querySelector('[type="submit"]');
+    boton.disabled = true;
+    try {
+        const respuesta = await fetch('api/inventario_action.php', {
+            method: 'POST', body: new FormData(form), headers: {'Accept': 'application/json'}
+        });
+        const datos = await respuesta.json();
+        if (!datos.success) throw new Error(datos.message || 'No se pudo registrar la venta.');
+        alert(datos.message);
+        window.location.reload();
+    } catch (error) {
+        alert(error.message || 'Error de conexión al registrar la venta.');
+        boton.disabled = false;
+    }
 }
 
 // 4. INVENTARIO
@@ -6902,5 +6960,6 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+<script src="js/ventas-vendedor.js" defer></script>
 </body>
 </html>

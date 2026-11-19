@@ -64,6 +64,25 @@ try {
     $columns = $ensureInventarioSchema();
 
     switch ($action) {
+        case 'registrar_venta':
+            if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+                throw new Exception('La sesión del formulario expiró. Actualiza la página.');
+            }
+            $venta = registrarVentaProductos($pdo, [[
+                'producto_id' => $_POST['producto_id'] ?? null,
+                'cantidad' => $_POST['cantidad'] ?? null
+            ]], $_POST['vendedor_id'] ?? null, (int) $_SESSION['user_id']);
+            registrarLog('VENDER', 'inventario', (int) $_POST['producto_id'],
+                'Venta acreditada a ' . $venta['vendedor_nombre'] . ' (#' . $venta['vendedor_id'] . ')');
+            $mensaje = 'Venta registrada a nombre de ' . $venta['vendedor_nombre'] . '.';
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => $mensaje]);
+                exit;
+            }
+            header('Location: ../inventario.php?success=' . urlencode($mensaje));
+            exit;
+
         case 'withdraw':
             $id = intval($_POST['id'] ?? 0);
             $cantidad = intval($_POST['cantidad'] ?? 0);

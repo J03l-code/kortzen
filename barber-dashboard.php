@@ -114,7 +114,7 @@ try {
 $gananciaHoyVentas = 0;
 try {
     $r = query("
-        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
+        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * COALESCE(comision_porcentaje, $com_productos) / 100)) as total
         FROM ventas_productos 
         WHERE usuario_id = ? AND DATE(fecha) = CURDATE()
     ", [$barbero_id]);
@@ -152,7 +152,7 @@ try {
 $gananciaMesVentas = 0;
 try {
     $r = query("
-        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
+        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * COALESCE(comision_porcentaje, $com_productos) / 100)) as total
         FROM ventas_productos 
         WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
     ", [$barbero_id, $monthStart, $monthEnd]);
@@ -186,7 +186,7 @@ try {
 $gananciaHistVentas = 0;
 try {
     $r = query("
-        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * $com_productos / 100)) as total
+        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * COALESCE(comision_porcentaje, $com_productos) / 100)) as total
         FROM ventas_productos 
         WHERE usuario_id = ?
     ", [$barbero_id]);
@@ -1057,6 +1057,7 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                 </p>
 
                 <form id="formVentaProducto" onsubmit="registrarVentaProductoBarbero(event)">
+                    <?php $vendedorSelectId = 'vendedorBarbero'; $vendedorEsCobro = false; include 'includes/vendedor_select.php'; ?>
                     <label class="config-label" style="font-size: 0.78rem;">Producto Vendido</label>
                     <select name="producto_id" class="barber-input" required>
                         <option value="">-- Seleccionar producto del inventario --</option>

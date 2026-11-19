@@ -201,6 +201,7 @@ include 'includes/header.php';
     <div id="predictiveCitaDropdown" class="predictive-dropdown"></div>
 </div>
 
+<script src="js/ventas-vendedor.js" defer></script>
 <script>
 function toggleFiltroHoy() {
     const inputFecha = document.getElementById('filtroFecha');
@@ -654,6 +655,8 @@ function toggleFiltroHoy() {
             <input type="hidden" name="id" id="citaIdTerminar">
             <input type="hidden" name="return_url" id="returnUrlTerminar" value="">
 
+            <?php $vendedorSelectId = 'vendedorCobroWeb'; $vendedorEsCobro = true; include 'includes/vendedor_select.php'; ?>
+
             <!-- Campo de Propina -->
             <div style="margin-bottom: 20px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 10px; padding: 14px;">
                 <label style="display: block; font-weight: 800; font-size: 0.8rem; color: #111827; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
@@ -679,7 +682,7 @@ function toggleFiltroHoy() {
                         <?php endforeach; ?>
                     </select>
                     <input type="number" name="cantidades[]" placeholder="Cant." class="filter-select"
-                        style="width: 80px;" min="1" step="0.1">
+                        style="width: 80px;" min="1" step="1" value="1">
                 </div>
             </div>
 
@@ -737,6 +740,7 @@ function toggleFiltroHoy() {
 
     // Modal Logic
     function abrirModalTerminar(id) {
+        document.getElementById('formTerminar').reset();
         document.getElementById('citaIdTerminar').value = id;
         document.getElementById('returnUrlTerminar').value = window.location.href;
         const pInput = document.getElementById('inputPropinaTerminar');
@@ -756,6 +760,8 @@ function toggleFiltroHoy() {
     function enviarFormTerminar(e) {
         e.preventDefault();
         const form = document.getElementById('formTerminar');
+        actualizarVendedorCobro(form);
+        if (!form.reportValidity()) return;
         const submitBtn = document.getElementById('btnSubmitTerminar');
         const originalText = submitBtn ? submitBtn.innerHTML : 'Confirmar y Terminar';
 
@@ -807,8 +813,10 @@ function toggleFiltroHoy() {
                     </option>
                 <?php endforeach; ?>
             </select>
-            <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: #E74C3C; cursor: pointer;">✕</button>
+            <input type="number" name="cantidades[]" class="filter-select" style="width: 80px;" min="1" step="1" value="1" required>
+            <button type="button" onclick="this.parentElement.remove(); actualizarVendedorCobro(document.getElementById('formTerminar'))" style="background: none; border: none; color: #E74C3C; cursor: pointer;">✕</button>
         `;
+        document.getElementById('materialesList').appendChild(div);
     }
 
     function prepararGuardarEstadoCitas(id) {

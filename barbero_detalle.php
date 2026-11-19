@@ -147,7 +147,7 @@ try {
 $gananciaMesVentas = 0.00;
 try {
     $stmtGanMesProd = $pdo->prepare("
-        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * ? / 100)) as total
+        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * COALESCE(comision_porcentaje, ?) / 100)) as total
         FROM ventas_productos 
         WHERE usuario_id = ? AND DATE(fecha) BETWEEN ? AND ?
     ");
@@ -190,7 +190,7 @@ try {
 $gananciaHistVentas = 0.00;
 try {
     $stmtGanHistProd = $pdo->prepare("
-        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * ? / 100)) as total
+        SELECT SUM((IFNULL(cantidad * precio_unitario, 0) * COALESCE(comision_porcentaje, ?) / 100)) as total
         FROM ventas_productos 
         WHERE usuario_id = ?
     ");
@@ -280,7 +280,7 @@ $comisionProdHoy = 0.00;
 try {
     $stmtVP = $pdo->prepare("
         SELECT SUM(IFNULL(cantidad * precio_unitario, 0)) as facturado,
-               SUM((IFNULL(cantidad * precio_unitario, 0) * ? / 100)) as comision
+               SUM((IFNULL(cantidad * precio_unitario, 0) * COALESCE(comision_porcentaje, ?) / 100)) as comision
         FROM ventas_productos 
         WHERE usuario_id = ? AND DATE(fecha) = CURDATE()
     ");
