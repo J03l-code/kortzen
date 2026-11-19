@@ -1,4 +1,14 @@
 <?php
+if (!function_exists('mb_str_split')) {
+    function mb_str_split(string $string, int $length = 1, ?string $encoding = null): array
+    {
+        if ($length < 1) return [];
+        if ($string === '') return [];
+        preg_match_all('/.{1,' . $length . '}/us', $string, $matches);
+        return !empty($matches[0]) ? $matches[0] : (str_split($string, $length) ?: []);
+    }
+}
+
 /** XLSX real con celdas de texto explícitas: ningún nombre se interpreta como fórmula. */
 function tablaXlsx(array $columnas, array $filas): string
 {

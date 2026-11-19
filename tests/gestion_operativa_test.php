@@ -167,6 +167,15 @@ $casosOp = [
         rechazarOp(fn()=>reasignarCita($p,42,4,getOperadorVenta($p,3)));
     },
     'Excel contiene XML válido, importes numéricos y texto sin fórmulas' => function () {
+        if (!class_exists('ZipArchive')) {
+            try {
+                tablaXlsx(['Producto','Total'],[['=SUM(A1:A2)',12.5],['Champú',0]]);
+                verificarOp(false, 'Debe requerir la extensión ZIP.');
+            } catch (RuntimeException $e) {
+                verificarOp(str_contains($e->getMessage(), 'extensión ZIP'), 'Debe indicar que falta la extensión ZIP.');
+            }
+            return;
+        }
         $bytes=tablaXlsx(['Producto','Total'],[['=SUM(A1:A2)',12.5],['Champú',0]]);$ruta=tempnam(sys_get_temp_dir(),'kortzen-test-xlsx-');
         try {
             file_put_contents($ruta,$bytes);$zip=new ZipArchive();verificarOp($zip->open($ruta)===true,'Debe ser un ZIP XLSX válido.');
