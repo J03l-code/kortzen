@@ -3,9 +3,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = root.querySelector('[data-filtros-ventas]');
         const estado = root.querySelector('[data-estado-ventas]');
         const cuerpo = root.querySelector('[data-filas-ventas]');
+        const vendedores = root.querySelector('[data-vendedores-historial]');
         let pagina = 1;
         let paginas = 1;
         let peticion = 0;
+        const cargarVendedores = async () => {
+            if (!vendedores) return;
+            try {
+                const respuesta = await fetch('api/reportes_ventas.php?accion=vendedores', {headers: {'Accept': 'application/json'}});
+                const datos = await respuesta.json();
+                if (!datos.success || !Array.isArray(datos.vendedores)) throw new Error('Vendedores no disponibles.');
+                vendedores.replaceChildren(new Option(datos.solo_propias ? 'Mis ventas' : 'Todos los vendedores', ''));
+                datos.vendedores.forEach(vendedor => {
+                    vendedores.append(new Option(vendedor.nombre + (Number(vendedor.activo) ? '' : ' (inactivo)'), String(vendedor.id)));
+                });
+                vendedores.disabled = false;
+            } catch (error) {
+                vendedores.replaceChildren(new Option('Vendedores no disponibles; recarga para reintentar', ''));
+                vendedores.disabled = true;
+            }
+        };
         const cargar = async () => {
             const actual = ++peticion;
             const params = new URLSearchParams(new FormData(form));
@@ -47,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pagina = Math.max(1, Math.min(paginas, pagina + Number(boton.dataset.paginaVentas)));
             cargar();
         }));
+        cargarVendedores();
         cargar();
     });
     document.querySelectorAll('[data-inventario-tabs]').forEach(root => {

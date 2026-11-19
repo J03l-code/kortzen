@@ -7,6 +7,8 @@
 
 require_once 'config.php';
 requireLogin();
+header('Cache-Control: private, no-store, max-age=0');
+header('Pragma: no-cache');
 
 $currentUser = getCurrentUser();
 $userRol = $currentUser['rol'] ?? '';
@@ -5938,7 +5940,9 @@ function cerrarDrawer() {
     document.getElementById('pwaDrawerContent').classList.remove('open');
 }
 
+let citaDetalleActualPwa = null;
 function abrirModalDetalleCitaPwa(c) {
+    citaDetalleActualPwa = c;
     document.getElementById('pwaSheetCliNombre').innerText = c.cliente_nombre;
     document.getElementById('pwaSheetServNombre').innerText = c.servicio_nombre;
     document.getElementById('pwaSheetHora').innerText = c.fecha_hora;
@@ -5984,23 +5988,14 @@ function cerrarModalNetasPwa() {
 }
 
 function completarCitaPwa(id) {
-    if (confirm('¿Completar esta cita?')) {
-        const formData = new FormData();
-        formData.append('action', 'completar');
-        formData.append('id', id);
-        formData.append('ajax', '1');
-
-        fetch('api/citas_action.php', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(() => {
-                cerrarModalCitaPwa();
-                cargarDatosHorariosPwa();
-            })
-            .catch(() => {
-                cerrarModalCitaPwa();
-                cargarDatosHorariosPwa();
-            });
+    const cita = rawCitasList.find(item => Number(item.id) === Number(id))
+        || (citaDetalleActualPwa && Number(citaDetalleActualPwa.id) === Number(id) ? citaDetalleActualPwa : null);
+    if (!cita) {
+        alert('No se pudo cargar la cita. Actualiza la agenda e inténtalo nuevamente.');
+        return;
     }
+    cerrarModalCitaPwa();
+    abrirModalTerminarCitaPwa(cita);
 }
 
 function cancelarCitaPwa(id) {
@@ -7814,6 +7809,6 @@ document.addEventListener('click', function(e) {
 </script>
 
 <script src="js/ventas-vendedor.js" defer></script>
-<script src="js/historial-ventas.js" defer></script>
+<script src="js/historial-ventas.js?v=20261119-2" defer></script>
 </body>
 </html>

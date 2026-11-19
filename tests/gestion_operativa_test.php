@@ -175,6 +175,15 @@ $casosOp = [
             verificarOp(str_contains($sheet,'<v>12.5</v>'),'El importe debe ser numérico.');$zip->close();
         } finally {unlink($ruta);}
     },
+    'Lista de vendedores funciona aunque fallen los registros heredados' => function () {
+        $p=new PDO('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
+        $p->exec('CREATE TABLE usuarios (id INTEGER,nombre TEXT,activo INTEGER)');
+        $p->exec("INSERT INTO usuarios VALUES (1,'Admin',1),(2,'Recepción',1)");
+        $r=vendedoresHistorial($p,['id'=>1,'nombre'=>'Admin','rol'=>'admin']);
+        verificarOp(count($r)===2,'Un problema en ventas heredadas no debe bloquear el equipo actual.');
+        $r=vendedoresHistorial($p,['id'=>2,'nombre'=>'Recepción','rol'=>'barbero']);
+        verificarOp(count($r)===1 && $r[0]['id']===2,'El vendedor debe seguir viendo sólo su propio filtro.');
+    },
     'PDF pagina y mantiene referencias xref válidas' => function () {
         $filas=array_fill(0,100,['19/11/2026 10:00','Champú profesional',2,22,'Mishell Pérez','Local Quito','Transferencia']);
         $pdf=tablaPdf('Historial de ventas',['Fecha','Producto','Cantidad','Total','Vendedor','Sucursal','Pago'],$filas);

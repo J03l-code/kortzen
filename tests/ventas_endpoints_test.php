@@ -202,6 +202,12 @@ try {
             $r=ejecutarEndpoint('reportes_ventas.php',[],$db,3,'barbero',['vendedor_id'=>2]);
             comprobarEndpoint($r['success'] && $r['reporte']['registros']===0,'Un barbero no puede consultar las ventas de otro vendedor mediante un filtro.');
         },
+        'Filtro de vendedores carga independientemente de la página principal' => function ($pdo,$db) {
+            $r=ejecutarEndpoint('reportes_ventas.php',[],$db,1,'admin',['accion'=>'vendedores']);
+            comprobarEndpoint($r['success'] && count($r['vendedores'])===3,'Administración debe cargar el equipo.');
+            $r=ejecutarEndpoint('reportes_ventas.php',[],$db,3,'barbero',['accion'=>'vendedores']);
+            comprobarEndpoint($r['success'] && $r['solo_propias'] && count($r['vendedores'])===1,'Un barbero sólo ve su filtro.');
+        },
         'Inventario y dashboard registran ventas con el mismo criterio' => function ($pdo, $db) {
             foreach (['inventario_action.php', 'barbero_inventario_action.php'] as $api) {
                 $r = ejecutarEndpoint($api, ['action' => 'registrar_venta', 'ajax' => '1', 'csrf_token' => 'token-pruebas',

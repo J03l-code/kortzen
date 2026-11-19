@@ -537,5 +537,5 @@ include 'includes/header.php';
 </div>
 <div data-inventario-panel="historial" hidden><?php include 'includes/historial_ventas.php'; ?></div>
 </div>
-<script src="js/historial-ventas.js" defer></script>
+<script src="js/historial-ventas.js?v=20261119-2" defer></script>
 <?php include 'includes/footer.php'; ?>

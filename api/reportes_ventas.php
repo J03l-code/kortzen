@@ -4,6 +4,13 @@ require_once __DIR__ . '/../includes/exportar_tablas.php';
 try {
     if (!isLoggedIn()) throw new InvalidArgumentException('Inicia sesión para consultar el reporte.');
     $usuario = getOperadorVenta(getConnection(), (int) $_SESSION['user_id']);
+    if (($_GET['accion'] ?? '') === 'vendedores') {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: private, no-store');
+        echo json_encode(['success' => true, 'vendedores' => vendedoresHistorial(getConnection(), $usuario),
+            'solo_propias' => !esAdministradorCaja($usuario)]);
+        exit;
+    }
     $formato = $_GET['formato'] ?? 'json';
     $reporte = historialVentas(getConnection(), $usuario, $_GET, in_array($formato, ['xlsx','pdf'], true));
     if ($formato === 'json') {

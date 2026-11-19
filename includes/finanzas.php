@@ -84,6 +84,26 @@ function alcanceReporte(array $usuario, string $alias, array &$params, $sucursal
     return $filtro;
 }
 
+function vendedoresHistorial(PDO $pdo, array $usuario): array
+{
+    if (!esAdministradorCaja($usuario)) {
+        return [['id' => (int) $usuario['id'], 'nombre' => $usuario['nombre'], 'activo' => 1]];
+    }
+    $equipo = $pdo->query('SELECT id, nombre, activo FROM usuarios ORDER BY nombre')->fetchAll(PDO::FETCH_ASSOC);
+    // Consultas separadas evitan mezclar collations de tablas heredadas en un UNION.
+    try {
+        $anteriores = $pdo->query("SELECT v.usuario_id AS id,
+            COALESCE(MAX(v.vendedor_nombre), 'Usuario eliminado') AS nombre, 0 AS activo
+            FROM ventas_productos v LEFT JOIN usuarios u ON u.id = v.usuario_id
+            WHERE u.id IS NULL GROUP BY v.usuario_id")->fetchAll(PDO::FETCH_ASSOC);
+        $equipo = array_merge($equipo, $anteriores);
+    } catch (Throwable $e) {
+        error_log('Vendedores históricos no disponibles: ' . $e->getMessage());
+    }
+    usort($equipo, fn ($a, $b) => strcasecmp($a['nombre'], $b['nombre']));
+    return $equipo;
+}
+
 function historialVentas(PDO $pdo, array $usuario, array $filtros, bool $exportar = false): array
 {
     [$desde, $hasta] = rangoReporte($filtros);

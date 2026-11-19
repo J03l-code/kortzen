@@ -1,16 +1,10 @@
-<?php
-$equipoHistorial = query("SELECT id, nombre, activo FROM usuarios UNION ALL SELECT v.usuario_id AS id, COALESCE(MAX(v.vendedor_nombre),'Usuario eliminado') AS nombre, 0 AS activo FROM ventas_productos v LEFT JOIN usuarios u ON u.id=v.usuario_id WHERE u.id IS NULL GROUP BY v.usuario_id ORDER BY nombre");
-if (!esAdministradorCaja($currentUser)) $equipoHistorial = array_values(array_filter($equipoHistorial, fn ($p) => (int) $p['id'] === (int) $currentUser['id']));
-?>
+<!-- Este componente no consulta la BD: un fallo del reporte no debe cortar la PWA. -->
 <div data-historial-ventas class="kortzen-panel">
     <h2>Historial de Ventas de Productos</h2>
     <form data-filtros-ventas class="kortzen-filtros">
         <label>Desde<input type="date" name="desde" value="<?php echo date('Y-m-01'); ?>" required></label>
         <label>Hasta<input type="date" name="hasta" value="<?php echo date('Y-m-d'); ?>" required></label>
-        <label>Vendedor<select name="vendedor_id"><option value=""><?php echo esAdministradorCaja($currentUser) ? 'Todos los vendedores' : 'Mis ventas'; ?></option>
-            <?php foreach ($equipoHistorial as $personaHistorial): ?>
-                <option value="<?php echo (int) $personaHistorial['id']; ?>"><?php echo htmlspecialchars($personaHistorial['nombre'] . ($personaHistorial['activo'] ? '' : ' (inactivo)'), ENT_QUOTES, 'UTF-8'); ?></option>
-            <?php endforeach; ?>
+        <label>Vendedor<select name="vendedor_id" data-vendedores-historial disabled><option value="">Cargando vendedores…</option>
         </select></label>
         <button type="submit" class="btn-primary">Filtrar</button>
         <a data-exportar-ventas="xlsx" class="btn-secondary">Descargar Excel</a>
