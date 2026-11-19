@@ -22,11 +22,22 @@ Options -Indexes
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# 4. Clean Extensionless URLs & SEO 301 Redirects
+# 4. Redireccion Canonica a Dominio Raiz con HTTPS
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
 
+# 4.1 Redirigir www.kortzen.com a https://kortzen.com (301 Permanente)
+RewriteCond %{HTTP_HOST} ^www\.kortzen\.com$ [NC]
+RewriteRule ^(.*)$ https://kortzen.com/$1 [R=301,L]
+
+# 4.2 Forzar HTTPS en kortzen.com si la peticion llega en HTTP plano
+RewriteCond %{HTTP_HOST} ^kortzen\.com$ [NC]
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+RewriteRule ^(.*)$ https://kortzen.com/$1 [R=301,L]
+
+# 5. Clean Extensionless URLs & SEO 301 Redirects
 # Block access to hidden folders (like .git)
 RewriteRule ^(\.git|logs|sql)/ - [F,L]
 

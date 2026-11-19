@@ -23,24 +23,50 @@
  * secret: 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
  */
 
+// Cargar configuración general del sistema si no ha sido cargada
+if (!defined('SITE_URL') && file_exists(__DIR__ . '/../../config.php')) {
+    require_once __DIR__ . '/../../config.php';
+}
+
 // ============================================================
 // ⚠️ CONFIGURA ESTOS VALORES CON TUS CREDENCIALES DE GOOGLE
 // ============================================================
 
-define('GOOGLE_CLIENT_ID', '287462075073-lmhplvlmgarkmgosqbo34oqco25esfn5.apps.googleusercontent.com');
-define('GOOGLE_CLIENT_SECRET', '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');
+if (!defined('GOOGLE_CLIENT_ID')) {
+    define('GOOGLE_CLIENT_ID', '287462075073-lmhplvlmgarkmgosqbo34oqco25esfn5.apps.googleusercontent.com');
+}
+if (!defined('GOOGLE_CLIENT_SECRET')) {
+    define('GOOGLE_CLIENT_SECRET', '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');
+}
 
-// URLs de redirección dinámicas (Multi-dominio automático)
-$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
-        || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) 
-        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-$proto = $isHttps ? 'https://' : 'http://';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$detectedBaseUrl = $proto . $host;
-$siteBase = defined('SITE_URL') ? SITE_URL : $detectedBaseUrl;
+// Extracción y sanitización estricta del host
+$rawHost = strtolower($_SERVER['HTTP_HOST'] ?? 'localhost');
+$cleanHost = explode(':', $rawHost)[0];
 
-define('GOOGLE_REDIRECT_URI', $siteBase . '/api/auth/google-callback.php');
-define('SITE_BASE_URL', $siteBase);
+// Determinar URL base y callback canónico
+if ($cleanHost === 'kortzen.com' || $cleanHost === 'www.kortzen.com' || str_ends_with($cleanHost, '.kortzen.com')) {
+    // Producción: siempre HTTPS canónico en kortzen.com (autorizado en Google Cloud Console)
+    $siteBase = 'https://kortzen.com';
+} elseif (defined('SITE_URL') && !empty(SITE_URL) && str_starts_with(SITE_URL, 'http')) {
+    // Si se definió explícitamente SITE_URL (por ejemplo en .env para clonación o staging)
+    $siteBase = rtrim(SITE_URL, '/');
+} else {
+    // Entorno local o de desarrollo (ej: localhost:2020, 127.0.0.1)
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+            || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) 
+            || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && str_contains(strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']), 'https'));
+    $proto = $isHttps ? 'https://' : 'http://';
+    $port = (isset($_SERVER['SERVER_PORT']) && !in_array($_SERVER['SERVER_PORT'], [80, 443])) ? ':' . $_SERVER['SERVER_PORT'] : '';
+    $hostConPuerto = (strpos($rawHost, ':') !== false) ? $rawHost : ($cleanHost . $port);
+    $siteBase = $proto . $hostConPuerto;
+}
+
+if (!defined('GOOGLE_REDIRECT_URI')) {
+    define('GOOGLE_REDIRECT_URI', $siteBase . '/api/auth/google-callback.php');
+}
+if (!defined('SITE_BASE_URL')) {
+    define('SITE_BASE_URL', $siteBase);
+}
 
 // URLs de Google OAuth 2.0
 define('GOOGLE_AUTH_URL', 'https://accounts.google.com/o/oauth2/v2/auth');

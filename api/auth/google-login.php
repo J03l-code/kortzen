@@ -4,7 +4,10 @@
  * Redirige al usuario a la página de autenticación de Google
  */
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/google-config.php';
 
 // Verificar si Google está configurado
