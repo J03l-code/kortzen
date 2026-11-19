@@ -93,17 +93,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const fin = Math.max(21 * 60,...finales);
             const alto = (fin - inicio) * 1.3;
             const reloj = nodo('div',undefined,'kortzen-columna-reloj');
-            reloj.append(nodo('div','Hora','kortzen-cal-cabecera'));
+            reloj.append(nodo('div','HORA','kortzen-cal-cabecera'));
             const horas = nodo('div'); horas.style.height = alto + 'px'; horas.style.position = 'relative';
             for (let m = Math.ceil(inicio/60)*60; m < fin; m += 60) {
-                const marca = nodo('span',String(Math.floor(m/60)).padStart(2,'0') + ':00'); marca.style.cssText = `position:absolute;top:${(m-inicio)*1.3}px;font-size:12px`; horas.append(marca);
+                const marca = nodo('span',String(Math.floor(m/60)).padStart(2,'0') + ':00'); marca.style.cssText = `position:absolute;top:${(m-inicio)*1.3}px;font-size:11px`; horas.append(marca);
             }
             reloj.append(horas); cuadricula.append(reloj);
             columnas.forEach((nombre,id) => {
                 const columna = nodo('div',undefined,'kortzen-columna-barbero');
-                columna.append(nodo('div',nombre,'kortzen-cal-cabecera'));
-                const cuerpo = nodo('div',undefined,'kortzen-cal-dia'); cuerpo.style.height = alto + 'px';
+                const cabecera = nodo('div',undefined,'kortzen-cal-cabecera');
+                const iniciales = (nombre.split(' ').filter(Boolean).map(p=>p[0]).join('').slice(0,2) || 'KB').toUpperCase();
+                const avatar = nodo('div',iniciales,'kortzen-cal-avatar');
+                const info = nodo('div',undefined,'kortzen-cal-barbero-info');
                 const eventos = datos.eventos.filter(e => (Number(e.reasignacion_pendiente) ? 'sin-asignar' : String(e.barbero_id)) === id);
+                const citasCount = eventos.length;
+                info.append(
+                    nodo('div',nombre,'kortzen-cal-barbero-nombre'),
+                    nodo('span',`${citasCount} ${citasCount === 1 ? 'cita' : 'citas'}`,'kortzen-cal-barbero-citas')
+                );
+                cabecera.append(avatar,info);
+                columna.append(cabecera);
+                const cuerpo = nodo('div',undefined,'kortzen-cal-dia'); cuerpo.style.height = alto + 'px';
                 const posiciones = distribuirCitasCalendario(eventos);
                 eventos.forEach(e => {
                     const tarjeta = nodo(datos.puede_administrar ? 'a' : 'div',undefined,'kortzen-cal-cita');

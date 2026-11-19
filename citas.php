@@ -516,6 +516,56 @@ function toggleFiltroHoy() {
         margin-bottom: 10px;
         align-items: center;
     }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+            margin-bottom: 20px !important;
+        }
+        .page-header > div:last-child {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        #filterForm {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+        }
+        #filterForm .filter-select,
+        #filterForm .filter-date,
+        #filterForm .btn {
+            width: 100% !important;
+            box-sizing: border-box !important;
+            min-height: 40px !important;
+            height: 40px !important;
+            padding: 8px 10px !important;
+            font-size: 13px !important;
+        }
+        #filterForm .btn-today,
+        #filterForm .btn-today-active {
+            grid-column: span 2 !important;
+            justify-content: center !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .page-header .btn-primary {
+            width: 100% !important;
+            min-height: 42px !important;
+            height: 42px !important;
+            justify-content: center !important;
+            display: flex !important;
+            align-items: center !important;
+            box-sizing: border-box !important;
+        }
+        #predictiveCitaSearch {
+            font-size: 13px !important;
+            padding: 10px 14px 10px 38px !important;
+        }
+    }
 </style>
 
 <?php include 'includes/calendario_citas.php'; ?>

@@ -690,10 +690,10 @@ body {
         transform: translateX(-100%) !important;
         visibility: hidden !important;
     }
-    /* Adjust content padding so it doesn't get cut by bottom bar */
+    /* Adjust content padding so it doesn't get cut by top mobile header or bottom bar */
     .main-content {
         margin-left: 0 !important;
-        padding: 20px 16px 85px 16px !important;
+        padding: calc(65px + env(safe-area-inset-top, 15px)) 16px calc(85px + env(safe-area-inset-bottom, 15px)) 16px !important;
     }
     /* Render bottom navigation bar */
     .pwa-bottom-nav {
