@@ -22,7 +22,7 @@ $es_hoy = ($fecha === date('Y-m-d'));
 // Obtener inventario para el modal de terminar cita (de todas las sucursales)
 $inventario = [];
 try {
-    $inventario = query("SELECT i.id, i.producto, i.cantidad, i.unidad, s.nombre as sucursal 
+    $inventario = query("SELECT i.id, i.producto, i.cantidad, i.unidad, COALESCE(i.precio, 0.00) as precio, s.nombre as sucursal 
                          FROM inventario i 
                          JOIN sucursales s ON i.sucursal_id = s.id 
                          WHERE i.cantidad > 0 
@@ -813,22 +813,31 @@ function toggleFiltroHoy() {
                 <span style="font-size: 0.72rem; color: #B45309; margin-top: 4px; display: block;">100% de la propina se transfiere al barbero en un rubro independiente.</span>
             </div>
 
-            <p style="margin-bottom: 8px; color: #4B5563; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">Materiales consumidos (opcional):</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <p style="margin: 0; color: #4B5563; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">
+                    <i class="fas fa-boxes" style="color: #6B7280;"></i> Productos / Materiales consumidos (opcional):
+                </p>
+                <span style="font-size: 0.7rem; color: #10B981; font-weight: 700;">Precio editable si aplicas descuento</span>
+            </div>
             <div id="materialesList">
-                <div class="material-row">
-                    <select name="materiales[]" class="filter-select" style="flex: 1;">
-                        <option value="">Seleccionar material...</option>
+                <div class="material-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                    <select name="materiales[]" class="filter-select" style="flex: 2;" onchange="actualizarPrecioMaterialFila(this)">
+                        <option value="">Seleccionar producto / material...</option>
                         <?php foreach ($inventario as $item): ?>
-                            <option value="<?php echo $item['id']; ?>">
-                                <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' (' . $item['unidad'] . ')'; ?>
+                            <option value="<?php echo $item['id']; ?>" data-precio="<?php echo $item['precio']; ?>">
+                                <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' ($' . number_format($item['precio'], 2) . ')'; ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <input type="number" name="cantidades[]" placeholder="Cant." class="filter-select" style="width: 80px;" min="1" step="0.1">
+                    <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 65px;" min="1" step="1">
+                    <div style="position: relative; width: 110px;">
+                        <span style="position: absolute; left: 8px; top: 8px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
+                        <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; padding-left: 20px; font-weight: 800; color: #10B981;" title="Precio unitario cobrado (editable si aplicas descuento)">
+                    </div>
                 </div>
             </div>
 
-            <button type="button" onclick="agregarFilaMaterial()" class="btn-secondary" style="margin-top: 8px; width: 100%; font-size: 0.8rem; padding: 7px;">+ Agregar otro material</button>
+            <button type="button" onclick="agregarFilaMaterial()" class="btn-secondary" style="margin-top: 6px; width: 100%; font-size: 0.8rem; padding: 7px;">+ Agregar otro producto / material</button>
 
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button type="button" onclick="cerrarModal()" class="btn-secondary" style="flex: 1; padding: 11px;">Cancelar</button>
@@ -1265,20 +1274,41 @@ function toggleFiltroHoy() {
         }, 300);
     }
 
+    function actualizarPrecioMaterialFila(selectElem) {
+        const row = selectElem.closest('.material-row');
+        if (!row) return;
+        const inputPrecio = row.querySelector('input[name="precios_materiales[]"]');
+        if (!inputPrecio) return;
+        const opt = selectElem.options[selectElem.selectedIndex];
+        if (opt && opt.value) {
+            const precio = parseFloat(opt.getAttribute('data-precio') || 0);
+            inputPrecio.value = precio.toFixed(2);
+        } else {
+            inputPrecio.value = '';
+        }
+    }
+
     function agregarFilaMaterial() {
         const div = document.createElement('div');
         div.className = 'material-row';
+        div.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px;';
         div.innerHTML = `
-            <select name="materiales[]" class="filter-select" style="flex: 1;">
-                <option value="">Seleccionar material...</option>
+            <select name="materiales[]" class="filter-select" style="flex: 2;" onchange="actualizarPrecioMaterialFila(this)">
+                <option value="">Seleccionar producto / material...</option>
                 <?php foreach ($inventario as $item): ?>
-                    <option value="<?php echo $item['id']; ?>">
-                        <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' (' . $item['unidad'] . ')'; ?>
+                    <option value="<?php echo $item['id']; ?>" data-precio="<?php echo $item['precio']; ?>">
+                        <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' ($' . number_format($item['precio'], 2) . ')'; ?>
                     </option>
                 <?php endforeach; ?>
             </select>
-            <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: #E74C3C; cursor: pointer;">✕</button>
+            <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 65px;" min="1" step="1">
+            <div style="position: relative; width: 110px;">
+                <span style="position: absolute; left: 8px; top: 8px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
+                <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; padding-left: 20px; font-weight: 800; color: #10B981;" title="Precio unitario cobrado (editable si aplicas descuento)">
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" style="background: #FEE2E2; color: #DC2626; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
         `;
+        document.getElementById('materialesList').appendChild(div);
     }
 
     function prepararGuardarEstadoCitas(id) {

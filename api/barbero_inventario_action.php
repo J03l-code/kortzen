@@ -75,22 +75,31 @@ try {
             throw new Exception("Stock insuficiente de '{$prod['producto']}'. Quedan solo {$prod['cantidad']} unidades.");
         }
 
-        $precioUnitario = floatval($prod['precio']);
+        $precioCatalogo = floatval($prod['precio']);
+        // Precio unitario editable (permite descuentos o precio personalizado)
+        if (isset($_POST['precio_venta']) && is_numeric($_POST['precio_venta']) && floatval($_POST['precio_venta']) >= 0) {
+            $precioUnitario = floatval($_POST['precio_venta']);
+        } elseif (isset($_POST['precio_cobrado']) && is_numeric($_POST['precio_cobrado']) && floatval($_POST['precio_cobrado']) >= 0) {
+            $precioUnitario = floatval($_POST['precio_cobrado']);
+        } else {
+            $precioUnitario = $precioCatalogo;
+        }
 
         // 1. Debitar stock
         $stmtUpdate = $pdo->prepare("UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?");
         $stmtUpdate->execute([$cantidad, $productoId]);
 
-        // 2. Registrar venta vinculada al barbero
+        // 2. Registrar venta vinculada al barbero con el valor de venta real
         $stmtVenta = $pdo->prepare("
             INSERT INTO ventas_productos (producto_id, cantidad, precio_unitario, sucursal_id, usuario_id, fecha)
             VALUES (?, ?, ?, ?, ?, NOW())
         ");
         $stmtVenta->execute([$productoId, $cantidad, $precioUnitario, $sucursalId, $usuarioId]);
 
+        $msgDescuento = ($precioUnitario < $precioCatalogo) ? " (con descuento: $" . number_format($precioUnitario, 2) . ")" : "";
         echo json_encode([
             'success' => true,
-            'message' => "Venta de '{$prod['producto']}' registrada con éxito. ¡Tu comisión se ha sumado a tus ganancias!"
+            'message' => "Venta de '{$prod['producto']}' registrada con éxito a $" . number_format($precioUnitario, 2) . " c/u{$msgDescuento}. ¡Tu comisión se ha sumado a tus ganancias!"
         ]);
         exit;
 

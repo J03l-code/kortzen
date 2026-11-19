@@ -483,22 +483,31 @@ try {
             $sucursal_id = $citaInfo['sucursal_id'] ?? 0;
             $usuario_id = $_SESSION['user_id'];
 
-            // 2. Procesar inventario y Registrar Venta
+            // 2. Procesar inventario y Registrar Venta con precio real cobrado
             if (!empty($materiales)) {
                 $stmtStock = $pdo->prepare("UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?");
                 $stmtPrice = $pdo->prepare("SELECT precio FROM inventario WHERE id = ?");
                 $stmtVenta = $pdo->prepare("INSERT INTO ventas_productos (cita_id, producto_id, cantidad, precio_unitario, sucursal_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?)");
 
+                $preciosMateriales = $_POST['precios_materiales'] ?? $_POST['precios_venta'] ?? [];
+
                 for ($i = 0; $i < count($materiales); $i++) {
                     $prodId = intval($materiales[$i]);
-                    $cant = floatval($cantidades[$i]);
+                    $cant = (isset($cantidades[$i]) && floatval($cantidades[$i]) > 0) ? floatval($cantidades[$i]) : 1.0;
 
                     if ($prodId > 0 && $cant > 0) {
                         $stmtStock->execute([$cant, $prodId]);
 
                         $stmtPrice->execute([$prodId]);
                         $prodInfo = $stmtPrice->fetch();
-                        $precioUnitario = $prodInfo['precio'] ?? 0;
+                        $precioCatalogo = floatval($prodInfo['precio'] ?? 0);
+
+                        // Si se envió un precio cobrado editable (ej: descuento de $13 a $11), usarlo; si no, catálogo
+                        if (isset($preciosMateriales[$i]) && is_numeric($preciosMateriales[$i]) && floatval($preciosMateriales[$i]) >= 0) {
+                            $precioUnitario = floatval($preciosMateriales[$i]);
+                        } else {
+                            $precioUnitario = $precioCatalogo;
+                        }
 
                         if ($sucursal_id > 0) {
                             $stmtVenta->execute([$id, $prodId, $cant, $precioUnitario, $sucursal_id, $usuario_id]);

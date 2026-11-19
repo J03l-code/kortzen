@@ -2367,7 +2367,8 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                             <span style="font-weight: 900; font-size: 1.15rem; color: <?php echo floatval($inv['cantidad']) > 0 ? 'var(--green-pwa)' : 'var(--red-pwa)'; ?>;">
                                 <?php echo number_format($inv['cantidad'], 0); ?> <span style="font-size: 0.75rem; font-weight: 600; color: #666;"><?php echo htmlspecialchars($inv['unidad'] ?? 'unid'); ?></span>
                             </span>
-                            <div style="margin-top: 6px;">
+                            <div style="margin-top: 6px; display: flex; gap: 4px; justify-content: flex-end;">
+                                <button type="button" onclick="abrirModalVenderInventarioPwa(<?php echo htmlspecialchars(json_encode($inv), ENT_QUOTES, 'UTF-8'); ?>)" class="pwa-btn-secondary" style="font-size: 0.72rem; padding: 4px 8px; background: #10B981; color: white; border: none; font-weight: 700;">Vender</button>
                                 <button type="button" onclick="abrirModalInventarioPwa(<?php echo htmlspecialchars(json_encode($inv), ENT_QUOTES, 'UTF-8'); ?>)" class="pwa-btn-secondary" style="font-size: 0.72rem; padding: 4px 8px;">Editar</button>
                             </div>
                         </div>
@@ -3466,15 +3467,28 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
             </div>
 
             <div>
-                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Material consumido (opcional)</label>
-                <select name="materiales[]" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px; font-size: 0.8rem;">
-                    <option value="">Ninguno / Sin insumos adicionales</option>
-                    <?php foreach ($inventarioList as $item): ?>
-                        <option value="<?php echo $item['id']; ?>">
-                            <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Material consumido / Producto vendido (opcional)</label>
+                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                    <select name="materiales[]" id="pwaTerminarMaterialSelect" onchange="pwaActualizarMaterialPrecio(this)" style="flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem;">
+                        <option value="" data-precio="0.00">Ninguno / Sin insumos</option>
+                        <?php foreach ($inventarioList as $item): ?>
+                            <option value="<?php echo $item['id']; ?>" data-precio="<?php echo number_format($item['precio'], 2, '.', ''); ?>">
+                                <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="number" name="cantidades[]" id="pwaTerminarMaterialCant" min="1" value="1" placeholder="Cant." style="width: 65px; padding: 8px 6px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem; text-align: center;">
+                </div>
+                <div id="pwaPrecioCobradoMaterialWrapper" style="display: none; margin-top: 6px; background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 8px; padding: 8px 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase;">Precio Cobrado ($)</span>
+                        <span style="font-size: 0.68rem; color: #15803D; font-weight: 600;">(Editable si aplica descuento)</span>
+                    </div>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 10px; top: 6px; font-weight: 900; color: #166534;">$</span>
+                        <input type="number" step="0.01" min="0" name="precios_materiales[]" id="pwaTerminarMaterialPrecio" value="0.00" style="width: 100%; padding: 6px 10px 6px 24px; border-radius: 6px; border: 1.5px solid #86EFAC; font-weight: 800; font-size: 0.95rem; color: #166534;">
+                    </div>
+                </div>
             </div>
 
             <button type="submit" id="btnSubmitPwaTerminar" class="pwa-btn-main" style="background: #10B981; color: #FFF; font-weight: 900; margin-top: 6px; padding: 12px;">Confirmar y Finalizar Cita</button>
@@ -3850,6 +3864,61 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
 
             <button type="submit" id="btnSubmitPwaInv" class="pwa-btn-main" style="margin-top: 8px;">Guardar Producto</button>
             <button type="button" id="btnDeletePwaInv" onclick="eliminarInventarioPwa()" class="pwa-btn-main" style="background: #FEE2E2; color: #DC2626; display: none;">Eliminar Producto</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Vender Producto PWA -->
+<div class="pwa-action-sheet" id="pwaVenderProductoSheet" onclick="if(event.target===this) cerrarModalVenderInventarioPwa()">
+    <div class="pwa-sheet-box" style="max-height: 90vh; overflow-y: auto;">
+        <div style="width: 40px; height: 4px; background: #DDD; border-radius: 4px; margin: 0 auto 16px auto;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #111;">Registrar Venta</div>
+                <div style="font-size: 0.8rem; color: var(--text-gray);" id="pwaVenderProdNombre">Producto</div>
+            </div>
+            <button onclick="cerrarModalVenderInventarioPwa()" style="background: #F4F4F4; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">✕</button>
+        </div>
+
+        <form id="formPwaVenderProducto" onsubmit="guardarVentaInventarioPwa(event)" style="display: flex; flex-direction: column; gap: 12px;">
+            <input type="hidden" name="action" value="sell">
+            <input type="hidden" name="id" id="pwaVenderProdId" value="">
+            <input type="hidden" name="ajax" value="1">
+
+            <div>
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Cantidad a Vender</label>
+                <input type="number" name="cantidad" id="pwaVenderCantidad" min="1" value="1" required oninput="actualizarTotalVentaPwa()" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 800; font-size: 1rem; margin-top: 4px;">
+                <div style="font-size: 0.72rem; color: #666; margin-top: 2px;">Stock disponible: <span id="pwaVenderStockMax" style="font-weight: 700;">-</span></div>
+            </div>
+
+            <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 10px; padding: 12px;">
+                <label style="font-size: 0.75rem; font-weight: 800; color: #166534; text-transform: uppercase; display: block; margin-bottom: 4px;">
+                    Precio Cobrado Unitario ($)
+                </label>
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 12px; top: 10px; font-weight: 900; color: #166534;">$</span>
+                    <input type="number" step="0.01" min="0" name="precio_venta" id="pwaVenderPrecioCobrado" required oninput="actualizarTotalVentaPwa()" style="width: 100%; padding: 8px 10px 8px 28px; border-radius: 8px; border: 1.5px solid #86EFAC; font-weight: 900; font-size: 1.1rem; color: #166534;">
+                </div>
+                <div style="font-size: 0.72rem; color: #15803D; margin-top: 4px;">
+                    Precio catálogo: $<span id="pwaVenderPrecioCatalogoDisplay">0.00</span>. Editable si se aplica descuento.
+                </div>
+            </div>
+
+            <div>
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Barbero / Vendedor</label>
+                <select name="usuario_id" id="pwaVenderUsuarioId" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px; font-size: 0.85rem;">
+                    <?php foreach ($barberosList as $b): ?>
+                        <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['nombre']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: #334155;">TOTAL A COBRAR:</span>
+                <span style="font-size: 1.3rem; font-weight: 900; color: #10B981;">$<span id="pwaVenderTotalDisplay">0.00</span></span>
+            </div>
+
+            <button type="submit" id="btnSubmitPwaVender" class="pwa-btn-main" style="background: #10B981; color: #FFF; font-weight: 900; margin-top: 8px; padding: 12px;">Confirmar Venta</button>
         </form>
     </div>
 </div>
@@ -5324,6 +5393,12 @@ function abrirModalTerminarCitaPwa(citaOrId, clienteNombre) {
     const pInput = document.getElementById('pwaTerminarPropina');
     if (pInput) pInput.value = '0.00';
 
+    const mSelect = document.getElementById('pwaTerminarMaterialSelect');
+    if (mSelect) {
+        mSelect.value = '';
+        pwaActualizarMaterialPrecio(mSelect);
+    }
+
     const sSelect = document.getElementById('pwaSelectServicioAdicional');
     if (sSelect) sSelect.value = '';
 
@@ -5339,6 +5414,21 @@ function abrirModalTerminarCitaPwa(citaOrId, clienteNombre) {
 
 function cerrarModalTerminarCitaPwa() {
     document.getElementById('pwaTerminarCitaSheet').style.display = 'none';
+}
+
+function pwaActualizarMaterialPrecio(select) {
+    if (!select) return;
+    const opt = select.options[select.selectedIndex];
+    const precio = opt ? (opt.getAttribute('data-precio') || '0.00') : '0.00';
+    const wrapper = document.getElementById('pwaPrecioCobradoMaterialWrapper');
+    const input = document.getElementById('pwaTerminarMaterialPrecio');
+    if (select.value && select.value !== '') {
+        if (input) input.value = parseFloat(precio).toFixed(2);
+        if (wrapper) wrapper.style.display = 'block';
+    } else {
+        if (input) input.value = '0.00';
+        if (wrapper) wrapper.style.display = 'none';
+    }
 }
 
 function agregarServicioAdicionalPwa() {
@@ -6426,6 +6516,73 @@ function eliminarInventarioPwa() {
         .then(() => window.location.reload())
         .catch(() => window.location.reload());
     }
+}
+
+let pwaVenderPrecioCatalogo = 0;
+
+function abrirModalVenderInventarioPwa(inv) {
+    if (!inv) return;
+    document.getElementById('pwaVenderProdId').value = inv.id;
+    document.getElementById('pwaVenderProdNombre').innerText = (inv.producto || 'Producto') + ' (Stock: ' + (inv.cantidad || 0) + ')';
+    document.getElementById('pwaVenderStockMax').innerText = (inv.cantidad || 0) + ' ' + (inv.unidad || 'unidades');
+
+    const cantInput = document.getElementById('pwaVenderCantidad');
+    cantInput.max = inv.cantidad || 1;
+    cantInput.value = 1;
+
+    pwaVenderPrecioCatalogo = parseFloat(inv.precio) || 0;
+    document.getElementById('pwaVenderPrecioCatalogoDisplay').innerText = pwaVenderPrecioCatalogo.toFixed(2);
+    document.getElementById('pwaVenderPrecioCobrado').value = pwaVenderPrecioCatalogo.toFixed(2);
+
+    actualizarTotalVentaPwa();
+    const btn = document.getElementById('btnSubmitPwaVender');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerText = 'Confirmar Venta';
+    }
+    document.getElementById('pwaVenderProductoSheet').style.display = 'flex';
+}
+
+function cerrarModalVenderInventarioPwa() {
+    document.getElementById('pwaVenderProductoSheet').style.display = 'none';
+}
+
+function actualizarTotalVentaPwa() {
+    const cant = parseFloat(document.getElementById('pwaVenderCantidad').value) || 0;
+    const precio = parseFloat(document.getElementById('pwaVenderPrecioCobrado').value) || 0;
+    const total = cant * precio;
+    document.getElementById('pwaVenderTotalDisplay').innerText = total.toFixed(2);
+}
+
+function guardarVentaInventarioPwa(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitPwaVender');
+    btn.disabled = true;
+    btn.innerText = 'Procesando...';
+
+    const formData = new FormData(document.getElementById('formPwaVenderProducto'));
+
+    fetch('api/inventario_action.php', {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Venta registrada con éxito.');
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo registrar la venta.'));
+            btn.disabled = false;
+            btn.innerText = 'Confirmar Venta';
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerText = 'Confirmar Venta';
+        alert('Error de conexión al registrar la venta.');
+    });
 }
 
 function filtrarInventarioPwa() {

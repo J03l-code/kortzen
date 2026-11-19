@@ -1068,25 +1068,30 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
 
                 <form id="formVentaProducto" onsubmit="registrarVentaProductoBarbero(event)">
                     <label class="config-label" style="font-size: 0.78rem;">Producto Vendido</label>
-                    <select name="producto_id" class="barber-input" required>
+                    <select name="producto_id" class="barber-input" onchange="actualizarPrecioVentaBarbero(this)" required>
                         <option value="">-- Seleccionar producto del inventario --</option>
                         <?php foreach ($inventarioItems as $item): ?>
-                            <option value="<?php echo $item['id']; ?>">
+                            <option value="<?php echo $item['id']; ?>" data-precio="<?php echo $item['precio']; ?>">
                                 <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
 
-                    <div style="display: flex; gap: 12px;">
+                    <div style="display: flex; gap: 12px; margin-top: 8px;">
                         <div style="flex: 1;">
                             <label class="config-label" style="font-size: 0.78rem;">Cantidad</label>
                             <input type="number" name="cantidad" value="1" min="1" class="barber-input" required>
                         </div>
-                        <div style="flex: 2; display: flex; align-items: flex-end; margin-bottom: 12px;">
-                            <button type="submit" class="btn-action-black">
-                                <span>Registrar Venta</span>
-                            </button>
+                        <div style="flex: 1.5;">
+                            <label class="config-label" style="font-size: 0.78rem;">Precio Cobrado ($)</label>
+                            <input type="number" step="0.01" min="0" name="precio_venta" id="inputPrecioVentaBarbero" placeholder="0.00" class="barber-input" style="font-weight: 800; color: #10B981;" required>
+                            <span style="font-size: 0.7rem; color: #888; display: block; margin-top: 2px;">Editable si aplicas descuento</span>
                         </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button type="submit" class="btn-action-black" style="width: 100%;">
+                            <span>Registrar Venta</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -1433,6 +1438,18 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                     modal.style.display = 'none';
                     document.body.style.overflow = '';
                 }
+            }
+        }
+
+        function actualizarPrecioVentaBarbero(select) {
+            const input = document.getElementById('inputPrecioVentaBarbero');
+            if (!input) return;
+            const opt = select.options[select.selectedIndex];
+            if (opt && opt.value) {
+                const precio = parseFloat(opt.getAttribute('data-precio') || 0);
+                input.value = precio.toFixed(2);
+            } else {
+                input.value = '';
             }
         }
 

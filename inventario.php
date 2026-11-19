@@ -28,6 +28,13 @@ try {
 }
 
 $pageTitle = 'Inventario';
+
+// Lista de barberos y staff para atribución de venta
+$barberos_lista = [];
+try {
+    $barberos_lista = query("SELECT id, nombre FROM usuarios WHERE rol IN ('barbero', 'admin_local', 'admin') AND activo = 1 ORDER BY nombre ASC");
+} catch (Exception $e) {}
+
 include 'includes/header.php';
 ?>
 
@@ -275,6 +282,10 @@ include 'includes/header.php';
                                 <?php endif; ?>
                             </td>
                             <td class="actions-cell">
+                                <button class="btn-action" style="background: #10B981; color: #fff; font-weight: 800;"
+                                    onclick="openSellModal(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars(addslashes($item['producto'])); ?>', <?php echo $item['cantidad']; ?>, <?php echo floatval($item['precio']); ?>)">
+                                    VENDER
+                                </button>
                                 <?php if ($isBarber): ?>
                                     <button class="btn-action btn-withdraw"
                                         onclick="openWithdrawModal(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['producto']); ?>', <?php echo $item['cantidad']; ?>)">
@@ -320,6 +331,55 @@ include 'includes/header.php';
                     style="flex:1;">CANCELAR</button>
                 <button type="submit" class="btn-action btn-withdraw"
                     style="flex:1; background:var(--primary-gold); color:black; border:none;">CONFIRMAR</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Vender Producto -->
+<div id="sellModal" class="modal">
+    <div class="modal-content" style="max-width: 450px; text-align: left;">
+        <h2 style="margin-bottom: 5px; color: var(--text-primary); text-align: center;">Registrar Venta</h2>
+        <p id="sellModalProductName" style="color: var(--text-secondary); margin-bottom: 20px; text-align: center; font-weight: 600;">Producto</p>
+
+        <form action="api/inventario_action.php" method="POST" id="formVentaInventario">
+            <input type="hidden" name="action" value="sell">
+            <input type="hidden" id="sellProductId" name="id" value="">
+
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; font-size:12px; font-weight:bold; color:var(--text-secondary); margin-bottom: 5px;">CANTIDAD A VENDER</label>
+                <input type="number" id="sellCantidad" name="cantidad" class="form-input" min="1" value="1" required style="margin: 0;" oninput="actualizarTotalVentaModal()">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; font-size:12px; font-weight:bold; color:var(--text-secondary); margin-bottom: 5px;">
+                    PRECIO COBRADO UNITARIO ($) <span style="font-weight: normal; color: #10B981;">(Editable si hay descuento)</span>
+                </label>
+                <input type="number" step="0.01" min="0" id="sellPrecioCobrado" name="precio_venta" class="form-input" required style="margin: 0; font-weight: 800; font-size: 16px; color: #047857;" oninput="actualizarTotalVentaModal()">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+                    Sugerido por catálogo: $<span id="sellPrecioCatalogoDisplay">0.00</span>. Puedes modificarlo libremente.
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; font-size:12px; font-weight:bold; color:var(--text-secondary); margin-bottom: 5px;">BARBERO / VENDEDOR</label>
+                <select name="usuario_id" class="form-input" style="margin: 0;">
+                    <?php foreach ($barberos_lista as $barb): ?>
+                        <option value="<?php echo $barb['id']; ?>" <?php echo ($barb['id'] == $currentUser['id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($barb['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div style="background: #F3F4F6; border-radius: 8px; padding: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600; color: #374151;">Total a Cobrar:</span>
+                <span style="font-size: 18px; font-weight: 800; color: #10B981;">$<span id="sellTotalDisplay">0.00</span></span>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="button" onclick="closeSellModal()" class="btn-action" style="flex:1;">CANCELAR</button>
+                <button type="submit" class="btn-action" style="flex:1; background:#10B981; color:white; border:none; font-weight:700;">CONFIRMAR VENTA</button>
             </div>
         </form>
     </div>
@@ -439,10 +499,42 @@ include 'includes/header.php';
         document.getElementById('withdrawModal').style.display = "none";
     }
 
+    let sellCatalogPrice = 0;
+
+    function openSellModal(id, name, maxStock, precio) {
+        document.getElementById('sellProductId').value = id;
+        document.getElementById('sellModalProductName').textContent = name + " (Stock disponible: " + maxStock + ")";
+
+        const cantInput = document.getElementById('sellCantidad');
+        cantInput.max = maxStock;
+        cantInput.value = 1;
+
+        sellCatalogPrice = parseFloat(precio) || 0;
+        document.getElementById('sellPrecioCatalogoDisplay').textContent = sellCatalogPrice.toFixed(2);
+        document.getElementById('sellPrecioCobrado').value = sellCatalogPrice.toFixed(2);
+
+        actualizarTotalVentaModal();
+        document.getElementById('sellModal').style.display = "block";
+    }
+
+    function closeSellModal() {
+        document.getElementById('sellModal').style.display = "none";
+    }
+
+    function actualizarTotalVentaModal() {
+        const cant = parseFloat(document.getElementById('sellCantidad').value) || 0;
+        const precio = parseFloat(document.getElementById('sellPrecioCobrado').value) || 0;
+        const total = cant * precio;
+        document.getElementById('sellTotalDisplay').textContent = total.toFixed(2);
+    }
+
     // Close modal if clicking outside
     window.onclick = function (event) {
         if (event.target == document.getElementById('withdrawModal')) {
             closeWithdrawModal();
+        }
+        if (event.target == document.getElementById('sellModal')) {
+            closeSellModal();
         }
     }
 </script>

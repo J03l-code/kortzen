@@ -98,6 +98,74 @@ try {
             header('Location: ../inventario.php?success=' . urlencode("Se retiraron {$cantidad} unidades de '{$productName}' exitosamente"));
             exit;
 
+        case 'sell':
+        case 'registrar_venta':
+            $id = intval($_POST['id'] ?? $_POST['producto_id'] ?? 0);
+            $cantidad = intval($_POST['cantidad'] ?? 1);
+            $usuarioVentaId = intval($_POST['usuario_id'] ?? $_SESSION['user_id']);
+
+            if ($id <= 0) {
+                throw new Exception('ID de producto no válido.');
+            }
+
+            if ($cantidad <= 0) {
+                throw new Exception('La cantidad a vender debe ser mayor a 0.');
+            }
+
+            // Verificar stock y precio
+            $stmtCheck = $pdo->prepare("SELECT producto, cantidad, precio, sucursal_id FROM inventario WHERE id = ?");
+            $stmtCheck->execute([$id]);
+            $prod = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+            if (!$prod) {
+                throw new Exception('El producto no existe en el inventario.');
+            }
+
+            $currentStock = intval($prod['cantidad']);
+            $productName = $prod['producto'];
+            $sucursalId = intval($prod['sucursal_id'] ?? 1);
+
+            if ($cantidad > $currentStock) {
+                throw new Exception("Stock insuficiente de '{$productName}'. Stock actual: {$currentStock}");
+            }
+
+            $precioCatalogo = floatval($prod['precio']);
+            // Precio editable cobrado (permite descuento o precio personalizado)
+            if (isset($_POST['precio_venta']) && is_numeric($_POST['precio_venta']) && floatval($_POST['precio_venta']) >= 0) {
+                $precioCobrado = floatval($_POST['precio_venta']);
+            } elseif (isset($_POST['precio_cobrado']) && is_numeric($_POST['precio_cobrado']) && floatval($_POST['precio_cobrado']) >= 0) {
+                $precioCobrado = floatval($_POST['precio_cobrado']);
+            } else {
+                $precioCobrado = $precioCatalogo;
+            }
+
+            // 1. Descontar stock de inventario
+            $sql = "UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$cantidad, $id]);
+
+            // 2. Registrar venta vinculada al barbero/usuario
+            $stmtVenta = $pdo->prepare("
+                INSERT INTO ventas_productos (producto_id, cantidad, precio_unitario, sucursal_id, usuario_id, fecha)
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            $stmtVenta->execute([$id, $cantidad, $precioCobrado, $sucursalId, $usuarioVentaId]);
+
+            $totalVenta = $cantidad * $precioCobrado;
+            $msgDesc = ($precioCobrado < $precioCatalogo) ? " (con descuento: $" . number_format($precioCobrado, 2) . " c/u)" : "";
+            registrarLog('VENTA', 'inventario', $id, "Venta de $cantidad unidades de '$productName' registrada por $$totalVenta$msgDesc");
+
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Venta de {$cantidad} unid. de '{$productName}' registrada exitosamente a $" . number_format($precioCobrado, 2) . " c/u" . ($precioCobrado < $precioCatalogo ? " (descuento aplicado)" : "")
+                ]);
+                exit;
+            }
+            header('Location: ../inventario.php?success=' . urlencode("Venta de '{$productName}' registrada exitosamente por $" . number_format($totalVenta, 2)));
+            exit;
+
         case 'create':
             $producto = trim($_POST['producto'] ?? '');
             $cantidad = intval($_POST['cantidad'] ?? 0);
