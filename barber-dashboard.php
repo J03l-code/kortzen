@@ -347,8 +347,16 @@ if (!function_exists('formatearFechaEspanolAgenda')) {
 
 // 4. Inventario de la Sucursal
 $inventarioItems = [];
+$lowStockItemsBarbero = [];
 try {
-    $inventarioItems = query("SELECT id, producto, cantidad, precio FROM inventario WHERE sucursal_id = ? ORDER BY producto ASC", [$sucursal_id]);
+    $inventarioItems = query("SELECT id, producto, cantidad, precio, stock_minimo FROM inventario WHERE sucursal_id = ? ORDER BY producto ASC", [$sucursal_id]);
+    $lowStockItemsBarbero = query("
+        SELECT id, producto, cantidad, stock_minimo 
+        FROM inventario 
+        WHERE (sucursal_id = ? OR sucursal_id IS NULL OR sucursal_id = 1) 
+          AND cantidad <= stock_minimo 
+        ORDER BY cantidad ASC LIMIT 5
+    ", [$sucursal_id]);
 } catch (Throwable $eInv) {}
 
 $nombreBarbero = explode(' ', trim($currentUser['nombre'] ?? 'Barbero'))[0];
@@ -894,6 +902,34 @@ $inicial_barbero = strtoupper(substr($nombreBarbero, 0, 1));
                 <?php echo $inicial_barbero; ?>
             </div>
         </div>
+
+        <!-- ALERTA STOCK BAJO PARA BARBEROS -->
+        <?php if (!empty($lowStockItemsBarbero)): ?>
+            <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 12px; padding: 14px 16px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <div style="font-weight: 900; color: #DC2626; font-size: 0.88rem; display: flex; align-items: center; gap: 8px;">
+                        <svg class="barber-icon-stroke" style="stroke: #DC2626; width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        <span>Alerta: Insumos o Productos con Stock Bajo</span>
+                    </div>
+                    <span style="background: #FEE2E2; color: #DC2626; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px;">
+                        <?php echo count($lowStockItemsBarbero); ?> por agotar
+                    </span>
+                </div>
+                <div style="font-size: 0.82rem; color: #7F1D1D; line-height: 1.5;">
+                    <?php foreach ($lowStockItemsBarbero as $ls): ?>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #FECACA;">
+                            <span>• <?php echo htmlspecialchars($ls['producto']); ?></span>
+                            <span style="font-weight: 800; color: #B91C1C;">
+                                Quedan: <?php echo intval($ls['cantidad']); ?> (Mín: <?php echo intval($ls['stock_minimo']); ?>)
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.72rem; color: #991B1B;">
+                    Comunica a la administración para el reabastecimiento oportuno de estos productos.
+                </div>
+            </div>
+        <?php endif; ?>
 
         <?php if ($mensaje): ?>
             <div style="background: #111111; color: #FFFFFF; padding: 14px 18px; border-radius: 12px; font-size: 0.88rem; margin-bottom: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">

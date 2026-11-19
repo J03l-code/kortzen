@@ -21,10 +21,18 @@ if ($filter === 'pendientes') {
 
 $resenas = [];
 try {
-    $resenas = query("SELECT * FROM resenas $whereClause ORDER BY COALESCE(fecha, id) DESC, id DESC", $params);
+    $resenas = query("
+        SELECT r.*, u.nombre as barbero_nombre, s.nombre as servicio_nombre
+        FROM resenas r
+        LEFT JOIN usuarios u ON r.barbero_id = u.id
+        LEFT JOIN citas c ON r.cita_id = c.id
+        LEFT JOIN servicios s ON c.servicio_id = s.id
+        $whereClause 
+        ORDER BY COALESCE(r.fecha, r.id) DESC, r.id DESC
+    ", $params);
 } catch (Exception $e) {
     try {
-        $resenas = query("SELECT * FROM resenas $whereClause ORDER BY id DESC", $params);
+        $resenas = query("SELECT * FROM resenas $whereClause ORDER BY COALESCE(fecha, id) DESC, id DESC", $params);
     } catch (Exception $e2) {
         $resenas = [];
     }
@@ -219,7 +227,17 @@ try {
                                 <div style="width: 34px; height: 34px; border-radius: 50%; background: #EEF2F6; color: #1E293B; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                     <?php echo strtoupper(mb_substr($rNombre, 0, 1, 'UTF-8')); ?>
                                 </div>
-                                <span><?php echo htmlspecialchars($rNombre); ?></span>
+                                <div>
+                                    <div><?php echo htmlspecialchars($rNombre); ?></div>
+                                    <?php if (!empty($r['barbero_nombre'])): ?>
+                                        <div style="font-size: 0.72rem; color: #6B7280; font-weight: 500;">
+                                            Barbero: <strong style="color: #374151;"><?php echo htmlspecialchars($r['barbero_nombre']); ?></strong>
+                                            <?php if (!empty($r['servicio_nombre'])): ?>
+                                                • <?php echo htmlspecialchars($r['servicio_nombre']); ?>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </td>
                         <td style="padding: 14px 16px; max-width: 380px;">

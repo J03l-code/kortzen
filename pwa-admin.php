@@ -1755,6 +1755,28 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
             </div>
         </div>
 
+        <?php if (!empty($lowStock)): ?>
+            <!-- Banner Proactivo de Stock Bajo para Administradores -->
+            <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);" onclick="cambiarVistaPwa('inventario')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 900; font-size: 0.86rem; color: #DC2626;">Alerta de Stock Bajo (<?php echo count($lowStock); ?> productos)</div>
+                        <div style="font-size: 0.74rem; color: #7F1D1D; margin-top: 2px;">
+                            <?php 
+                            $nombresBajos = array_map(function($p) { return htmlspecialchars($p['producto']) . " (" . $p['cantidad'] . ")"; }, array_slice($lowStock, 0, 3));
+                            echo implode(', ', $nombresBajos);
+                            if (count($lowStock) > 3) echo ' y más...';
+                            ?>
+                        </div>
+                    </div>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #DC2626; text-decoration: underline; white-space: nowrap;">Revisar →</span>
+            </div>
+        <?php endif; ?>
+
         <!-- 8 Cuadros de Métricas al Principio -->
         <div class="pwa-kpi-grid">
             <!-- 1. Venta Total Hoy -->
@@ -3571,6 +3593,9 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+            <a id="pwaBtnPedirCalificacionWhatsApp" href="#" target="_blank" style="background: #F59E0B; color: #FFF; text-decoration: none; padding: 11px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);">
+                <i class="fas fa-star"></i> ⭐ Pedir Calificación (WhatsApp)
+            </a>
             <a id="pwaBtnReciboWhatsApp" href="#" target="_blank" style="background: #25D366; color: #FFF; text-decoration: none; padding: 11px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
                 <i class="fab fa-whatsapp"></i> Enviar Recibo a WhatsApp
             </a>
@@ -5725,9 +5750,25 @@ function mostrarReciboEnModalPwa(r) {
             msg += `🎁 *Propina:* $${parseFloat(r.propina).toFixed(2)}\n`;
         }
         msg += `\n💰 *TOTAL PAGADO:* $${parseFloat(r.total_a_cobrar || r.total_pagado || 0).toFixed(2)}\n\n`;
+        const linkCalifReceiptPwa = r.link_calificar || (window.location.origin + '/calificar.php?c=' + (r.cita_id || ''));
+        msg += `⭐ *Califica tu experiencia con ${r.barbero_nombre}:*\n${linkCalifReceiptPwa}\n\n`;
         msg += `¡Muchas gracias por tu preferencia! Te esperamos pronto en Kortzen.`;
 
         waBtn.href = telLimpio ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    }
+
+    const calificarBtn = document.getElementById('pwaBtnPedirCalificacionWhatsApp');
+    if (calificarBtn) {
+        let telLimpioCal = (r.cliente_telefono || '').replace(/\D/g, '');
+        if (telLimpioCal.startsWith('0')) telLimpioCal = '593' + telLimpioCal.substring(1);
+        if (!telLimpioCal.startsWith('593') && telLimpioCal.length === 9) telLimpioCal = '593' + telLimpioCal;
+
+        const linkCal = r.link_calificar || (window.location.origin + '/calificar.php?c=' + (r.cita_id || ''));
+        const cliNom = r.cliente_nombre ? r.cliente_nombre.split(' ')[0] : 'Cliente';
+        const barbNom = r.barbero_nombre || 'tu barbero';
+        const msgCal = r.wa_msg_calificar || `¡Hola ${cliNom}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con ${barbNom}? Déjanos tu calificación de 1 a 5 estrellas aquí: ${linkCal}`;
+
+        calificarBtn.href = telLimpioCal ? `https://wa.me/${telLimpioCal}?text=${encodeURIComponent(msgCal)}` : `https://wa.me/?text=${encodeURIComponent(msgCal)}`;
     }
 
     document.getElementById('pwaReciboSheet').style.display = 'flex';

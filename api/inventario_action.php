@@ -94,6 +94,19 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$cantidad, $id]);
 
+            // Alerta Stock Bajo a Barberos y Administradores
+            try {
+                $stmtStk = $pdo->prepare("SELECT cantidad, stock_minimo FROM inventario WHERE id = ?");
+                $stmtStk->execute([$id]);
+                $rStk = $stmtStk->fetch(PDO::FETCH_ASSOC);
+                if ($rStk && floatval($rStk['cantidad']) <= floatval($rStk['stock_minimo'])) {
+                    require_once __DIR__ . '/../includes/webpush_helper.php';
+                    if (function_exists('notificarStockBajo')) {
+                        notificarStockBajo($pdo, $id, $rStk['cantidad'], $rStk['stock_minimo'], $_SESSION['user_id'] ?? null);
+                    }
+                }
+            } catch (Exception $eStk) {}
+
             registrarLog('RETIRAR', 'inventario', $id, "Se retiraron $cantidad unidades de '$productName'");
             header('Location: ../inventario.php?success=' . urlencode("Se retiraron {$cantidad} unidades de '{$productName}' exitosamente"));
             exit;
@@ -143,6 +156,19 @@ try {
             $sql = "UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$cantidad, $id]);
+
+            // Alerta Stock Bajo a Barberos y Administradores
+            try {
+                $stmtStk = $pdo->prepare("SELECT cantidad, stock_minimo FROM inventario WHERE id = ?");
+                $stmtStk->execute([$id]);
+                $rStk = $stmtStk->fetch(PDO::FETCH_ASSOC);
+                if ($rStk && floatval($rStk['cantidad']) <= floatval($rStk['stock_minimo'])) {
+                    require_once __DIR__ . '/../includes/webpush_helper.php';
+                    if (function_exists('notificarStockBajo')) {
+                        notificarStockBajo($pdo, $id, $rStk['cantidad'], $rStk['stock_minimo'], $usuarioVentaId ?? null);
+                    }
+                }
+            } catch (Exception $eStk) {}
 
             // 2. Registrar venta vinculada al barbero/usuario
             $stmtVenta = $pdo->prepare("

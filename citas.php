@@ -938,6 +938,9 @@ function toggleFiltroHoy() {
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+            <a id="btnPedirCalificacionWhatsApp" href="#" target="_blank" class="btn-primary" style="background: #F59E0B; color: #FFF; text-decoration: none; padding: 10px; border-radius: 8px; font-weight: 800; font-size: 0.85rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);">
+                <i class="fas fa-star"></i> ⭐ Pedir Calificación (WhatsApp)
+            </a>
             <a id="btnReciboWhatsApp" href="#" target="_blank" class="btn-primary" style="background: #25D366; color: #FFF; text-decoration: none; padding: 10px; border-radius: 8px; font-weight: 800; font-size: 0.85rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
                 <i class="fab fa-whatsapp"></i> Enviar Recibo por WhatsApp
             </a>
@@ -1324,9 +1327,25 @@ function toggleFiltroHoy() {
                 msg += `🎁 *Propina:* $${parseFloat(r.propina).toFixed(2)}\n`;
             }
             msg += `\n💰 *TOTAL PAGADO:* $${parseFloat(r.total_a_cobrar || r.total_pagado || 0).toFixed(2)}\n\n`;
+            const linkCalifReceipt = r.link_calificar || (window.location.origin + '/calificar.php?c=' + (r.cita_id || ''));
+            msg += `⭐ *Califica tu experiencia con ${r.barbero_nombre}:*\n${linkCalifReceipt}\n\n`;
             msg += `¡Muchas gracias por tu preferencia! Te esperamos pronto en Kortzen.`;
 
             waBtn.href = telLimpio ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        }
+
+        const calificarBtn = document.getElementById('btnPedirCalificacionWhatsApp');
+        if (calificarBtn) {
+            let telLimpioCal = (r.cliente_telefono || '').replace(/\D/g, '');
+            if (telLimpioCal.startsWith('0')) telLimpioCal = '593' + telLimpioCal.substring(1);
+            if (!telLimpioCal.startsWith('593') && telLimpioCal.length === 9) telLimpioCal = '593' + telLimpioCal;
+
+            const linkCal = r.link_calificar || (window.location.origin + '/calificar.php?c=' + (r.cita_id || ''));
+            const cliNom = r.cliente_nombre ? r.cliente_nombre.split(' ')[0] : 'Cliente';
+            const barbNom = r.barbero_nombre || 'tu barbero';
+            const msgCal = r.wa_msg_calificar || `¡Hola ${cliNom}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con ${barbNom}? Déjanos tu calificación de 1 a 5 estrellas aquí: ${linkCal}`;
+
+            calificarBtn.href = telLimpioCal ? `https://wa.me/${telLimpioCal}?text=${encodeURIComponent(msgCal)}` : `https://wa.me/?text=${encodeURIComponent(msgCal)}`;
         }
 
         document.getElementById('modalReciboCita').style.display = 'flex';

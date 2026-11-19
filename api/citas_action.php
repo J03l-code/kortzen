@@ -501,6 +501,18 @@ try {
                     if ($prodId > 0 && $cant > 0) {
                         $stmtStock->execute([$cant, $prodId]);
 
+                        // Alerta proactiva de Stock Bajo para barberos y administración
+                        try {
+                            $stmtStkCheck = $pdo->prepare("SELECT cantidad, stock_minimo FROM inventario WHERE id = ?");
+                            $stmtStkCheck->execute([$prodId]);
+                            $rowStk = $stmtStkCheck->fetch(PDO::FETCH_ASSOC);
+                            if ($rowStk && floatval($rowStk['cantidad']) <= floatval($rowStk['stock_minimo'])) {
+                                if (function_exists('notificarStockBajo')) {
+                                    notificarStockBajo($pdo, $prodId, $rowStk['cantidad'], $rowStk['stock_minimo'], $citaBase['barbero_id'] ?? null);
+                                }
+                            }
+                        } catch (Exception $eStk) {}
+
                         $stmtPrice->execute([$prodId]);
                         $prodInfo = $stmtPrice->fetch();
                         $nombreProd = $prodInfo['producto'] ?? 'Producto';
@@ -562,12 +574,43 @@ try {
                 $msgOk .= ' Propina registrada para el barbero: $' . number_format($propina, 2);
             }
 
+            $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+            $hostActual = $_SERVER['HTTP_HOST'] ?? 'kortzen.com';
+            $linkCalificar = "{$protocolo}://{$hostActual}/calificar.php?c={$id}";
+
+            $clienteNombreCorto = !empty($cNombre) ? explode(' ', trim($cNombre))[0] : 'Cliente';
+            $waMsgCalificar = "¡Hola {$clienteNombreCorto}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con {$bNombre}? Déjanos tu calificación de 1 a 5 estrellas aquí: {$linkCalificar}";
+            $rawPhone = $cD['cliente_telefono'] ?? ($citaBase['cliente_telefono'] ?? '');
+            $telLimpio = preg_replace('/[^0-9]/', '', $rawPhone);
+            if (!empty($telLimpio) && strlen($telLimpio) === 10 && substr($telLimpio, 0, 1) === '0') {
+                $telLimpio = '593' . substr($telLimpio, 1);
+            }
+            $waUrlCalificar = !empty($telLimpio)
+                ? "https://wa.me/{$telLimpio}?text=" . rawurlencode($waMsgCalificar)
+                : "https://wa.me/?text=" . rawurlencode($waMsgCalificar);
+
+            // Notificación push y en PWA al cliente para calificar
+            if (!empty($citaBase['cliente_id'])) {
+                try {
+                    if (function_exists('notificarCliente')) {
+                        notificarCliente(
+                            $pdo,
+                            intval($citaBase['cliente_id']),
+                            $id,
+                            "⭐ ¿Cómo calificarías tu corte en Kortzen?",
+                            "¡Hola {$clienteNombreCorto}! Déjanos tu calificación de 1 a 5 estrellas sobre tu atención con {$bNombre}.",
+                            "/calificar.php?c={$id}"
+                        );
+                    }
+                } catch (Exception $eNotifCli) {}
+            }
+
             $reciboData = [
                 'cita_id' => $id,
                 'fecha_hora' => $citaBase['fecha_hora'],
                 'fecha_hora_formateada' => date('d/m/Y H:i', strtotime($citaBase['fecha_hora'])),
                 'cliente_nombre' => $cNombre,
-                'cliente_telefono' => $cD['cliente_telefono'] ?? ($citaBase['cliente_telefono'] ?? ''),
+                'cliente_telefono' => $rawPhone,
                 'barbero_nombre' => $bNombre,
                 'servicio_principal' => $sNombre,
                 'precio_principal' => $precioBase,
@@ -581,7 +624,10 @@ try {
                 'total_pagado' => $totalCobrarFinal,
                 'comision_porcentaje' => $comPct,
                 'comision_barbero' => $comisionTotalBarbero,
-                'ganancia_neta_negocio' => $nuevoPrecioFinal - $comisionTotalBarbero
+                'ganancia_neta_negocio' => $nuevoPrecioFinal - $comisionTotalBarbero,
+                'link_calificar' => $linkCalificar,
+                'wa_msg_calificar' => $waMsgCalificar,
+                'wa_url_calificar' => $waUrlCalificar
             ];
 
             responderAccionCita($isAjax, $redirect_url, $msgOk, [
@@ -590,6 +636,8 @@ try {
                 'nuevo_precio_final' => $nuevoPrecioFinal,
                 'total_productos' => $totalProductos,
                 'total_pagado' => $totalCobrarFinal,
+                'link_calificar' => $linkCalificar,
+                'wa_url_calificar' => $waUrlCalificar,
                 'recibo' => $reciboData
             ]);
 
@@ -668,6 +716,22 @@ try {
             $comPct = $esFinde ? floatval($citaR['barbero_comision_finde']) : floatval($citaR['barbero_comision']);
             $comisionBarbero = ($precioFinal * $comPct / 100);
 
+            $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+            $hostActual = $_SERVER['HTTP_HOST'] ?? 'kortzen.com';
+            $linkCalificar = "{$protocolo}://{$hostActual}/calificar.php?c={$id}";
+
+            $cliNomCorto = !empty($citaR['cliente_nombre']) ? explode(' ', trim($citaR['cliente_nombre']))[0] : 'Cliente';
+            $barbNom = $citaR['barbero_nombre'] ?? 'Barbero';
+            $waMsgCalificar = "¡Hola {$cliNomCorto}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con {$barbNom}? Déjanos tu calificación de 1 a 5 estrellas aquí: {$linkCalificar}";
+            $rawPhoneR = $citaR['cliente_telefono'] ?? '';
+            $telLimpioR = preg_replace('/[^0-9]/', '', $rawPhoneR);
+            if (!empty($telLimpioR) && strlen($telLimpioR) === 10 && substr($telLimpioR, 0, 1) === '0') {
+                $telLimpioR = '593' . substr($telLimpioR, 1);
+            }
+            $waUrlCalificar = !empty($telLimpioR)
+                ? "https://wa.me/{$telLimpioR}?text=" . rawurlencode($waMsgCalificar)
+                : "https://wa.me/?text=" . rawurlencode($waMsgCalificar);
+
             responderAccionCita(true, '', 'Recibo obtenido con éxito.', [
                 'recibo' => [
                     'cita_id' => $id,
@@ -690,7 +754,10 @@ try {
                     'total_pagado' => $totalCobrar,
                     'comision_porcentaje' => $comPct,
                     'comision_barbero' => $comisionBarbero,
-                    'ganancia_neta_negocio' => $precioFinal - $comisionBarbero
+                    'ganancia_neta_negocio' => $precioFinal - $comisionBarbero,
+                    'link_calificar' => $linkCalificar,
+                    'wa_msg_calificar' => $waMsgCalificar,
+                    'wa_url_calificar' => $waUrlCalificar
                 ]
             ]);
             break;

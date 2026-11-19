@@ -47,6 +47,19 @@ try {
         $stmtUpdate = $pdo->prepare("UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?");
         $stmtUpdate->execute([$cantidad, $productoId]);
 
+        // Alerta Stock Bajo proactiva a barberos y administración
+        try {
+            $stmtStk = $pdo->prepare("SELECT cantidad, stock_minimo FROM inventario WHERE id = ?");
+            $stmtStk->execute([$productoId]);
+            $rStk = $stmtStk->fetch(PDO::FETCH_ASSOC);
+            if ($rStk && floatval($rStk['cantidad']) <= floatval($rStk['stock_minimo'])) {
+                require_once __DIR__ . '/../includes/webpush_helper.php';
+                if (function_exists('notificarStockBajo')) {
+                    notificarStockBajo($pdo, $productoId, $rStk['cantidad'], $rStk['stock_minimo'], $usuarioId);
+                }
+            }
+        } catch (Exception $eStk) {}
+
         echo json_encode([
             'success' => true, 
             'message' => "Se debitaron {$cantidad} unidades de '{$prod['producto']}' del inventario."
@@ -88,6 +101,19 @@ try {
         // 1. Debitar stock
         $stmtUpdate = $pdo->prepare("UPDATE inventario SET cantidad = cantidad - ? WHERE id = ?");
         $stmtUpdate->execute([$cantidad, $productoId]);
+
+        // Alerta Stock Bajo proactiva a barberos y administración
+        try {
+            $stmtStk = $pdo->prepare("SELECT cantidad, stock_minimo FROM inventario WHERE id = ?");
+            $stmtStk->execute([$productoId]);
+            $rStk = $stmtStk->fetch(PDO::FETCH_ASSOC);
+            if ($rStk && floatval($rStk['cantidad']) <= floatval($rStk['stock_minimo'])) {
+                require_once __DIR__ . '/../includes/webpush_helper.php';
+                if (function_exists('notificarStockBajo')) {
+                    notificarStockBajo($pdo, $productoId, $rStk['cantidad'], $rStk['stock_minimo'], $usuarioId);
+                }
+            }
+        } catch (Exception $eStk) {}
 
         // 2. Registrar venta vinculada al barbero con el valor de venta real
         $stmtVenta = $pdo->prepare("

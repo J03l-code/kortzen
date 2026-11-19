@@ -314,6 +314,18 @@ function getConnection()
                         if (!in_array('cliente_nombre', $colsR)) {
                             try { $pdo->exec("ALTER TABLE resenas ADD COLUMN cliente_nombre VARCHAR(100) NOT NULL DEFAULT 'Cliente'"); } catch (Throwable $e) {}
                         }
+                        if (!in_array('cita_id', $colsR)) {
+                            try { $pdo->exec("ALTER TABLE resenas ADD COLUMN cita_id INT NULL AFTER id"); } catch (Throwable $e) {}
+                        }
+                        if (!in_array('barbero_id', $colsR)) {
+                            try { $pdo->exec("ALTER TABLE resenas ADD COLUMN barbero_id INT NULL AFTER cita_id"); } catch (Throwable $e) {}
+                        }
+                        if (!in_array('cliente_id', $colsR)) {
+                            try { $pdo->exec("ALTER TABLE resenas ADD COLUMN cliente_id INT NULL AFTER barbero_id"); } catch (Throwable $e) {}
+                        }
+                        if (!in_array('sucursal_id', $colsR)) {
+                            try { $pdo->exec("ALTER TABLE resenas ADD COLUMN sucursal_id INT NULL AFTER cliente_id"); } catch (Throwable $e) {}
+                        }
                         if (!in_array('comentario', $colsR)) {
                             try { $pdo->exec("ALTER TABLE resenas ADD COLUMN comentario TEXT NULL"); } catch (Throwable $e) {}
                         }

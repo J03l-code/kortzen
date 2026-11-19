@@ -322,3 +322,214 @@ function notificarCliente($pdo, $clienteId, $citaId, $titulo, $mensaje, $url = '
     return true;
 }
 
+/**
+ * Notificar Stock Bajo a Barberos y Administradores
+ * 
+ * @param PDO $pdo Conexión a BD
+ * @param int $productoId ID del producto en inventario
+ * @param int|float $cantidadRestante Stock actual restante
+ * @param int|float $stockMinimo Nivel de stock mínimo configurado
+ * @param int|null $barberoId ID del barbero involucrado (opcional)
+ */
+function notificarStockBajo($pdo, $productoId, $cantidadRestante, $stockMinimo, $barberoId = null) {
+    $productoId = intval($productoId);
+    $cantidadRestante = floatval($cantidadRestante);
+    $stockMinimo = floatval($stockMinimo);
+    
+    // Solo disparar alerta si el stock ha llegado o está por debajo del mínimo
+    if ($cantidadRestante > $stockMinimo) {
+        return false;
+    }
+
+    asegurarTablasNotificaciones($pdo);
+
+    // Obtener detalles del producto y su sucursal
+    $prodNombre = 'Producto';
+    $sucursalNombre = 'General';
+    $sucursalId = 1;
+    try {
+        $stmtP = $pdo->prepare("
+            SELECT i.producto, i.sucursal_id, s.nombre as sucursal_nombre
+            FROM inventario i
+            LEFT JOIN sucursales s ON i.sucursal_id = s.id
+            WHERE i.id = ?
+        ");
+        $stmtP->execute([$productoId]);
+        $pRow = $stmtP->fetch(PDO::FETCH_ASSOC);
+        if ($pRow) {
+            $prodNombre = $pRow['producto'];
+            $sucursalNombre = $pRow['sucursal_nombre'] ?? 'General';
+            $sucursalId = intval($pRow['sucursal_id'] ?? 1);
+        }
+    } catch (Exception $e) {}
+
+    $titulo = "⚠️ Alerta de Stock Bajo: {$prodNombre}";
+    $mensaje = "Quedan solo {$cantidadRestante} unidades de '{$prodNombre}' en {$sucursalNombre} (Mínimo: {$stockMinimo}). ¡Es momento de reabastecer!";
+    $url = '/inventario.php';
+
+    // Destinatarios:
+    // 1. Administradores (globales o locales de la sucursal)
+    // 2. Barbero involucrado o barberos de la sucursal
+    $destinatariosIds = [];
+
+    // Admins
+    try {
+        $stmtAdmins = $pdo->prepare("
+            SELECT id FROM usuarios 
+            WHERE activo = 1 
+              AND (rol IN ('admin', 'administrador', 'superadmin') 
+                   OR (rol = 'admin_local' AND (sucursal_id = ? OR id IN (SELECT usuario_id FROM usuarios_sucursales WHERE sucursal_id = ?))))
+        ");
+        $stmtAdmins->execute([$sucursalId, $sucursalId]);
+        $adminRows = $stmtAdmins->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($adminRows as $aId) {
+            $destinatariosIds[intval($aId)] = true;
+        }
+    } catch (Exception $e) {}
+
+    // Barbero específico involucrado o barberos de la sucursal
+    if (!empty($barberoId) && intval($barberoId) > 0) {
+        $destinatariosIds[intval($barberoId)] = true;
+    } else {
+        try {
+            $stmtBarbs = $pdo->prepare("
+                SELECT id FROM usuarios 
+                WHERE activo = 1 AND rol = 'barbero' 
+                  AND (sucursal_id = ? OR id IN (SELECT usuario_id FROM usuarios_sucursales WHERE sucursal_id = ?))
+            ");
+            $stmtBarbs->execute([$sucursalId, $sucursalId]);
+            $barbRows = $stmtBarbs->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($barbRows as $bId) {
+                $destinatariosIds[intval($bId)] = true;
+            }
+        } catch (Exception $e) {}
+    }
+
+    if (empty($destinatariosIds)) {
+        return false;
+    }
+
+    $userIdsList = array_keys($destinatariosIds);
+
+    // 1. Registrar en notificaciones_pwa para cada destinatario
+    try {
+        $stmtNotif = $pdo->prepare("
+            INSERT INTO notificaciones_pwa (usuario_id, titulo, mensaje, url, leido, fecha_creacion)
+            VALUES (?, ?, ?, ?, 0, NOW())
+        ");
+        foreach ($userIdsList as $uId) {
+            $stmtNotif->execute([$uId, $titulo, $mensaje, $url]);
+        }
+    } catch (Exception $e) {}
+
+    // 2. Enviar WebPush VAPID a todas las suscripciones push de estos usuarios
+    try {
+        $inUsers = implode(',', array_map('intval', $userIdsList));
+        $stmtSubs = $pdo->query("SELECT * FROM push_subscriptions WHERE usuario_id IN ($inUsers)");
+        $subs = $stmtSubs ? $stmtSubs->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        if (!empty($subs)) {
+            $payload = json_encode([
+                'title' => $titulo,
+                'body' => $mensaje,
+                'icon' => '/assets/icons/favicon.png',
+                'url' => $url,
+                'data' => [
+                    'url' => $url,
+                    'producto_id' => $productoId,
+                    'tipo' => 'stock_bajo'
+                ]
+            ]);
+
+            foreach ($subs as $sub) {
+                if (!empty($sub['endpoint'])) {
+                    @enviarWebPushVapid($sub, $payload);
+                }
+            }
+        }
+    } catch (Exception $e) {}
+
+    return true;
+}
+
+/**
+ * Notificar Nueva Reseña / Calificación al Barbero y Administradores
+ */
+function notificarNuevaResena($pdo, $resenaId, $barberoId, $clienteNombre, $calificacion, $comentario = '', $sucursalId = 1) {
+    asegurarTablasNotificaciones($pdo);
+
+    $estrellasStr = str_repeat('⭐', max(1, min(5, intval($calificacion))));
+    $titulo = "{$estrellasStr} ¡Nueva calificación de {$clienteNombre}!";
+    $mensaje = "El cliente calificó el servicio con {$calificacion} estrellas" . (!empty($comentario) ? ": \"{$comentario}\"" : ".");
+    $url = '/resenas.php';
+
+    $destinatariosIds = [];
+
+    // Barbero calificado
+    if (!empty($barberoId) && intval($barberoId) > 0) {
+        $destinatariosIds[intval($barberoId)] = true;
+    }
+
+    // Admins
+    try {
+        $stmtAdmins = $pdo->prepare("
+            SELECT id FROM usuarios 
+            WHERE activo = 1 
+              AND (rol IN ('admin', 'administrador', 'superadmin') 
+                   OR (rol = 'admin_local' AND (sucursal_id = ? OR id IN (SELECT usuario_id FROM usuarios_sucursales WHERE sucursal_id = ?))))
+        ");
+        $stmtAdmins->execute([$sucursalId, $sucursalId]);
+        $adminRows = $stmtAdmins->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($adminRows as $aId) {
+            $destinatariosIds[intval($aId)] = true;
+        }
+    } catch (Exception $e) {}
+
+    if (empty($destinatariosIds)) {
+        return false;
+    }
+
+    $userIdsList = array_keys($destinatariosIds);
+
+    // 1. Guardar en notificaciones_pwa
+    try {
+        $stmtNotif = $pdo->prepare("
+            INSERT INTO notificaciones_pwa (usuario_id, titulo, mensaje, url, leido, fecha_creacion)
+            VALUES (?, ?, ?, ?, 0, NOW())
+        ");
+        foreach ($userIdsList as $uId) {
+            $stmtNotif->execute([$uId, $titulo, $mensaje, $url]);
+        }
+    } catch (Exception $e) {}
+
+    // 2. Push VAPID
+    try {
+        $inUsers = implode(',', array_map('intval', $userIdsList));
+        $stmtSubs = $pdo->query("SELECT * FROM push_subscriptions WHERE usuario_id IN ($inUsers)");
+        $subs = $stmtSubs ? $stmtSubs->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        if (!empty($subs)) {
+            $payload = json_encode([
+                'title' => $titulo,
+                'body' => $mensaje,
+                'icon' => '/assets/icons/favicon.png',
+                'url' => $url,
+                'data' => [
+                    'url' => $url,
+                    'resena_id' => $resenaId,
+                    'tipo' => 'nueva_resena'
+                ]
+            ]);
+
+            foreach ($subs as $sub) {
+                if (!empty($sub['endpoint'])) {
+                    @enviarWebPushVapid($sub, $payload);
+                }
+            }
+        }
+    } catch (Exception $e) {}
+
+    return true;
+}
+
+
