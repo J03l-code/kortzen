@@ -210,6 +210,14 @@ function getConnection()
                 } catch (Throwable $e_r2h) {}
 
                 try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN fecha_completada DATETIME NULL");
+                } catch (Throwable $e_fcomp) {}
+
+                try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN notif_calificacion_enviada TINYINT(1) DEFAULT 0");
+                } catch (Throwable $e_ncal) {}
+
+                try {
                     $pdo->exec("ALTER TABLE citas ADD COLUMN asistencia_confirmada TINYINT(1) DEFAULT 0");
                 } catch (Throwable $e_asist) {}
 
@@ -573,7 +581,8 @@ function getSystemConfigs($pdo = null)
         'smtp_port' => '465',
         'smtp_user' => 'info@kortzen.com',
         'smtp_pass' => 'Kortzen2026!',
-        'sistema_referidos_activo' => '0' // 1 = Activo, 0 = Inactivo / Desactivado
+        'sistema_referidos_activo' => '0', // 1 = Activo, 0 = Inactivo / Desactivado
+        'google_review_url' => 'https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu'
     ];
 
     try {

@@ -433,9 +433,15 @@ try {
             $nuevoPrecioFinal = $precioBase + $sumaAdicionales;
             $txtAdicionales = !empty($nombresAdicionales) ? implode(', ', $nombresAdicionales) : null;
 
-            // 1. Marcar completada con propina, precio_final actualizado y servicios adicionales
-            $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', propina = ?, precio_final = ?, servicios_adicionales_txt = ? WHERE id = ?");
-            $stmtComp->execute([$propina, $nuevoPrecioFinal, $txtAdicionales, $id]);
+            // 1. Marcar completada con propina, precio_final actualizado, servicios adicionales y timestamp para notificación a los 30 min
+            try {
+                $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', fecha_completada = NOW(), notif_calificacion_enviada = 0, propina = ?, precio_final = ?, servicios_adicionales_txt = ? WHERE id = ?");
+                $stmtComp->execute([$propina, $nuevoPrecioFinal, $txtAdicionales, $id]);
+            } catch (Exception $eCompUpd) {
+                // Fallback por si las columnas están migrándose
+                $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', propina = ?, precio_final = ?, servicios_adicionales_txt = ? WHERE id = ?");
+                $stmtComp->execute([$propina, $nuevoPrecioFinal, $txtAdicionales, $id]);
+            }
 
             // Cargar puntos configurados
             $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
@@ -579,7 +585,7 @@ try {
             $linkCalificar = "{$protocolo}://{$hostActual}/calificar.php?c={$id}";
 
             $clienteNombreCorto = !empty($cNombre) ? explode(' ', trim($cNombre))[0] : 'Cliente';
-            $waMsgCalificar = "¡Hola {$clienteNombreCorto}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con {$bNombre}? Déjanos tu calificación de 1 a 5 estrellas aquí: {$linkCalificar}";
+            $waMsgCalificar = "¡Hola {$clienteNombreCorto}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con {$bNombre}? Déjanos tu calificación de 1 a 5 estrellas y apóyanos con tu reseña en Google aquí: {$linkCalificar}";
             $rawPhone = $cD['cliente_telefono'] ?? ($citaBase['cliente_telefono'] ?? '');
             $telLimpio = preg_replace('/[^0-9]/', '', $rawPhone);
             if (!empty($telLimpio) && strlen($telLimpio) === 10 && substr($telLimpio, 0, 1) === '0') {
@@ -589,21 +595,8 @@ try {
                 ? "https://wa.me/{$telLimpio}?text=" . rawurlencode($waMsgCalificar)
                 : "https://wa.me/?text=" . rawurlencode($waMsgCalificar);
 
-            // Notificación push y en PWA al cliente para calificar
-            if (!empty($citaBase['cliente_id'])) {
-                try {
-                    if (function_exists('notificarCliente')) {
-                        notificarCliente(
-                            $pdo,
-                            intval($citaBase['cliente_id']),
-                            $id,
-                            "⭐ ¿Cómo calificarías tu corte en Kortzen?",
-                            "¡Hola {$clienteNombreCorto}! Déjanos tu calificación de 1 a 5 estrellas sobre tu atención con {$bNombre}.",
-                            "/calificar.php?c={$id}"
-                        );
-                    }
-                } catch (Exception $eNotifCli) {}
-            }
+            // Nota: La notificación Push al cliente queda programada para enviarse automáticamente
+            // a los 30 minutos de finalizada la cita mediante el cron / procesador en segundo plano.
 
             $reciboData = [
                 'cita_id' => $id,
@@ -722,7 +715,7 @@ try {
 
             $cliNomCorto = !empty($citaR['cliente_nombre']) ? explode(' ', trim($citaR['cliente_nombre']))[0] : 'Cliente';
             $barbNom = $citaR['barbero_nombre'] ?? 'Barbero';
-            $waMsgCalificar = "¡Hola {$cliNomCorto}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con {$barbNom}? Déjanos tu calificación de 1 a 5 estrellas aquí: {$linkCalificar}";
+            $waMsgCalificar = "¡Hola {$cliNomCorto}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con {$barbNom}? Déjanos tu calificación de 1 a 5 estrellas y apóyanos con tu reseña en Google aquí: {$linkCalificar}";
             $rawPhoneR = $citaR['cliente_telefono'] ?? '';
             $telLimpioR = preg_replace('/[^0-9]/', '', $rawPhoneR);
             if (!empty($telLimpioR) && strlen($telLimpioR) === 10 && substr($telLimpioR, 0, 1) === '0') {

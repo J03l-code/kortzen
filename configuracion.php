@@ -356,6 +356,28 @@ include 'includes/header.php';
         </div>
     </div>
 
+    <!-- Tarjeta de Reseñas en Google & Calificación de Clientes (30 min) -->
+    <div class="config-card">
+        <h3 class="config-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <svg class="config-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Reseñas en Google Maps & Calificación de Clientes</span>
+            </div>
+            <span style="font-size: 0.75rem; background: #EFF6FF; color: #1D4ED8; padding: 4px 12px; border-radius: 20px; font-weight: 800; border: 1px solid #BFDBFE;">
+                ✓ Notificación Push automática en 30 min
+            </span>
+        </h3>
+        <p style="color: #666666; font-size: 0.88rem; margin-bottom: 20px; line-height: 1.5;">
+            Configura el enlace de tu perfil de negocio en Google Maps. 30 minutos después de que finalices una cita, el cliente recibe una notificación push invitándolo a calificar su experiencia de 1 a 5 estrellas y a dejar su reseña en tu ficha de Google.
+        </p>
+
+        <div>
+            <label class="config-label">Enlace de Google Maps / Reseñas de Google</label>
+            <input type="url" name="google_review_url" value="<?php echo htmlspecialchars($configs['google_review_url'] ?? 'https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu'); ?>" class="config-input" placeholder="https://www.google.com/maps/place/..." required>
+            <small class="config-help">Puedes ingresar tu enlace de Google Maps o enlace corto de reseñas (ej: https://g.page/r/.../review).</small>
+        </div>
+    </div>
+
     <!-- Tarjeta de Política de Reservas & Términos de Cita -->
     <div class="config-card">
         <h3 class="config-card-header" style="display: flex; justify-content: space-between; align-items: center;">

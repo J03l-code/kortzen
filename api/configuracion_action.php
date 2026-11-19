@@ -31,6 +31,8 @@ if ($action === 'save_configs') {
         $smtp_user = trim($_POST['smtp_user'] ?? '');
         $smtp_pass = trim($_POST['smtp_pass'] ?? '');
 
+        $google_review_url = trim($_POST['google_review_url'] ?? '');
+
         $politica_reserva_titulo = trim($_POST['politica_reserva_titulo'] ?? 'POLÍTICA DE RESERVAS');
         $politica_reserva_texto = trim($_POST['politica_reserva_texto'] ?? '');
         $politica_reserva_check_texto = trim($_POST['politica_reserva_check_texto'] ?? 'He leído y acepto la política de reserva y condiciones de puntualidad.');
@@ -53,7 +55,8 @@ if ($action === 'save_configs') {
             'smtp_host' => $smtp_host,
             'smtp_port' => (string)$smtp_port,
             'smtp_user' => $smtp_user,
-            'smtp_pass' => $smtp_pass
+            'smtp_pass' => $smtp_pass,
+            'google_review_url' => !empty($google_review_url) ? $google_review_url : 'https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu'
         ];
 
         $stmt = $pdo->prepare("INSERT INTO configuracion (clave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor = VALUES(valor)");

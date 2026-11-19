@@ -532,4 +532,120 @@ function notificarNuevaResena($pdo, $resenaId, $barberoId, $clienteNombre, $cali
     return true;
 }
 
+/**
+ * Procesa y envía notificaciones push a clientes 30 minutos después de que su cita fue finalizada
+ * Invitándolos a calificar de 1 a 5 estrellas y a dejar una reseña en Google
+ * 
+ * @param PDO $pdo Conexión a BD
+ * @param int $limite Cantidad máxima de citas a procesar por ejecución
+ * @param int|null $forzarCitaId ID específico para pruebas manuales inmediatas
+ * @return array
+ */
+function procesarNotificacionesCalificacion30min($pdo, $limite = 20, $forzarCitaId = null) {
+    asegurarTablasNotificaciones($pdo);
+
+    try {
+        $pdo->exec("ALTER TABLE citas ADD COLUMN fecha_completada DATETIME NULL");
+    } catch (Exception $e) {}
+    try {
+        $pdo->exec("ALTER TABLE citas ADD COLUMN notif_calificacion_enviada TINYINT(1) DEFAULT 0");
+    } catch (Exception $e) {}
+
+    $limite = max(1, intval($limite));
+    $citas = [];
+
+    if (!empty($forzarCitaId) && intval($forzarCitaId) > 0) {
+        $stmt = $pdo->prepare("
+            SELECT c.*, 
+                   cli.id as cliente_id_bd, cli.nombre as cliente_nombre, cli.telefono as cliente_telefono,
+                   u.nombre as barbero_nombre,
+                   s.nombre as servicio_nombre
+            FROM citas c
+            INNER JOIN clientes cli ON c.cliente_id = cli.id
+            LEFT JOIN usuarios u ON c.barbero_id = u.id
+            LEFT JOIN servicios s ON c.servicio_id = s.id
+            WHERE c.id = ?
+        ");
+        $stmt->execute([intval($forzarCitaId)]);
+        $citas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        // Citas completadas hace 30 minutos o más, en ventana de las últimas 24 horas, no notificadas aún
+        $stmt = $pdo->prepare("
+            SELECT c.*, 
+                   cli.id as cliente_id_bd, cli.nombre as cliente_nombre, cli.telefono as cliente_telefono,
+                   u.nombre as barbero_nombre,
+                   s.nombre as servicio_nombre
+            FROM citas c
+            INNER JOIN clientes cli ON c.cliente_id = cli.id
+            LEFT JOIN usuarios u ON c.barbero_id = u.id
+            LEFT JOIN servicios s ON c.servicio_id = s.id
+            WHERE c.estado = 'completada'
+              AND (c.notif_calificacion_enviada IS NULL OR c.notif_calificacion_enviada = 0)
+              AND (
+                  (c.fecha_completada IS NOT NULL AND c.fecha_completada <= NOW() - INTERVAL 30 MINUTE)
+                  OR (c.fecha_completada IS NULL AND c.fecha_hora <= NOW() - INTERVAL 30 MINUTE)
+              )
+              AND (
+                  (c.fecha_completada IS NOT NULL AND c.fecha_completada >= NOW() - INTERVAL 24 HOUR)
+                  OR (c.fecha_completada IS NULL AND c.fecha_hora >= NOW() - INTERVAL 24 HOUR)
+              )
+            ORDER BY c.fecha_completada ASC, c.id ASC
+            LIMIT {$limite}
+        ");
+        $stmt->execute();
+        $citas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    $enviadas = 0;
+    $detalles = [];
+
+    $stmtMarcar = $pdo->prepare("UPDATE citas SET notif_calificacion_enviada = 1 WHERE id = ?");
+
+    foreach ($citas as $cita) {
+        $cId = intval($cita['id']);
+        $cliId = intval($cita['cliente_id_bd'] ?? $cita['cliente_id']);
+        $cliNom = !empty($cita['cliente_nombre']) ? explode(' ', trim($cita['cliente_nombre']))[0] : 'Cliente';
+        $barbNom = !empty($cita['barbero_nombre']) ? $cita['barbero_nombre'] : 'tu barbero';
+
+        // Marcar como procesada inmediatamente para evitar dobles envíos concurrentes
+        $stmtMarcar->execute([$cId]);
+
+        // Verificar si el cliente ya dejó reseña para esta cita
+        $stmtYaRes = $pdo->prepare("SELECT id FROM resenas WHERE cita_id = ? LIMIT 1");
+        $stmtYaRes->execute([$cId]);
+        if ($stmtYaRes->fetchColumn()) {
+            $detalles[] = [
+                'cita_id' => $cId,
+                'cliente' => $cliNom,
+                'estado' => 'ya_calificada_omitida'
+            ];
+            continue;
+        }
+
+        // Título y mensaje de la notificación push invitando a calificar y dejar reseña en Google
+        $titulo = "⭐ ¿Qué tal tu corte en KORTZEN?";
+        $mensaje = "¡Hola {$cliNom}! Califica tu atención con {$barbNom} y apóyanos con tu reseña en Google.";
+        $url = "/calificar.php?c={$cId}";
+
+        // Enviar notificación al cliente (PWA y WebPush VAPID)
+        $sent = notificarCliente($pdo, $cliId, $cId, $titulo, $mensaje, $url);
+        if ($sent) {
+            $enviadas++;
+        }
+
+        $detalles[] = [
+            'cita_id' => $cId,
+            'cliente' => $cliNom,
+            'enviada' => $sent,
+            'estado' => 'push_enviada'
+        ];
+    }
+
+    return [
+        'procesadas' => count($citas),
+        'enviadas' => $enviadas,
+        'detalles' => $detalles
+    ];
+}
+
 
