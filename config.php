@@ -25,18 +25,26 @@ if (file_exists(__DIR__ . '/.env')) {
 }
 
 // Configuración de la Base de Datos
-$db_host = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false) ? '195.35.61.92' : 'localhost';
-define('DB_HOST', getenv('DB_HOST') ?: $db_host);
+$db_host = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false) ? 'localhost' : 'localhost';
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_NAME', getenv('DB_NAME') ?: 'u434851126_kortzen');
 define('DB_USER', getenv('DB_USER') ?: 'u434851126_kortzenusr');
 define('DB_PASS', getenv('DB_PASS') ?: 'Kortzen2026!');
 define('DB_CHARSET', 'utf8mb4');
 
-// Configuración de Zona Horaria (Ecuador)
+// Configuración de Zona Horaria (Ecuador / América)
 date_default_timezone_set('America/Guayaquil');
 
+// Detección automática del dominio actual (Multi-dominio automático)
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+        || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) 
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+$protocol = $isHttps ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$detectedUrl = $protocol . $host;
+
 // Configuración de la aplicación
-define('SITE_URL', getenv('SITE_URL') ?: 'https://kortzen.com');
+define('SITE_URL', getenv('SITE_URL') ?: $detectedUrl);
 define('SITE_NAME', getenv('SITE_NAME') ?: 'KORTZEN Barbería');
 
 // Configuración de Google reCAPTCHA
@@ -234,8 +242,24 @@ function getConnection()
                 } catch (Throwable $e_r2h) {}
 
                 try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN fecha_completada DATETIME NULL");
+                } catch (Throwable $e_fcomp) {}
+
+                try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN notif_calificacion_enviada TINYINT(1) DEFAULT 0");
+                } catch (Throwable $e_ncal) {}
+
+                try {
                     $pdo->exec("ALTER TABLE citas ADD COLUMN asistencia_confirmada TINYINT(1) DEFAULT 0");
                 } catch (Throwable $e_asist) {}
+
+                try {
+                    $pdo->exec("ALTER TABLE citas MODIFY COLUMN estado ENUM('pendiente', 'confirmada', 'en_atencion', 'completada', 'cancelada', 'no_asistio') NOT NULL DEFAULT 'pendiente'");
+                } catch (Throwable $e_enum) {
+                    try {
+                        $pdo->exec("ALTER TABLE citas MODIFY COLUMN estado VARCHAR(50) NOT NULL DEFAULT 'pendiente'");
+                    } catch (Throwable $e_var) {}
+                }
 
                 try {
                     $pdo->exec("ALTER TABLE servicios ADD COLUMN barbero_id INT UNSIGNED NULL DEFAULT NULL");
@@ -253,6 +277,25 @@ function getConnection()
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                     ");
                 } catch (Throwable $e_sb) {}
+
+                try {
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS citas_servicios_adicionales (
+                            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                            cita_id INT UNSIGNED NOT NULL,
+                            servicio_id INT UNSIGNED NOT NULL,
+                            nombre VARCHAR(150) NOT NULL,
+                            precio DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            INDEX idx_csa_cita (cita_id),
+                            INDEX idx_csa_servicio (servicio_id)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                    ");
+                } catch (Throwable $e_csa) {}
+
+                try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN servicios_adicionales_txt VARCHAR(255) NULL AFTER precio_final");
+                } catch (Throwable $e_csatxt) {}
 
                 try {
                     $pdo->exec("
@@ -282,6 +325,12 @@ function getConnection()
                     ");
                 } catch (Throwable $e_usuc) {}
 
+                // Sincronización de horarios y almuerzos por defecto:
+                try {
+                    // Solo asignar almuerzo por defecto si el usuario no tiene ninguno configurado
+                    $pdo->exec("UPDATE usuarios SET almuerzo_activo = 1, almuerzo_inicio = '13:00:00', almuerzo_fin = '14:00:00' WHERE almuerzo_inicio IS NULL OR almuerzo_fin IS NULL OR almuerzo_activo IS NULL");
+                } catch (Throwable $e_sync_all) {}
+
                 try {
                     $pdo->exec("
                         CREATE TABLE IF NOT EXISTS `resenas` (
@@ -304,6 +353,18 @@ function getConnection()
                     if (!empty($colsR)) {
                         if (!in_array('cliente_nombre', $colsR)) {
                             try { $pdo->exec("ALTER TABLE resenas ADD COLUMN cliente_nombre VARCHAR(100) NOT NULL DEFAULT 'Cliente'"); } catch (Throwable $e) {}
+                        }
+                        if (!in_array('cita_id', $colsR)) {
+                            try { $pdo->exec("ALTER TABLE resenas ADD COLUMN cita_id INT NULL AFTER id"); } catch (Throwable $e) {}
+                        }
+                        if (!in_array('barbero_id', $colsR)) {
+                            try { $pdo->exec("ALTER TABLE resenas ADD COLUMN barbero_id INT NULL AFTER cita_id"); } catch (Throwable $e) {}
+                        }
+                        if (!in_array('cliente_id', $colsR)) {
+                            try { $pdo->exec("ALTER TABLE resenas ADD COLUMN cliente_id INT NULL AFTER barbero_id"); } catch (Throwable $e) {}
+                        }
+                        if (!in_array('sucursal_id', $colsR)) {
+                            try { $pdo->exec("ALTER TABLE resenas ADD COLUMN sucursal_id INT NULL AFTER cliente_id"); } catch (Throwable $e) {}
                         }
                         if (!in_array('comentario', $colsR)) {
                             try { $pdo->exec("ALTER TABLE resenas ADD COLUMN comentario TEXT NULL"); } catch (Throwable $e) {}
@@ -341,6 +402,17 @@ function getConnection()
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                     ");
                 } catch (Throwable $e_ref) {}
+
+                // Integridad de Servicios: Asegurar que todo servicio tenga sucursal y barberos asignados
+                try {
+                    asegurarIntegridadServiciosSucursalesBarberos($pdo);
+                } catch (Throwable $e_int) {}
+
+                // Integridad de Horarios de Sucursales: Corregir registros que tengan 00:00:00 o NULL
+                try {
+                    $pdo->exec("UPDATE sucursales SET horario_apertura = '10:00:00' WHERE horario_apertura IS NULL OR horario_apertura = '00:00:00' OR horario_apertura = '00:00'");
+                    $pdo->exec("UPDATE sucursales SET horario_cierre = '20:00:00' WHERE horario_cierre IS NULL OR horario_cierre = '00:00:00' OR horario_cierre = '00:00'");
+                } catch (Throwable $e_suc) {}
             }
 
 
@@ -540,7 +612,9 @@ function getSystemConfigs($pdo = null)
         'smtp_host' => 'smtp.hostinger.com',
         'smtp_port' => '465',
         'smtp_user' => 'info@kortzen.com',
-        'smtp_pass' => 'Kortzen2026!'
+        'smtp_pass' => 'Kortzen2026!',
+        'sistema_referidos_activo' => '0', // 1 = Activo, 0 = Inactivo / Desactivado
+        'google_review_url' => 'https://www.google.com/maps/place/KORTZEN/@-0.1352812,-78.4460419,17z/data=!3m1!4b1!4m6!3m5!1s0x91d58fc52de96153:0x35f5708deeee0cf7!8m2!3d-0.1352812!4d-78.443467!16s%2Fg%2F11yck29m8p?entry=ttu'
     ];
 
     try {
@@ -554,6 +628,17 @@ function getSystemConfigs($pdo = null)
     } catch (Throwable $e) {}
 
     return $configs;
+}
+
+/**
+ * Verificar si el sistema de referidos y códigos promocionales está activo
+ * @param PDO|null $pdo
+ * @return bool
+ */
+function isSistemaReferidosActivo($pdo = null)
+{
+    $cfgs = getSystemConfigs($pdo);
+    return ($cfgs['sistema_referidos_activo'] ?? '0') === '1';
 }
 
 /**
@@ -830,7 +915,7 @@ function isClienteLoggedIn()
             if ($clientId > 0 && !empty($tokenHash)) {
                 try {
                     $pdo = getConnection();
-                    $stmt = $pdo->prepare("SELECT id, nombre, email, foto_perfil, google_id FROM clientes WHERE id = ?");
+                    $stmt = $pdo->prepare("SELECT id, nombre, email, telefono, foto_perfil, google_id FROM clientes WHERE id = ?");
                     $stmt->execute([$clientId]);
                     $c = $stmt->fetch(PDO::FETCH_ASSOC);
                     if ($c && validarPwaToken($c['id'], $c['email'], $tokenHash)) {
@@ -838,6 +923,7 @@ function isClienteLoggedIn()
                         $_SESSION['cliente_id'] = $c['id'];
                         $_SESSION['cliente_nombre'] = $c['nombre'];
                         $_SESSION['cliente_email'] = $c['email'];
+                        $_SESSION['cliente_telefono'] = $c['telefono'] ?? null;
                         $_SESSION['cliente_foto'] = $c['foto_perfil'] ?? null;
                         $_SESSION['cliente_google_id'] = $c['google_id'] ?? null;
                         return true;
@@ -860,11 +946,32 @@ function getCurrentCliente()
         return null;
     }
 
+    $cId = $_SESSION['cliente_id'] ?? null;
+    $telefono = $_SESSION['cliente_telefono'] ?? null;
+
+    if ($cId && $telefono === null) {
+        try {
+            $pdo = getConnection();
+            $stmt = $pdo->prepare("SELECT telefono, foto_perfil FROM clientes WHERE id = ?");
+            $stmt->execute([$cId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                $telefono = $row['telefono'] ?? '';
+                $_SESSION['cliente_telefono'] = $telefono;
+                if (!empty($row['foto_perfil'])) {
+                    $_SESSION['cliente_foto'] = $row['foto_perfil'];
+                }
+            }
+        } catch (Exception $e) {}
+    }
+
     return [
-        'id' => $_SESSION['cliente_id'] ?? null,
+        'id' => $cId,
         'nombre' => $_SESSION['cliente_nombre'] ?? 'Cliente',
         'email' => $_SESSION['cliente_email'] ?? '',
         'foto' => $_SESSION['cliente_foto'] ?? null,
+        'foto_perfil' => $_SESSION['cliente_foto'] ?? null,
+        'telefono' => $telefono ?? '',
         'google_id' => $_SESSION['cliente_google_id'] ?? null
     ];
 }
@@ -1148,32 +1255,152 @@ function requirePermission($hasPermission, $redirectTo = 'dashboard.php')
 }
 
 /**
- * Formatear número de teléfono para WhatsApp (Ecuador)
+ * Formatear número de teléfono para WhatsApp (Ecuador +593)
  * @param string $phone
  * @return string
  */
 function formatPhoneForWhatsapp($phone)
 {
-    // 1. Eliminar todo lo que no sea número
-    $clean = preg_replace('/[^0-9]/', '', $phone);
-
-    // 2. Si está vacío, retornar vacío
-    if (empty($clean))
-        return '';
-
-    // 3. Lógica para Ecuador (empezar con 09 -> 5939)
-    // Si tiene 10 dígitos y empieza con 0, reemplazar 0 por 593
-    if (strlen($clean) === 10 && substr($clean, 0, 1) === '0') {
-        return '593' . substr($clean, 1);
-    }
-
-    // 4. Si ya empieza con 593 (ej: 593988...) se deja igual
-    // 5. Si es de 9 dígitos (sin el 0 inicial), agregar 593
-    if (strlen($clean) === 9) {
-        return '593' . $clean;
-    }
-
+    $clean = preg_replace('/[^0-9]/', '', (string)$phone);
+    if (empty($clean)) return '';
+    if (strpos($clean, '00593') === 0) $clean = substr($clean, 2);
+    if (strpos($clean, '5930') === 0 && strlen($clean) >= 12) $clean = '593' . substr($clean, 4);
+    if (strpos($clean, '593') === 0 && strlen($clean) >= 11) return $clean;
+    if (substr($clean, 0, 1) === '0') return '593' . substr($clean, 1);
+    if (strlen($clean) === 9) return '593' . $clean;
+    if (strlen($clean) <= 8) return '593' . $clean;
     return $clean;
+}
+
+/**
+ * Formatear número de teléfono para guardar en base de datos (+5939XXXXXXXX)
+ * @param string $phone
+ * @return string|null
+ */
+function formatPhoneDB($phone)
+{
+    $wa = formatPhoneForWhatsapp($phone);
+    return $wa ? ('+' . $wa) : null;
+}
+
+/**
+ * Formatear número de teléfono para mostrarlo limpio en pantalla (ej: 0979359178)
+ * @param string $phone
+ * @return string
+ */
+function formatPhoneDisplay($phone)
+{
+    if (empty($phone)) return '-';
+    $clean = preg_replace('/[^0-9]/', '', (string)$phone);
+    if (empty($clean)) return htmlspecialchars($phone);
+
+    // Si viene en formato internacional 5939XXXXXXXX -> mostrar como 09XXXXXXXX
+    if (strpos($clean, '593') === 0 && strlen($clean) === 12) {
+        return '0' . substr($clean, 3);
+    }
+
+    // Si ya empieza con 0 y tiene 10 dígitos
+    if (substr($clean, 0, 1) === '0' && strlen($clean) === 10) {
+        return $clean;
+    }
+
+    // Si tiene 9 dígitos sin 0
+    if (strlen($clean) === 9 && substr($clean, 0, 1) === '9') {
+        return '0' . $clean;
+    }
+
+    return htmlspecialchars($phone);
+}
+
+/**
+ * Valida de forma estricta que un número sea un celular real y válido de Ecuador (09XXXXXXXX)
+ * @param string $phone
+ * @return array ['valid' => bool, 'clean' => string, 'formatted' => string, 'whatsapp' => string, 'error' => string|null]
+ */
+function validateEcuadorianMobile($phone)
+{
+    $raw = preg_replace('/[^0-9]/', '', (string)$phone);
+    if (empty($raw)) {
+        return ['valid' => false, 'clean' => '', 'formatted' => '', 'whatsapp' => '', 'error' => 'El número de celular no puede estar vacío.'];
+    }
+
+    $clean = $raw;
+    // Normalizaciones de prefijo 593 / 00593 / 5930
+    if (strpos($clean, '00593') === 0) {
+        $clean = substr($clean, 5);
+    } elseif (strpos($clean, '5930') === 0 && strlen($clean) >= 12) {
+        $clean = '0' . substr($clean, 4);
+    } elseif (strpos($clean, '593') === 0 && strlen($clean) >= 11) {
+        $clean = '0' . substr($clean, 3);
+    } elseif (strpos($clean, '9') === 0 && strlen($clean) === 9) {
+        $clean = '0' . $clean;
+    }
+
+    // 1. Debe tener exactamente 10 dígitos
+    if (strlen($clean) !== 10) {
+        return [
+            'valid' => false,
+            'clean' => $clean,
+            'formatted' => $clean,
+            'whatsapp' => '',
+            'error' => 'El número debe tener exactamente 10 dígitos (ej: 0991234567).'
+        ];
+    }
+
+    // 2. Debe empezar obligatoriamente con 09
+    if (substr($clean, 0, 2) !== '09') {
+        return [
+            'valid' => false,
+            'clean' => $clean,
+            'formatted' => $clean,
+            'whatsapp' => '',
+            'error' => 'El celular debe comenzar con 09 (ej: 098..., 099..., 096...).'
+        ];
+    }
+
+    // 3. El tercer dígito debe corresponder a prefijos móviles vigentes en Ecuador (092 a 099)
+    $tercer = intval(substr($clean, 2, 1));
+    if ($tercer < 2) {
+        return [
+            'valid' => false,
+            'clean' => $clean,
+            'formatted' => $clean,
+            'whatsapp' => '',
+            'error' => 'El código de operadora no es válido. Debe iniciar con 098, 099, 097, 096, etc.'
+        ];
+    }
+
+    // 4. Rechazar números con dígitos restantes idénticos (ej: 0999999999, 0988888888, 0900000000, 0911111111)
+    $resto = substr($clean, 2);
+    if (preg_match('/^(\d)\1{7}$/', $resto)) {
+        return [
+            'valid' => false,
+            'clean' => $clean,
+            'formatted' => $clean,
+            'whatsapp' => '',
+            'error' => 'Por favor ingresa un número de teléfono real y activo.'
+        ];
+    }
+
+    // 5. Rechazar secuencias falsas comunes
+    $secuenciasInvalidas = ['0912345678', '0987654321', '0901234567', '0923456789'];
+    if (in_array($clean, $secuenciasInvalidas, true)) {
+        return [
+            'valid' => false,
+            'clean' => $clean,
+            'formatted' => $clean,
+            'whatsapp' => '',
+            'error' => 'Por favor ingresa un número de teléfono real y activo.'
+        ];
+    }
+
+    return [
+        'valid' => true,
+        'clean' => $clean,
+        'formatted' => substr($clean, 0, 3) . ' ' . substr($clean, 3, 3) . ' ' . substr($clean, 6, 4),
+        'whatsapp' => '593' . substr($clean, 1),
+        'error' => null
+    ];
 }
 
 /**
@@ -1204,6 +1431,75 @@ function checkCronRecordatorios2hAuto() {
             @fclose($fp);
         }
     } catch (Exception $e) {}
+}
+
+/**
+ * Garantiza que ningún servicio quede invisible o huérfano (sin sucursales o sin barberos).
+ * Si un servicio no tiene sucursales asignadas en servicios_sucursales, se asigna a todas las sucursales activas.
+ * Si no tiene barberos asignados en servicios_barberos, se asigna a todos los barberos activos.
+ */
+function asegurarIntegridadServiciosSucursalesBarberos($pdo) {
+    if (!$pdo) return;
+    try {
+        // Asegurar existencia de tablas relacionales
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `servicios_sucursales` (
+                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `servicio_id` INT UNSIGNED NOT NULL,
+                `sucursal_id` INT UNSIGNED NOT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uk_servicio_sucursal` (`servicio_id`, `sucursal_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `servicios_barberos` (
+                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `servicio_id` INT UNSIGNED NOT NULL,
+                `barbero_id` INT UNSIGNED NOT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uk_servicio_barbero` (`servicio_id`, `barbero_id`),
+                INDEX `idx_servicio` (`servicio_id`),
+                INDEX `idx_barbero` (`barbero_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+
+        // 1. Vincular a todas las sucursales activas cualquier servicio que no tenga asignación en servicios_sucursales
+        $pdo->exec("
+            INSERT IGNORE INTO servicios_sucursales (servicio_id, sucursal_id)
+            SELECT s.id, suc.id 
+            FROM servicios s 
+            CROSS JOIN sucursales suc 
+            WHERE suc.activo = 1 
+            AND NOT EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id)
+        ");
+
+        // 2. Vincular a todos los barberos activos cualquier servicio que no tenga ningún barbero en servicios_barberos
+        $pdo->exec("
+            INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id)
+            SELECT s.id, u.id 
+            FROM servicios s 
+            CROSS JOIN usuarios u 
+            WHERE u.activo = 1 AND (u.rol = 'barbero' OR u.rol = 'admin_local' OR u.rol = 'admin')
+            AND LOWER(s.nombre) NOT LIKE '%mateo%'
+            AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
+        ");
+
+        // Si el corte especifica 'Mateo', vincularlo con Mateo
+        $pdo->exec("
+            INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id)
+            SELECT s.id, u.id 
+            FROM servicios s 
+            CROSS JOIN usuarios u 
+            WHERE u.activo = 1 AND (LOWER(u.nombre) LIKE '%mateo%' OR LOWER(u.email) LIKE '%mateo%')
+            AND LOWER(s.nombre) LIKE '%mateo%'
+            AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
+        ");
+
+        // 3. Asegurar que los servicios tengan activo = 1 por defecto si estuvieran en null
+        $pdo->exec("UPDATE servicios SET activo = 1 WHERE activo IS NULL");
+    } catch (Throwable $e) {
+        error_log("Error asegurando integridad de servicios: " . $e->getMessage());
+    }
 }
 
 // Auto-ejecución pasiva de fondo al cargar cualquier página

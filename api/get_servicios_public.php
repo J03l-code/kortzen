@@ -17,27 +17,16 @@ try {
     $params = [];
 
     if ($sucursal_id > 0) {
-        // Si existe tabla servicios_sucursales, buscar ahí o si sucursal_id coincide o es global
-        try {
-            $checkSS = $pdo->query("SELECT COUNT(*) FROM servicios_sucursales WHERE sucursal_id = $sucursal_id")->fetchColumn();
-            if ($checkSS > 0) {
-                $sql = "SELECT s.*, cs.orden as cat_orden, cs.descripcion as cat_descripcion 
-                        FROM servicios s 
-                        INNER JOIN servicios_sucursales ss ON s.id = ss.servicio_id 
-                        LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
-                        WHERE s.activo = 1 AND ss.sucursal_id = ? 
-                        ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC";
-                $params = [$sucursal_id];
-            } else {
-                $sql .= " AND (s.sucursal_id = ? OR s.sucursal_id IS NULL OR s.sucursal_id = 0) 
-                          ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC";
-                $params = [$sucursal_id];
-            }
-        } catch (Throwable $e) {
-            $sql .= " AND (s.sucursal_id = ? OR s.sucursal_id IS NULL OR s.sucursal_id = 0) 
-                      ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC";
-            $params = [$sucursal_id];
-        }
+        // Buscar servicios asignados a esta sucursal O servicios globales sin sucursales fijadas
+        $sql = "SELECT s.*, cs.orden as cat_orden, cs.descripcion as cat_descripcion 
+                FROM servicios s 
+                LEFT JOIN servicios_sucursales ss ON s.id = ss.servicio_id 
+                LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
+                WHERE s.activo = 1 
+                AND (ss.sucursal_id = ? OR ss.sucursal_id IS NULL OR s.sucursal_id = ? OR s.sucursal_id IS NULL OR s.sucursal_id = 0) 
+                GROUP BY s.id
+                ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC";
+        $params = [$sucursal_id, $sucursal_id];
     } else {
         $sql .= " ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC";
     }
@@ -47,12 +36,31 @@ try {
     $servicios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($servicios as &$s) {
-        if (empty($s['foto_url']) && !empty($s['imagen_url'])) {
-            $s['foto_url'] = $s['imagen_url'];
+        $nombreLower = strtolower(trim($s['nombre']));
+        if (stripos($nombreLower, 'mateo') !== false) {
+            $s['foto_url'] = '/assets/images/service-corte-mateo.png';
+        } elseif (stripos($nombreLower, 'pro') !== false) {
+            $s['foto_url'] = '/assets/images/service-corte-pro.png';
+        } elseif (stripos($nombreLower, 'barba') !== false && stripos($nombreLower, 'corte') !== false) {
+            $s['foto_url'] = '/assets/images/service-corte-barba.png';
+        } elseif (stripos($nombreLower, 'afeitado') !== false) {
+            $s['foto_url'] = '/assets/images/service-afeitado-tradicional.png';
+        } elseif (stripos($nombreLower, 'barba') !== false) {
+            $s['foto_url'] = '/assets/images/service-barba-premium.png';
+        } elseif (stripos($nombreLower, 'cejas') !== false) {
+            $s['foto_url'] = '/assets/images/service-cejas.png';
+        } elseif (stripos($nombreLower, 'facial') !== false || stripos($nombreLower, 'limpieza') !== false) {
+            $s['foto_url'] = '/assets/images/service-limpieza-facial.png';
+        } elseif (stripos($nombreLower, 'ritual') !== false) {
+            $s['foto_url'] = '/assets/images/service-ritual-kortzen.png';
+        } elseif (stripos($nombreLower, 'ondulaci') !== false) {
+            $s['foto_url'] = '/assets/images/service-ondulacion.png';
         }
-        if (empty($s['imagen_url']) && !empty($s['foto_url'])) {
-            $s['imagen_url'] = $s['foto_url'];
+
+        if (empty($s['foto_url'])) {
+            $s['foto_url'] = !empty($s['imagen_url']) ? $s['imagen_url'] : (!empty($s['imagen']) ? $s['imagen'] : '/assets/images/service-classic-cut.jpg');
         }
+        $s['imagen_url'] = $s['foto_url'];
         if (empty($s['categoria'])) {
             $s['categoria'] = 'General';
         }

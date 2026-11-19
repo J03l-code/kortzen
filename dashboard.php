@@ -908,7 +908,7 @@ if ($currentUser['rol'] === 'admin_local') {
                                         $raw_phone = preg_replace('/[^0-9+]/', '', $cita['telefono']);
                                     ?>
                                         <div style="font-size: 11px; margin-top: 4px; display: flex; gap: 8px; align-items: center;">
-                                            <span style="color:#888;"><?php echo htmlspecialchars($cita['telefono']); ?></span>
+                                            <span style="color:#888;"><?php echo htmlspecialchars(formatPhoneDisplay($cita['telefono'])); ?></span>
                                             
                                             <!-- WA Button -->
                                             <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo $wa_msg; ?>" target="_blank" title="Enviar WhatsApp" style="color: #25D366; text-decoration: none;">
@@ -926,10 +926,8 @@ if ($currentUser['rol'] === 'admin_local') {
                                 <td><span style="font-size: 11px; color: #888888; font-weight: 700;"><?php echo htmlspecialchars($cita['sucursal_nombre'] ?? 'Kortzen'); ?></span></td>
                                 <td style="white-space: nowrap;">
                                     <div style="display: flex; gap: 8px; align-items: center;">
-                                        <select id="select_estado_<?php echo $cita['id']; ?>" onchange="prepararGuardarEstado(<?php echo $cita['id']; ?>)" style="padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'en_atencion' ? 'rgba(52, 152, 219, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)')))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'en_atencion' ? '#2980b9' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d')))); ?>;">
-                                            <option value="pendiente" <?php echo $cita['estado'] === 'pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                                        <select id="select_estado_<?php echo $cita['id']; ?>" onchange="prepararGuardarEstado(<?php echo $cita['id']; ?>)" style="padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid currentColor; outline: none; background: <?php echo ($cita['estado'] === 'completada' ? 'rgba(46, 204, 113, 0.15)' : ($cita['estado'] === 'confirmada' ? 'rgba(241, 196, 15, 0.15)' : ($cita['estado'] === 'cancelada' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(149, 165, 166, 0.15)'))); ?>; color: <?php echo ($cita['estado'] === 'completada' ? '#27ae60' : ($cita['estado'] === 'confirmada' ? '#d35400' : ($cita['estado'] === 'cancelada' ? '#c0392b' : '#7f8c8d'))); ?>;">
                                             <option value="confirmada" <?php echo $cita['estado'] === 'confirmada' ? 'selected' : ''; ?>>Confirmada</option>
-                                            <option value="en_atencion" <?php echo $cita['estado'] === 'en_atencion' ? 'selected' : ''; ?>>En Atención</option>
                                             <option value="completada" <?php echo $cita['estado'] === 'completada' ? 'selected' : ''; ?>>Completada</option>
                                             <option value="cancelada" <?php echo $cita['estado'] === 'cancelada' ? 'selected' : ''; ?>>Cancelada</option>
                                         </select>

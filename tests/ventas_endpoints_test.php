@@ -35,6 +35,19 @@ function fixtureEndpoint(string $ruta): PDO
     $pdo->exec('CREATE TABLE configuracion (clave TEXT, valor TEXT)');
     $pdo->exec("INSERT INTO configuracion VALUES ('puntos_por_corte', '100')");
     $pdo->exec('CREATE TABLE referidos (id INTEGER PRIMARY KEY, cita_id INTEGER, estado TEXT, referente_id INTEGER, puntos_otorgados INTEGER)');
+    $pdo->exec('ALTER TABLE usuarios ADD COLUMN comision_porcentaje DECIMAL DEFAULT 50');
+    $pdo->exec('ALTER TABLE usuarios ADD COLUMN comision_fin_semana DECIMAL DEFAULT 50');
+    $pdo->exec("ALTER TABLE clientes ADD COLUMN telefono TEXT DEFAULT '0999999999'");
+    $pdo->exec('ALTER TABLE servicios ADD COLUMN precio DECIMAL DEFAULT 15');
+    $pdo->exec("ALTER TABLE citas ADD COLUMN fecha_hora TEXT DEFAULT '2026-11-19 10:00:00'");
+    $pdo->exec('ALTER TABLE citas ADD COLUMN fecha_completada DATETIME');
+    $pdo->exec('ALTER TABLE citas ADD COLUMN notif_calificacion_enviada INTEGER DEFAULT 0');
+    $pdo->exec('ALTER TABLE citas ADD COLUMN servicios_adicionales_txt TEXT');
+    $pdo->exec('CREATE TABLE citas_servicios_adicionales (id INTEGER PRIMARY KEY, cita_id INTEGER, servicio_id INTEGER, nombre TEXT, precio DECIMAL)');
+    $pdo->exec('CREATE TABLE sucursales (id INTEGER PRIMARY KEY, nombre TEXT, direccion TEXT)');
+    $pdo->exec("INSERT INTO sucursales VALUES (1, 'Local 1', 'Dirección 1'), (2, 'Local 2', 'Dirección 2')");
+    $pdo->exec('CREATE TABLE notificaciones_pwa (id INTEGER PRIMARY KEY, cliente_id INTEGER, usuario_id INTEGER, cita_id INTEGER, titulo TEXT, mensaje TEXT, url TEXT, leido INTEGER, fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP)');
+    $pdo->exec('CREATE TABLE push_subscriptions (id INTEGER PRIMARY KEY, usuario_id INTEGER, cliente_id INTEGER, endpoint TEXT)');
     return $pdo;
 }
 
@@ -66,6 +79,7 @@ function comprobarCobroIntacto(PDO $pdo): void
     comprobarEndpoint((int) $pdo->query('SELECT puntos FROM clientes WHERE id = 1')->fetchColumn() === 0, 'Un cobro fallido otorgó puntos.');
     comprobarEndpoint((int) $pdo->query('SELECT SUM(cantidad) FROM inventario')->fetchColumn() === 16, 'Un cobro fallido consumió stock.');
     comprobarEndpoint((int) $pdo->query('SELECT COUNT(*) FROM ventas_productos')->fetchColumn() === 0, 'Un cobro fallido guardó ventas.');
+    comprobarEndpoint((int) $pdo->query('SELECT COUNT(*) FROM notificaciones_pwa')->fetchColumn() === 0, 'Un cobro fallido no debe enviar alertas.');
 }
 
 try {
@@ -88,7 +102,7 @@ try {
     $casos = [
         'Cobro completo y segundo envío sin duplicar puntos ni ventas' => function ($pdo, $db) use ($base) {
             $r = ejecutarEndpoint('citas_action.php', $base, $db);
-            comprobarEndpoint($r['success'], 'El cobro válido debe completarse.');
+            comprobarEndpoint($r['success'], 'El cobro válido debe completarse: ' . json_encode($r));
             comprobarEndpoint($pdo->query('SELECT estado FROM citas')->fetchColumn() === 'completada', 'Debe completar la cita.');
             comprobarEndpoint((int) $pdo->query('SELECT puntos FROM clientes')->fetchColumn() === 100, 'Debe sumar los puntos una vez.');
             comprobarEndpoint((float) $pdo->query('SELECT propina FROM citas')->fetchColumn() === 3.5, 'Debe conservar la propina.');
@@ -143,6 +157,31 @@ try {
                 comprobarCobroIntacto($pdo);
             }
         },
+        'Cobro conserva adicionales, descuento, recibo y programación de calificación' => function ($pdo, $db) use ($base) {
+            $pdo->exec("INSERT INTO servicios VALUES (2, 'Barba', 5.50)");
+            $r = ejecutarEndpoint('citas_action.php', array_replace($base, [
+                'servicios_adicionales' => [2], 'precios_materiales' => ['11.00']
+            ]), $db);
+            comprobarEndpoint($r['success'], 'Debe completar el cobro con adicionales y descuento.');
+            $recibo = $r['recibo'];
+            comprobarEndpoint((float) $recibo['total_servicios'] === 20.5, 'Debe sumar el servicio adicional.');
+            comprobarEndpoint((float) $recibo['total_productos'] === 22.0, 'Debe usar el precio rebajado de $11 por unidad.');
+            comprobarEndpoint((float) $recibo['total_a_cobrar'] === 46.0, 'Debe sumar servicios, productos y propina.');
+            comprobarEndpoint((float) $recibo['comision_barbero'] === 10.25, 'La comisión de servicios debe incluir el adicional.');
+            comprobarEndpoint((int) $pdo->query('SELECT usuario_id FROM ventas_productos')->fetchColumn() === 2, 'El producto debe acreditarse a recepción.');
+            comprobarEndpoint((bool) $pdo->query('SELECT fecha_completada FROM citas')->fetchColumn(), 'Debe conservar la fecha de finalización.');
+            comprobarEndpoint((int) $pdo->query('SELECT notif_calificacion_enviada FROM citas')->fetchColumn() === 0, 'La notificación a los 30 minutos debe quedar pendiente.');
+            $consulta = ejecutarEndpoint('citas_action.php', ['action' => 'get_recibo', 'id' => 42, 'ajax' => '1'], $db);
+            comprobarEndpoint($consulta['success'] && (float) $consulta['recibo']['total_a_cobrar'] === 46.0, 'La consulta posterior del recibo debe conservar el total.');
+        },
+        'Stock bajo alerta sólo a administración y barberos después de confirmar' => function ($pdo, $db) {
+            $r = ejecutarEndpoint('inventario_action.php', ['action' => 'sell', 'ajax' => '1', 'csrf_token' => 'token-pruebas',
+                'id' => 2, 'cantidad' => 1, 'precio_venta' => '6.50', 'vendedor_id' => 2], $db);
+            comprobarEndpoint($r['success'], 'Debe aceptar el formulario actual con action sell.');
+            $ids = array_map('intval', $pdo->query('SELECT usuario_id FROM notificaciones_pwa ORDER BY usuario_id')->fetchAll(PDO::FETCH_COLUMN));
+            comprobarEndpoint($ids === [1, 3], 'Recepción y clientes no deben recibir alertas de stock bajo.');
+            comprobarEndpoint((float) $pdo->query('SELECT precio_unitario FROM ventas_productos')->fetchColumn() === 6.5, 'Debe conservar el descuento del inventario.');
+        },
         'Inventario y dashboard registran ventas con el mismo criterio' => function ($pdo, $db) {
             foreach (['inventario_action.php', 'barbero_inventario_action.php'] as $api) {
                 $r = ejecutarEndpoint($api, ['action' => 'registrar_venta', 'ajax' => '1', 'csrf_token' => 'token-pruebas',
@@ -158,8 +197,11 @@ try {
         $db = $temporal . '/caso-' . (++$indice) . '.sqlite';
         $archivos[] = $db;
         $pdo = fixtureEndpoint($db);
-        $prueba($pdo, $db);
-        $pdo = null;
+        try {
+            $prueba($pdo, $db);
+        } finally {
+            $pdo = null;
+        }
         echo "OK: $nombre\n";
     }
     echo count($casos) . " pruebas de endpoints completadas.\n";

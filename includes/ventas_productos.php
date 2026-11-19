@@ -52,7 +52,7 @@ function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $opera
     }
     try {
         $operador = getOperadorVenta($pdo, $operadorId);
-        $stmt = $pdo->prepare('SELECT id, nombre, comision_productos FROM usuarios WHERE id = ? AND activo = 1 FOR UPDATE');
+        $stmt = $pdo->prepare('SELECT id, nombre, rol, comision_productos FROM usuarios WHERE id = ? AND activo = 1 FOR UPDATE');
         $stmt->execute([$vendedorId]);
         $vendedor = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$vendedor) {
@@ -60,8 +60,9 @@ function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $opera
         }
         $porcentaje = max(0, min(100, (float) ($vendedor['comision_productos'] ?? 0)));
 
-        // Consolidar productos repetidos y bloquear siempre en el mismo orden.
+        // Bloquear cada producto una sola vez; conservar líneas con precios diferentes.
         $cantidades = [];
+        $lineas = [];
         foreach ($items as $item) {
             if (!is_array($item)) {
                 throw new InvalidArgumentException('La lista de productos no es válida.');
@@ -71,15 +72,26 @@ function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $opera
             if (!$productoId || !$cantidad) {
                 throw new InvalidArgumentException('Selecciona productos y cantidades enteras mayores a cero.');
             }
+            $precio = $item['precio_unitario'] ?? null;
+            $clavePrecio = 'catalogo';
+            if ($precio !== null && $precio !== '') {
+                if (!is_numeric($precio) || !is_finite((float) $precio) || (float) $precio < 0 || (float) $precio > 99999999.99) {
+                    throw new InvalidArgumentException('El precio cobrado debe ser un importe válido mayor o igual a cero.');
+                }
+                $clavePrecio = number_format((float) $precio, 2, '.', '');
+            }
             $cantidades[$productoId] = ($cantidades[$productoId] ?? 0) + $cantidad;
+            $lineas[$productoId][$clavePrecio] = ($lineas[$productoId][$clavePrecio] ?? 0) + $cantidad;
         }
         ksort($cantidades);
-        $stock = $pdo->prepare('SELECT id, producto, cantidad, precio, sucursal_id FROM inventario WHERE id = ? FOR UPDATE');
+        $stock = $pdo->prepare('SELECT * FROM inventario WHERE id = ? FOR UPDATE');
         $descontar = $pdo->prepare('UPDATE inventario SET cantidad = cantidad - ? WHERE id = ? AND cantidad >= ?');
         $insertar = $pdo->prepare('INSERT INTO ventas_productos
             (cita_id, producto_id, cantidad, precio_unitario, sucursal_id, usuario_id, registrado_por, vendedor_nombre, comision_porcentaje)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        $total = 0;
+        $totalCentavos = 0;
+        $itemsRecibo = [];
+        $alertasStock = [];
         foreach ($cantidades as $productoId => $cantidad) {
             $stock->execute([$productoId]);
             $producto = $stock->fetch(PDO::FETCH_ASSOC);
@@ -101,18 +113,48 @@ function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $opera
             if ($descontar->rowCount() !== 1) {
                 throw new RuntimeException('El stock cambió. Actualiza el inventario e intenta nuevamente.');
             }
-            $insertar->execute([$citaId, $productoId, $cantidad, $producto['precio'], $sucursalId,
-                $vendedorId, $operadorId, $vendedor['nombre'], $porcentaje]);
-            $total += round($cantidad * (float) $producto['precio'], 2);
+            foreach ($lineas[$productoId] as $clavePrecio => $cantidadLinea) {
+                $precio = $clavePrecio === 'catalogo' ? $producto['precio'] : $clavePrecio;
+                $centavos = (int) round((float) $precio * 100);
+                $precio = $centavos / 100.0;
+                $subtotalCentavos = $cantidadLinea * $centavos;
+                $insertar->execute([$citaId, $productoId, $cantidadLinea, $precio, $sucursalId,
+                    $vendedorId, $operadorId, $vendedor['nombre'], $porcentaje]);
+                $totalCentavos += $subtotalCentavos;
+                $itemsRecibo[] = ['id' => $productoId, 'nombre' => $producto['producto'], 'cantidad' => $cantidadLinea,
+                    'precio_unitario' => $precio, 'total' => $subtotalCentavos / 100.0];
+            }
+            $restante = (int) $producto['cantidad'] - $cantidad;
+            $minimo = (float) ($producto['stock_minimo'] ?? 5);
+            if ($restante <= $minimo) {
+                $alertasStock[] = ['producto_id' => $productoId, 'cantidad' => $restante, 'stock_minimo' => $minimo];
+            }
         }
         if ($propia) {
             $pdo->commit();
         }
-        return ['vendedor_id' => $vendedorId, 'vendedor_nombre' => $vendedor['nombre'], 'total' => $total];
+        return ['vendedor_id' => $vendedorId, 'vendedor_nombre' => $vendedor['nombre'],
+            'barbero_id' => ($vendedor['rol'] === 'barbero' ? $vendedorId : null),
+            'total' => $totalCentavos / 100.0, 'items' => $itemsRecibo, 'alertas_stock' => $alertasStock];
     } catch (Throwable $e) {
         if ($propia && $pdo->inTransaction()) {
             $pdo->rollBack();
         }
         throw $e;
+    }
+}
+
+/** Enviar avisos después del commit para no anunciar operaciones que se revierten. */
+function notificarStockVentas(PDO $pdo, array $venta, ?int $barberoId = null): void
+{
+    if ($pdo->inTransaction()) return;
+    foreach ($venta['alertas_stock'] ?? [] as $alerta) {
+        try {
+            require_once __DIR__ . '/webpush_helper.php';
+            notificarStockBajo($pdo, $alerta['producto_id'], $alerta['cantidad'], $alerta['stock_minimo'],
+                $barberoId ?? ($venta['barbero_id'] ?? null));
+        } catch (Throwable $e) {
+            error_log('No se pudo notificar el stock bajo: ' . $e->getMessage());
+        }
     }
 }

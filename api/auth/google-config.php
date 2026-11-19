@@ -14,10 +14,10 @@
  *    - Nombre: KORTZEN Login
  *    - Orígenes autorizados de JavaScript:
  *      * http://localhost:2020 (desarrollo)
- *      * https://kortzenbrb.jiyanedesign.com (producción)
+ *      * https://kortzen.com (producción)
  *    - URIs de redirección autorizados:
  *      * http://localhost:2020/api/auth/google-callback.php (desarrollo)
- *      * https://kortzenbrb.jiyanedesign.com/api/auth/google-callback.php (producción)
+ *      * https://kortzen.com/api/auth/google-callback.php (producción)
  * 7. Copia el Client ID y Client Secret aquí abajo
  * ID: 287462075073-lmhplvlmgarkmgosqbo34oqco25esfn5.apps.googleusercontent.com
  * secret: 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
@@ -30,19 +30,17 @@
 define('GOOGLE_CLIENT_ID', '287462075073-lmhplvlmgarkmgosqbo34oqco25esfn5.apps.googleusercontent.com');
 define('GOOGLE_CLIENT_SECRET', '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');
 
-// URLs de redirección (ajusta según tu entorno)
-$isLocalhost = ($_SERVER['HTTP_HOST'] ?? '') === 'localhost:2020' ||
-    strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false;
+// URLs de redirección dinámicas (Multi-dominio automático)
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+        || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) 
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+$proto = $isHttps ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$detectedBaseUrl = $proto . $host;
+$siteBase = defined('SITE_URL') ? SITE_URL : $detectedBaseUrl;
 
-if ($isLocalhost) {
-    // Desarrollo local
-    define('GOOGLE_REDIRECT_URI', 'http://localhost:2020/api/auth/google-callback.php');
-    define('SITE_BASE_URL', 'http://localhost:2020');
-} else {
-    // Producción
-    define('GOOGLE_REDIRECT_URI', 'https://kortzen.com/api/auth/google-callback.php');
-    define('SITE_BASE_URL', 'https://kortzen.com');
-}
+define('GOOGLE_REDIRECT_URI', $siteBase . '/api/auth/google-callback.php');
+define('SITE_BASE_URL', $siteBase);
 
 // URLs de Google OAuth 2.0
 define('GOOGLE_AUTH_URL', 'https://accounts.google.com/o/oauth2/v2/auth');
@@ -59,10 +57,15 @@ define('GOOGLE_SCOPES', 'openid email profile');
  */
 function getGoogleAuthUrl($state = null)
 {
+    if (session_status() === PHP_SESSION_NONE) {
+        @session_start();
+    }
+
     if ($state === null) {
         $state = bin2hex(random_bytes(16));
-        $_SESSION['google_oauth_state'] = $state;
     }
+    
+    $_SESSION['google_oauth_state'] = $state;
 
     $params = [
         'client_id' => GOOGLE_CLIENT_ID,

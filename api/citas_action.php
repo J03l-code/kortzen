@@ -184,6 +184,27 @@ try {
 
             $fecha_hora = $fecha . ' ' . $hora . ':00';
 
+            // Validar si el barbero ya tiene citas activas en esta fecha
+            $diaSemCita = date('w', strtotime($fecha));
+            $stmtCitasCount = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE barbero_id = ? AND DATE(fecha_hora) = ? AND estado NOT IN ('cancelada', 'no_asistio')");
+            $stmtCitasCount->execute([$barbero_id, $fecha]);
+            $hasCitasOnDate = intval($stmtCitasCount->fetchColumn() ?? 0) > 0;
+
+            // Validar que el barbero no tenga el día desactivado en sus horarios (a menos que tenga citas)
+            $stmtHorDia = $pdo->prepare("SELECT activo FROM horarios_barberos WHERE barbero_id = ? AND dia_semana = ?");
+            $stmtHorDia->execute([$barbero_id, $diaSemCita]);
+            $horDia = $stmtHorDia->fetch(PDO::FETCH_ASSOC);
+            if ($horDia && intval($horDia['activo']) === 0 && !$hasCitasOnDate) {
+                throw new Exception('El barbero no trabaja este día. Selecciona otro día u otro barbero.');
+            }
+
+            // Validar que el día no esté bloqueado completo
+            $stmtBloqDia = $pdo->prepare("SELECT id FROM dias_bloqueados WHERE barbero_id = ? AND fecha = ? AND todo_el_dia = 1");
+            $stmtBloqDia->execute([$barbero_id, $fecha]);
+            if ($stmtBloqDia->fetch() && !$hasCitasOnDate) {
+                throw new Exception('El barbero tiene este día bloqueado. Selecciona otro día u otro barbero.');
+            }
+
             $sql = "INSERT INTO citas (cliente_id, servicio_id, barbero_id, sucursal_id, fecha_hora, estado, notas) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
@@ -327,16 +348,41 @@ try {
                 throw new Exception('ID inválido');
             }
 
-            if (!is_array($materiales) || !is_array($cantidades)) {
+            // Asegurar que las columnas y tablas necesarias existan
+            try {
+                $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
+            } catch (Exception $exP) {}
+
+            try {
+                $pdo->exec("ALTER TABLE citas ADD COLUMN servicios_adicionales_txt VARCHAR(255) NULL AFTER precio_final");
+            } catch (Exception $exSat) {}
+
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS citas_servicios_adicionales (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        cita_id INT UNSIGNED NOT NULL,
+                        servicio_id INT UNSIGNED NOT NULL,
+                        nombre VARCHAR(150) NOT NULL,
+                        precio DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_csa_cita (cita_id),
+                        INDEX idx_csa_servicio (servicio_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (Exception $exCsa) {}
+
+            $preciosMateriales = $_POST['precios_materiales'] ?? $_POST['precios_venta'] ?? [];
+            if (!is_array($materiales) || !is_array($cantidades) || !is_array($preciosMateriales)) {
                 throw new Exception('La lista de productos no es válida.');
             }
             $productosVenta = [];
             foreach ($materiales as $indice => $productoId) {
                 if ($productoId !== '') {
-                    $productosVenta[] = ['producto_id' => $productoId, 'cantidad' => $cantidades[$indice] ?? null];
+                    $productosVenta[] = ['producto_id' => $productoId, 'cantidad' => $cantidades[$indice] ?? null,
+                        'precio_unitario' => $preciosMateriales[$indice] ?? null];
                 }
             }
-
             $pdo->beginTransaction();
             $stmtCitaVenta = $pdo->prepare('SELECT sucursal_id, estado FROM citas WHERE id = ? FOR UPDATE');
             $stmtCitaVenta->execute([$id]);
@@ -345,14 +391,81 @@ try {
                 throw new Exception('La cita no existe, ya fue finalizada o está cancelada.');
             }
             validarSucursalVenta($pdo, getOperadorVenta($pdo, (int) $_SESSION['user_id']), (int) $citaVenta['sucursal_id']);
-            if ($productosVenta) {
-                registrarVentaProductos($pdo, $productosVenta, $_POST['vendedor_id'] ?? null,
-                    (int) $_SESSION['user_id'], $id, (int) $citaVenta['sucursal_id']);
+
+            // Cargar datos previos de la cita para cálculo de precio y comisiones
+            $stmtCitaBase = $pdo->prepare("
+                SELECT c.*, s.nombre as servicio_nombre, COALESCE(s.precio, 0.00) as servicio_precio,
+                       u.nombre as barbero_nombre, COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
+                       COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
+                       cl.nombre as cliente_nombre, cl.telefono as cliente_telefono
+                FROM citas c
+                LEFT JOIN servicios s ON c.servicio_id = s.id
+                LEFT JOIN usuarios u ON c.barbero_id = u.id
+                LEFT JOIN clientes cl ON c.cliente_id = cl.id
+                WHERE c.id = ?
+            ");
+            $stmtCitaBase->execute([$id]);
+            $citaBase = $stmtCitaBase->fetch(PDO::FETCH_ASSOC);
+            if (!$citaBase) {
+                throw new Exception('La cita no existe.');
             }
 
-            // Completar cita y otorgar puntos en la misma transacción que sus ventas.
-            $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', propina = ? WHERE id = ?");
-            $stmtComp->execute([$propina, $id]);
+            // Calcular precio base del servicio agendado
+            $precioBase = isset($_POST['precio_base']) && floatval($_POST['precio_base']) > 0
+                ? floatval($_POST['precio_base'])
+                : floatval($citaBase['servicio_precio'] > 0 ? $citaBase['servicio_precio'] : ($citaBase['precio_final'] ?? 0));
+
+            // Procesar servicios adicionales
+            $serviciosAdicionalesIds = $_POST['servicios_adicionales'] ?? [];
+            if (!is_array($serviciosAdicionalesIds)) {
+                $serviciosAdicionalesIds = [];
+            }
+
+            // Limpiar registros previos de servicios adicionales para esta cita (evitar duplicidad)
+            $stmtDelAdic = $pdo->prepare("DELETE FROM citas_servicios_adicionales WHERE cita_id = ?");
+            $stmtDelAdic->execute([$id]);
+
+            $sumaAdicionales = 0.00;
+            $nombresAdicionales = [];
+            $itemsAdicionales = [];
+
+            if (!empty($serviciosAdicionalesIds)) {
+                $stmtInsAdic = $pdo->prepare("INSERT INTO citas_servicios_adicionales (cita_id, servicio_id, nombre, precio) VALUES (?, ?, ?, ?)");
+                $stmtGetSrv = $pdo->prepare("SELECT id, nombre, precio FROM servicios WHERE id = ?");
+
+                foreach ($serviciosAdicionalesIds as $srvId) {
+                    $srvId = intval($srvId);
+                    if ($srvId > 0) {
+                        $stmtGetSrv->execute([$srvId]);
+                        $srvData = $stmtGetSrv->fetch(PDO::FETCH_ASSOC);
+                        if ($srvData) {
+                            $srvPrecio = floatval($srvData['precio']);
+                            $srvNombre = $srvData['nombre'];
+                            $stmtInsAdic->execute([$id, $srvId, $srvNombre, $srvPrecio]);
+                            $sumaAdicionales += $srvPrecio;
+                            $nombresAdicionales[] = $srvNombre . " ($" . number_format($srvPrecio, 2) . ")";
+                            $itemsAdicionales[] = [
+                                'id' => $srvId,
+                                'nombre' => $srvNombre,
+                                'precio' => $srvPrecio
+                            ];
+                        }
+                    }
+                }
+            }
+
+            $nuevoPrecioFinal = $precioBase + $sumaAdicionales;
+            $txtAdicionales = !empty($nombresAdicionales) ? implode(', ', $nombresAdicionales) : null;
+
+            // 1. Marcar completada con propina, precio_final actualizado, servicios adicionales y timestamp para notificación a los 30 min
+            try {
+                $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', fecha_completada = NOW(), notif_calificacion_enviada = 0, propina = ?, precio_final = ?, servicios_adicionales_txt = ? WHERE id = ?");
+                $stmtComp->execute([$propina, $nuevoPrecioFinal, $txtAdicionales, $id]);
+            } catch (Exception $eCompUpd) {
+                // Fallback por si las columnas están migrándose
+                $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', propina = ?, precio_final = ?, servicios_adicionales_txt = ? WHERE id = ?");
+                $stmtComp->execute([$propina, $nuevoPrecioFinal, $txtAdicionales, $id]);
+            }
 
             // Cargar puntos configurados
             $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
@@ -390,6 +503,17 @@ try {
                 }
             } catch (Exception $exRef) {}
 
+            // Registrar productos con vendedor y precio real, conservando los datos del comprobante.
+            $ventaProductos = null;
+            $itemsProductos = [];
+            $totalProductos = 0.00;
+            if ($productosVenta) {
+                $ventaProductos = registrarVentaProductos($pdo, $productosVenta, $_POST['vendedor_id'] ?? null,
+                    (int) $_SESSION['user_id'], $id, (int) $citaVenta['sucursal_id']);
+                $itemsProductos = $ventaProductos['items'];
+                $totalProductos = $ventaProductos['total'];
+            }
+
             $stmtCDetails = $pdo->prepare("
                 SELECT c.nombre as cliente_nombre, s.nombre as servicio_nombre, b.nombre as barbero_nombre, cita.precio_final
                 FROM citas cita
@@ -401,19 +525,291 @@ try {
             $stmtCDetails->execute([$id]);
             $cD = $stmtCDetails->fetch(PDO::FETCH_ASSOC);
             $pdo->commit();
+            if ($ventaProductos !== null) {
+                notificarStockVentas($pdo, $ventaProductos, (int) $citaBase['barbero_id']);
+            }
 
             $cNombre = $cD ? $cD['cliente_nombre'] : "Cita #$id";
             $sNombre = $cD ? $cD['servicio_nombre'] : "Servicio";
             $bNombre = $cD ? $cD['barbero_nombre'] : "Barbero";
             $precioVal = number_format(floatval($cD['precio_final'] ?? 0), 2);
 
-            registrarLog('COMPLETAR', 'citas', $id, "Cita #$id finalizada para el cliente '$cNombre' (Servicio: '$sNombre', Barbero: '$bNombre', Valor: $$precioVal, Propina: $$propina, +$puntosPorCorte pts ganados)");
+            $esFinde = in_array(date('w', strtotime($citaBase['fecha_hora'])), [0, 6]);
+            $comPct = $esFinde 
+                ? floatval($citaBase['barbero_comision_finde'] ?? ($citaBase['barbero_comision'] ?? 50.0))
+                : floatval($citaBase['barbero_comision'] ?? 50.0);
+            $comisionTotalBarbero = ($nuevoPrecioFinal * $comPct / 100);
+
+            $totalCobrarFinal = $nuevoPrecioFinal + $totalProductos + $propina;
+            $detalleAdicLog = !empty($txtAdicionales) ? " + Adicionales: [$txtAdicionales]" : "";
+            $detalleProdLog = ($totalProductos > 0) ? " + Productos: $" . number_format($totalProductos, 2) : "";
+            registrarLog('COMPLETAR', 'citas', $id, "Cita #$id finalizada para el cliente '$cNombre' (Servicio: '$sNombre'$detalleAdicLog$detalleProdLog, Barbero: '$bNombre', Servicios: $$precioVal, Productos: $$totalProductos, Comisión Barbero ({$comPct}%): $$comisionTotalBarbero, Propina: $$propina, Total Pagado: $$totalCobrarFinal, +$puntosPorCorte pts ganados)");
 
             $msgOk = 'Cita completada con éxito.';
             if ($propina > 0) {
                 $msgOk .= ' Propina registrada para el barbero: $' . number_format($propina, 2);
             }
-            responderAccionCita($isAjax, $redirect_url, $msgOk, ['cita_id' => $id, 'propina' => $propina]);
+
+            $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+            $hostActual = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            $linkCalificar = "{$protocolo}://{$hostActual}/calificar.php?c={$id}";
+
+            $clienteNombreCorto = !empty($cNombre) ? explode(' ', trim($cNombre))[0] : 'Cliente';
+            $waMsgCalificar = "¡Hola {$clienteNombreCorto}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con {$bNombre}? Déjanos tu calificación de 1 a 5 estrellas y apóyanos con tu reseña en Google aquí: {$linkCalificar}";
+            $rawPhone = $cD['cliente_telefono'] ?? ($citaBase['cliente_telefono'] ?? '');
+            $telLimpio = preg_replace('/[^0-9]/', '', $rawPhone);
+            if (!empty($telLimpio) && strlen($telLimpio) === 10 && substr($telLimpio, 0, 1) === '0') {
+                $telLimpio = '593' . substr($telLimpio, 1);
+            }
+            $waUrlCalificar = !empty($telLimpio)
+                ? "https://wa.me/{$telLimpio}?text=" . rawurlencode($waMsgCalificar)
+                : "https://wa.me/?text=" . rawurlencode($waMsgCalificar);
+
+            // Nota: La notificación Push al cliente queda programada para enviarse automáticamente
+            // a los 30 minutos de finalizada la cita mediante el cron / procesador en segundo plano.
+
+            $reciboData = [
+                'cita_id' => $id,
+                'fecha_hora' => $citaBase['fecha_hora'],
+                'fecha_hora_formateada' => date('d/m/Y H:i', strtotime($citaBase['fecha_hora'])),
+                'cliente_nombre' => $cNombre,
+                'cliente_telefono' => $rawPhone,
+                'barbero_nombre' => $bNombre,
+                'servicio_principal' => $sNombre,
+                'precio_principal' => $precioBase,
+                'servicios_adicionales' => $itemsAdicionales,
+                'suma_adicionales' => $sumaAdicionales,
+                'total_servicios' => $nuevoPrecioFinal,
+                'productos' => $itemsProductos,
+                'total_productos' => $totalProductos,
+                'propina' => $propina,
+                'total_a_cobrar' => $totalCobrarFinal,
+                'total_pagado' => $totalCobrarFinal,
+                'comision_porcentaje' => $comPct,
+                'comision_barbero' => $comisionTotalBarbero,
+                'ganancia_neta_negocio' => $nuevoPrecioFinal - $comisionTotalBarbero,
+                'link_calificar' => $linkCalificar,
+                'wa_msg_calificar' => $waMsgCalificar,
+                'wa_url_calificar' => $waUrlCalificar
+            ];
+
+            responderAccionCita($isAjax, $redirect_url, $msgOk, [
+                'cita_id' => $id,
+                'propina' => $propina,
+                'nuevo_precio_final' => $nuevoPrecioFinal,
+                'total_productos' => $totalProductos,
+                'total_pagado' => $totalCobrarFinal,
+                'link_calificar' => $linkCalificar,
+                'wa_url_calificar' => $waUrlCalificar,
+                'recibo' => $reciboData
+            ]);
+
+        case 'get_recibo':
+            $id = intval($_GET['id'] ?? $_POST['id'] ?? 0);
+            if ($id <= 0) {
+                throw new Exception('ID de cita inválido.');
+            }
+
+            $stmtR = $pdo->prepare("
+                SELECT c.*, 
+                       cl.nombre as cliente_nombre, cl.telefono as cliente_telefono,
+                       s.nombre as servicio_nombre, COALESCE(s.precio, 0.00) as servicio_precio,
+                       u.nombre as barbero_nombre, COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
+                       COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
+                       su.nombre as sucursal_nombre, su.direccion as sucursal_direccion
+                FROM citas c
+                LEFT JOIN clientes cl ON c.cliente_id = cl.id
+                LEFT JOIN servicios s ON c.servicio_id = s.id
+                LEFT JOIN usuarios u ON c.barbero_id = u.id
+                LEFT JOIN sucursales su ON c.sucursal_id = su.id
+                WHERE c.id = ?
+            ");
+            $stmtR->execute([$id]);
+            $citaR = $stmtR->fetch(PDO::FETCH_ASSOC);
+            if (!$citaR) {
+                throw new Exception('La cita no existe.');
+            }
+
+            // Obtener adicionales de la tabla de servicios adicionales
+            $stmtAd = $pdo->prepare("SELECT id, servicio_id, nombre, precio FROM citas_servicios_adicionales WHERE cita_id = ? ORDER BY id ASC");
+            $stmtAd->execute([$id]);
+            $adicionales = $stmtAd->fetchAll(PDO::FETCH_ASSOC);
+
+            $sumaAdic = 0.00;
+            foreach ($adicionales as $ad) {
+                $sumaAdic += floatval($ad['precio']);
+            }
+
+            $precioFinal = floatval($citaR['precio_final'] > 0 ? $citaR['precio_final'] : ($citaR['servicio_precio'] + $sumaAdic));
+            $precioBase = floatval($citaR['servicio_precio']);
+            if ($precioFinal > $sumaAdic && $precioBase == 0) {
+                $precioBase = $precioFinal - $sumaAdic;
+            }
+
+            // Obtener productos asociados a la cita de ventas_productos
+            $stmtProd = $pdo->prepare("
+                SELECT vp.producto_id, vp.cantidad, vp.precio_unitario, i.producto as producto_nombre
+                FROM ventas_productos vp
+                LEFT JOIN inventario i ON vp.producto_id = i.id
+                WHERE vp.cita_id = ?
+                ORDER BY vp.id ASC
+            ");
+            $stmtProd->execute([$id]);
+            $prods = $stmtProd->fetchAll(PDO::FETCH_ASSOC);
+
+            $itemsProductos = [];
+            $totalProductos = 0.00;
+            foreach ($prods as $p) {
+                $cantP = floatval($p['cantidad']);
+                $precP = floatval($p['precio_unitario']);
+                $subtotalP = $cantP * $precP;
+                $totalProductos += $subtotalP;
+                $itemsProductos[] = [
+                    'id' => $p['producto_id'],
+                    'nombre' => $p['producto_nombre'] ?? 'Producto',
+                    'cantidad' => $cantP,
+                    'precio_unitario' => $precP,
+                    'total' => $subtotalP
+                ];
+            }
+
+            $propina = floatval($citaR['propina'] ?? 0.00);
+            $totalCobrar = $precioFinal + $totalProductos + $propina;
+            $esFinde = in_array(date('w', strtotime($citaR['fecha_hora'])), [0, 6]);
+            $comPct = $esFinde ? floatval($citaR['barbero_comision_finde']) : floatval($citaR['barbero_comision']);
+            $comisionBarbero = ($precioFinal * $comPct / 100);
+
+            $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+            $hostActual = $_SERVER['HTTP_HOST'] ?? 'kortzen.com';
+            $linkCalificar = "{$protocolo}://{$hostActual}/calificar.php?c={$id}";
+
+            $cliNomCorto = !empty($citaR['cliente_nombre']) ? explode(' ', trim($citaR['cliente_nombre']))[0] : 'Cliente';
+            $barbNom = $citaR['barbero_nombre'] ?? 'Barbero';
+            $waMsgCalificar = "¡Hola {$cliNomCorto}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con {$barbNom}? Déjanos tu calificación de 1 a 5 estrellas y apóyanos con tu reseña en Google aquí: {$linkCalificar}";
+            $rawPhoneR = $citaR['cliente_telefono'] ?? '';
+            $telLimpioR = preg_replace('/[^0-9]/', '', $rawPhoneR);
+            if (!empty($telLimpioR) && strlen($telLimpioR) === 10 && substr($telLimpioR, 0, 1) === '0') {
+                $telLimpioR = '593' . substr($telLimpioR, 1);
+            }
+            $waUrlCalificar = !empty($telLimpioR)
+                ? "https://wa.me/{$telLimpioR}?text=" . rawurlencode($waMsgCalificar)
+                : "https://wa.me/?text=" . rawurlencode($waMsgCalificar);
+
+            responderAccionCita(true, '', 'Recibo obtenido con éxito.', [
+                'recibo' => [
+                    'cita_id' => $id,
+                    'fecha_hora' => $citaR['fecha_hora'],
+                    'fecha_hora_formateada' => date('d/m/Y H:i', strtotime($citaR['fecha_hora'])),
+                    'sucursal_nombre' => $citaR['sucursal_nombre'] ?? 'Kortzen Barbería',
+                    'sucursal_direccion' => $citaR['sucursal_direccion'] ?? '',
+                    'cliente_nombre' => $citaR['cliente_nombre'] ?? 'Cliente',
+                    'cliente_telefono' => $citaR['cliente_telefono'] ?? '',
+                    'barbero_nombre' => $citaR['barbero_nombre'] ?? 'Barbero',
+                    'servicio_principal' => $citaR['servicio_nombre'] ?? 'Corte',
+                    'precio_principal' => $precioBase,
+                    'servicios_adicionales' => $adicionales,
+                    'suma_adicionales' => $sumaAdic,
+                    'total_servicios' => $precioFinal,
+                    'productos' => $itemsProductos,
+                    'total_productos' => $totalProductos,
+                    'propina' => $propina,
+                    'total_a_cobrar' => $totalCobrar,
+                    'total_pagado' => $totalCobrar,
+                    'comision_porcentaje' => $comPct,
+                    'comision_barbero' => $comisionBarbero,
+                    'ganancia_neta_negocio' => $precioFinal - $comisionBarbero,
+                    'link_calificar' => $linkCalificar,
+                    'wa_msg_calificar' => $waMsgCalificar,
+                    'wa_url_calificar' => $waUrlCalificar
+                ]
+            ]);
+            break;
+
+        case 'marcar_no_asistio':
+            $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
+            if ($id <= 0) {
+                throw new Exception('ID de cita inválido.');
+            }
+
+            // Obtener cita
+            $stmtC = $pdo->prepare("
+                SELECT c.*, cli.nombre as cliente_nombre, u.nombre as barbero_nombre, s.nombre as servicio_nombre
+                FROM citas c
+                LEFT JOIN clientes cli ON c.cliente_id = cli.id
+                LEFT JOIN usuarios u ON c.barbero_id = u.id
+                LEFT JOIN servicios s ON c.servicio_id = s.id
+                WHERE c.id = ?
+            ");
+            $stmtC->execute([$id]);
+            $citaRow = $stmtC->fetch(PDO::FETCH_ASSOC);
+            if (!$citaRow) {
+                throw new Exception('La cita no existe.');
+            }
+
+            // Validar RBAC: el barbero asignado o cualquier administrador
+            $userRol = $_SESSION['user_rol'] ?? '';
+            $userId = intval($_SESSION['user_id'] ?? 0);
+            $userSucursal = intval($_SESSION['user_sucursal_id'] ?? 0);
+
+            if ($userRol === 'barbero' && intval($citaRow['barbero_id']) !== $userId) {
+                throw new Exception('Acceso denegado: Solo puedes reportar inasistencia en tus propias citas.');
+            }
+            if ($userRol === 'admin_local' && $userSucursal > 0 && intval($citaRow['sucursal_id']) !== $userSucursal) {
+                throw new Exception('Acceso denegado: Esta cita pertenece a otra sucursal.');
+            }
+
+            // Auto-migración segura
+            try {
+                $pdo->exec("ALTER TABLE citas MODIFY COLUMN estado ENUM('pendiente', 'confirmada', 'en_atencion', 'completada', 'cancelada', 'no_asistio') NOT NULL DEFAULT 'pendiente'");
+            } catch (Throwable $eEnum) {
+                try {
+                    $pdo->exec("ALTER TABLE citas MODIFY COLUMN estado VARCHAR(50) NOT NULL DEFAULT 'pendiente'");
+                } catch (Throwable $eVar) {}
+            }
+
+            // Actualizar estado a no_asistio y asistencia_confirmada a 0
+            $stmtUpd = $pdo->prepare("UPDATE citas SET estado = 'no_asistio', asistencia_confirmada = 0 WHERE id = ?");
+            $stmtUpd->execute([$id]);
+
+            $cliNombre = $citaRow['cliente_nombre'] ?? 'Cliente';
+            $horaLegible = date('d/m/Y H:i', strtotime($citaRow['fecha_hora']));
+            registrarLog('NO_ASISTIO', 'citas', $id, "Cita #$id ($horaLegible) marcada como 'NO ASISTIÓ' para el cliente '$cliNombre'");
+
+            responderAccionCita($isAjax, $redirect_url, 'Cita registrada como No Asistió correctamente.', [
+                'cita_id' => $id,
+                'estado' => 'no_asistio',
+                'estado_label' => 'NO ASISTIÓ'
+            ]);
+            break;
+
+        case 'revertir_no_asistio':
+            $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
+            if ($id <= 0) {
+                throw new Exception('ID de cita inválido.');
+            }
+
+            $stmtC = $pdo->prepare("SELECT * FROM citas WHERE id = ?");
+            $stmtC->execute([$id]);
+            $citaRow = $stmtC->fetch(PDO::FETCH_ASSOC);
+            if (!$citaRow) throw new Exception('La cita no existe.');
+
+            $userRol = $_SESSION['user_rol'] ?? '';
+            $userId = intval($_SESSION['user_id'] ?? 0);
+            if ($userRol === 'barbero' && intval($citaRow['barbero_id']) !== $userId) {
+                throw new Exception('Acceso denegado.');
+            }
+
+            $stmtUpd = $pdo->prepare("UPDATE citas SET estado = 'confirmada', asistencia_confirmada = 1 WHERE id = ?");
+            $stmtUpd->execute([$id]);
+
+            registrarLog('REVERTIR_NO_ASISTIO', 'citas', $id, "Inasistencia de cita #$id revertida a 'confirmada'");
+
+            responderAccionCita($isAjax, $redirect_url, 'Inasistencia revertida a confirmada.', [
+                'cita_id' => $id,
+                'estado' => 'confirmada',
+                'estado_label' => 'ASISTENCIA CONFIRMADA'
+            ]);
+            break;
 
         case 'cambiar_estado':
             $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
@@ -421,7 +817,7 @@ try {
             $propina = floatval($_POST['propina'] ?? 0.00);
             if ($propina < 0) $propina = 0.00;
 
-            $validEstados = ['pendiente', 'confirmada', 'en_atencion', 'completada', 'cancelada'];
+            $validEstados = ['pendiente', 'confirmada', 'en_atencion', 'completada', 'cancelada', 'no_asistio'];
 
             if ($id <= 0 || !in_array($nuevoEstado, $validEstados)) {
                 throw new Exception('Parámetros de cita o estado inválidos.');
@@ -473,6 +869,10 @@ try {
             } elseif ($nuevoEstado === 'confirmada') {
                 // Si el admin marca como Confirmada, marcar asistencia_confirmada = 1
                 $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = 'confirmada', asistencia_confirmada = 1 WHERE id = ?");
+                $stmtUpdate->execute([$id]);
+            } elseif ($nuevoEstado === 'no_asistio') {
+                // Inasistencia: asistencia_confirmada = 0
+                $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = 'no_asistio', asistencia_confirmada = 0 WHERE id = ?");
                 $stmtUpdate->execute([$id]);
             } else {
                 $stmtUpdate = $pdo->prepare("UPDATE citas SET estado = ? WHERE id = ?");

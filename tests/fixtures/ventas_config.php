@@ -28,10 +28,14 @@ function getConnection(): PDO
 {
     static $pdo;
     global $peticionTest;
-    return $pdo ??= new VentasEndpointTestPDO('sqlite:' . $peticionTest['db'], null, null, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
+    if (!$pdo) {
+        $pdo = new VentasEndpointTestPDO('sqlite:' . $peticionTest['db'], null, null, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        $pdo->sqliteCreateFunction('NOW', fn () => date('Y-m-d H:i:s'));
+    }
+    return $pdo;
 }
 function isLoggedIn(): bool { return !empty($_SESSION['user_id']); }
 function getCurrentUser() { return query('SELECT * FROM usuarios WHERE id = ?', [$_SESSION['user_id']])[0] ?? null; }

@@ -64,25 +64,6 @@ try {
     $columns = $ensureInventarioSchema();
 
     switch ($action) {
-        case 'registrar_venta':
-            if (!is_string($_POST['csrf_token'] ?? null) || !verifyCSRFToken($_POST['csrf_token'])) {
-                throw new Exception('La sesión del formulario expiró. Actualiza la página.');
-            }
-            $venta = registrarVentaProductos($pdo, [[
-                'producto_id' => $_POST['producto_id'] ?? null,
-                'cantidad' => $_POST['cantidad'] ?? null
-            ]], $_POST['vendedor_id'] ?? null, (int) $_SESSION['user_id']);
-            registrarLog('VENDER', 'inventario', (int) $_POST['producto_id'],
-                'Venta acreditada a ' . $venta['vendedor_nombre'] . ' (#' . $venta['vendedor_id'] . ')');
-            $mensaje = 'Venta registrada a nombre de ' . $venta['vendedor_nombre'] . '.';
-            if ($isJson) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'message' => $mensaje]);
-                exit;
-            }
-            header('Location: ../inventario.php?success=' . urlencode($mensaje));
-            exit;
-
         case 'withdraw':
             $id = intval($_POST['id'] ?? 0);
             $cantidad = intval($_POST['cantidad'] ?? 0);
@@ -113,8 +94,44 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$cantidad, $id]);
 
+            // Alerta Stock Bajo a Barberos y Administradores
+            try {
+                $stmtStk = $pdo->prepare("SELECT cantidad, stock_minimo FROM inventario WHERE id = ?");
+                $stmtStk->execute([$id]);
+                $rStk = $stmtStk->fetch(PDO::FETCH_ASSOC);
+                if ($rStk && floatval($rStk['cantidad']) <= floatval($rStk['stock_minimo'])) {
+                    require_once __DIR__ . '/../includes/webpush_helper.php';
+                    if (function_exists('notificarStockBajo')) {
+                        notificarStockBajo($pdo, $id, $rStk['cantidad'], $rStk['stock_minimo'], $_SESSION['user_id'] ?? null);
+                    }
+                }
+            } catch (Exception $eStk) {}
+
             registrarLog('RETIRAR', 'inventario', $id, "Se retiraron $cantidad unidades de '$productName'");
             header('Location: ../inventario.php?success=' . urlencode("Se retiraron {$cantidad} unidades de '{$productName}' exitosamente"));
+            exit;
+
+        case 'sell':
+        case 'registrar_venta':
+            if (!is_string($_POST['csrf_token'] ?? null) || !verifyCSRFToken($_POST['csrf_token'])) {
+                throw new Exception('La sesión del formulario expiró. Actualiza la página.');
+            }
+            $productoVentaId = $_POST['producto_id'] ?? $_POST['id'] ?? null;
+            $venta = registrarVentaProductos($pdo, [[
+                'producto_id' => $productoVentaId,
+                'cantidad' => $_POST['cantidad'] ?? null,
+                'precio_unitario' => $_POST['precio_venta'] ?? $_POST['precio_cobrado'] ?? null
+            ]], $_POST['vendedor_id'] ?? null, (int) $_SESSION['user_id']);
+            notificarStockVentas($pdo, $venta);
+            registrarLog('VENTA', 'inventario', (int) $productoVentaId,
+                'Venta acreditada a ' . $venta['vendedor_nombre'] . ' (#' . $venta['vendedor_id'] . ') por $' . number_format($venta['total'], 2));
+            $mensaje = 'Venta registrada a nombre de ' . $venta['vendedor_nombre'] . ' por $' . number_format($venta['total'], 2) . '.';
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => $mensaje]);
+                exit;
+            }
+            header('Location: ../inventario.php?success=' . urlencode($mensaje));
             exit;
 
         case 'create':

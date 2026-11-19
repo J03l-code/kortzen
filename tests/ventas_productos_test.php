@@ -169,6 +169,25 @@ $pruebas = [
         comprobarVenta((float) $porUsuario[1]['comision'] === 0.0, 'La atribución histórica del administrador no debe reinterpretarse como comisión nueva.');
         comprobarVenta(str_contains($html, 'Sammy Pérez') && str_contains($html, 'Mishell Ruiz'), 'El resumen debe mostrar nombres completos.');
     },
+    'Descuentos y líneas del mismo producto con precios distintos se conservan' => function () {
+        $pdo = fixtureVentas();
+        $r = registrarVentaProductos($pdo, [
+            ['producto_id' => 1, 'cantidad' => 2, 'precio_unitario' => '11.00'],
+            ['producto_id' => 1, 'cantidad' => 1, 'precio_unitario' => '9.50']
+        ], 2, 1);
+        comprobarVenta($r['total'] === 31.5 && count($r['items']) === 2, 'Debe conservar ambos precios y su total real.');
+        comprobarVenta((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 1')->fetchColumn() === 7, 'Debe descontar el total de unidades.');
+        comprobarVenta((float) $pdo->query('SELECT SUM(cantidad * precio_unitario) FROM ventas_productos')->fetchColumn() === 31.5, 'El comprobante y la BD deben coincidir.');
+    },
+    'Precio cero es válido y precios negativos o malformados no consumen stock' => function () {
+        $pdo = fixtureVentas();
+        $r = registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1, 'precio_unitario' => '0.00']], 2, 1);
+        comprobarVenta($r['total'] === 0.0, 'Un descuento total debe conservar el precio cero.');
+        foreach ([-1, 'incorrecto', [], '1e309', '100000000.00'] as $precio) {
+            rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1, 'precio_unitario' => $precio]], 2, 1));
+        }
+        comprobarVenta((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 1')->fetchColumn() === 9, 'Las solicitudes inválidas no deben consumir stock.');
+    },
     'Un error de persistencia revierte el descuento de stock' => function () {
         $pdo = fixtureVentas();
         $pdo->exec("CREATE TRIGGER fallo_venta BEFORE INSERT ON ventas_productos BEGIN SELECT RAISE(ABORT, 'Fallo de escritura'); END");

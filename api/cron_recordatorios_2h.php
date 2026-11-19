@@ -216,12 +216,20 @@ try {
         ];
     }
 
+    // Procesar notificaciones de calificación y reseña en Google (30 min después de finalizar cita)
+    require_once __DIR__ . '/../includes/webpush_helper.php';
+    $resultadoCalificacion = ['procesadas' => 0, 'enviadas' => 0];
+    if (function_exists('procesarNotificacionesCalificacion30min')) {
+        $resultadoCalificacion = procesarNotificacionesCalificacion30min($pdo, 20, $testCitaId ?: null);
+    }
+
     echo json_encode([
         'success' => true,
         'modo' => $isTest ? 'PRUEBA MANUAL (?test=1)' : 'AUTOMÁTICO (CRON)',
         'citas_procesadas' => count($citasPendientes),
         'emails_enviados' => $enviadosEmail,
         'push_disparados' => $enviadosPush,
+        'calificaciones_30min' => $resultadoCalificacion,
         'detalles' => $detallesResumen,
         'timestamp' => date('Y-m-d H:i:s')
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

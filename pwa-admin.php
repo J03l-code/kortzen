@@ -484,6 +484,30 @@ try {
 }
 try {
     $serviciosList = query("SELECT s.*, cs.nombre as categoria_nombre FROM servicios s LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre ORDER BY COALESCE(s.orden, 999) ASC, s.categoria ASC, s.nombre ASC");
+
+    // Mapear relaciones de sucursales y barberos para edición completa
+    $srvSucursalMap = [];
+    try {
+        $ssRows = query("SELECT servicio_id, sucursal_id FROM servicios_sucursales");
+        foreach ($ssRows as $r) {
+            $srvSucursalMap[$r['servicio_id']][] = intval($r['sucursal_id']);
+        }
+    } catch (Exception $eSS) {}
+
+    $srvBarberoMap = [];
+    try {
+        $sbRows = query("SELECT servicio_id, barbero_id FROM servicios_barberos");
+        foreach ($sbRows as $r) {
+            $srvBarberoMap[$r['servicio_id']][] = intval($r['barbero_id']);
+        }
+    } catch (Exception $eSB) {}
+
+    foreach ($serviciosList as &$srv) {
+        $sId = $srv['id'];
+        $srv['sucursales_ids'] = $srvSucursalMap[$sId] ?? (!empty($srv['sucursal_id']) ? [intval($srv['sucursal_id'])] : []);
+        $srv['barberos_ids'] = $srvBarberoMap[$sId] ?? (!empty($srv['barbero_id']) ? [intval($srv['barbero_id'])] : []);
+    }
+    unset($srv);
 } catch (Exception $e) {
     $serviciosList = [];
 }
@@ -579,11 +603,15 @@ try {
             COALESCE(s.duracion_minutos, 45) as duracion_minutos,
             u.nombre as barbero_nombre,
             COALESCE(u.foto_url, '') as barbero_foto,
+            COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
+            COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
             su.nombre as sucursal_nombre,
             ref.codigo_usado as referido_codigo,
             ref.descuento_aplicado as referido_descuento,
             ref.referente_id,
-            ref_cli.nombre as referente_nombre
+            ref_cli.nombre as referente_nombre,
+            COALESCE((SELECT SUM(vp.cantidad * vp.precio_unitario) FROM ventas_productos vp WHERE vp.cita_id = c.id), 0.00) as total_productos,
+            COALESCE((SELECT GROUP_CONCAT(CONCAT(i.producto, ' (x', vp.cantidad, ')') SEPARATOR ', ') FROM ventas_productos vp JOIN inventario i ON vp.producto_id = i.id WHERE vp.cita_id = c.id), '') as productos_vendidos_txt
             FROM citas c
             INNER JOIN clientes cl ON c.cliente_id = cl.id
             INNER JOIN servicios s ON c.servicio_id = s.id
@@ -596,7 +624,7 @@ try {
         $inSucAll = implode(',', array_map('intval', $scopedBranchIds));
         $sqlCitasAll .= " AND c.sucursal_id IN ($inSucAll)";
     }
-    $sqlCitasAll .= " ORDER BY c.fecha_hora DESC LIMIT 200";
+    $sqlCitasAll .= " ORDER BY c.fecha_hora DESC LIMIT 1000";
     $citasList = query($sqlCitasAll);
 } catch (Exception $e) {
     $citasList = [];
@@ -1727,6 +1755,28 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
             </div>
         </div>
 
+        <?php if (!empty($lowStock)): ?>
+            <!-- Banner Proactivo de Stock Bajo para Administradores -->
+            <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);" onclick="cambiarVistaPwa('inventario')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 900; font-size: 0.86rem; color: #DC2626;">Alerta de Stock Bajo (<?php echo count($lowStock); ?> productos)</div>
+                        <div style="font-size: 0.74rem; color: #7F1D1D; margin-top: 2px;">
+                            <?php 
+                            $nombresBajos = array_map(function($p) { return htmlspecialchars($p['producto']) . " (" . $p['cantidad'] . ")"; }, array_slice($lowStock, 0, 3));
+                            echo implode(', ', $nombresBajos);
+                            if (count($lowStock) > 3) echo ' y más...';
+                            ?>
+                        </div>
+                    </div>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #DC2626; text-decoration: underline; white-space: nowrap;">Revisar →</span>
+            </div>
+        <?php endif; ?>
+
         <!-- 8 Cuadros de Métricas al Principio -->
         <div class="pwa-kpi-grid">
             <!-- 1. Venta Total Hoy -->
@@ -1893,7 +1943,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <?php foreach ($agendaGlobal as $cg): 
                         $horaStr = date('H:i', strtotime($cg['fecha_hora']));
-                        $telLimpio = preg_replace('/\D/', '', $cg['telefono'] ?? '');
+                        $telLimpio = formatPhoneForWhatsapp($cg['telefono'] ?? '');
                     ?>
                         <div style="background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 10px; padding: 12px;">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
@@ -1920,7 +1970,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                                         <a href="https://wa.me/<?php echo $telLimpio; ?>?text=<?php echo urlencode('Hola ' . explode(' ', $cg['cliente'])[0] . ', te escribo de Kortzen sobre tu cita.'); ?>" target="_blank" style="background: #25D366; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.85rem;">
                                             <i class="fab fa-whatsapp"></i>
                                         </a>
-                                        <a href="tel:<?php echo $telLimpio; ?>" style="background: #111; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.8rem;">
+                                        <a href="tel:<?php echo htmlspecialchars($cg['telefono'] ?? ''); ?>" style="background: #111; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.8rem;">
                                             <i class="fas fa-phone"></i>
                                         </a>
                                     <?php endif; ?>
@@ -1928,10 +1978,9 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
 
                                 <div style="display: flex; gap: 6px; align-items: center;">
                                     <select id="select_estado_overview_<?php echo $cg['id']; ?>" style="padding: 5px 8px; border-radius: 6px; font-weight: 700; font-size: 0.72rem; border: 1px solid #CCC; background: #FFF;">
-                                        <option value="pendiente" <?php echo $cg['estado'] === 'pendiente' ? 'selected' : ''; ?>>Pendiente</option>
                                         <option value="confirmada" <?php echo $cg['estado'] === 'confirmada' ? 'selected' : ''; ?>>Confirmada</option>
-                                        <option value="en_atencion" <?php echo $cg['estado'] === 'en_atencion' ? 'selected' : ''; ?>>En Atención</option>
                                         <option value="completada" <?php echo $cg['estado'] === 'completada' ? 'selected' : ''; ?>>Completada</option>
+                                        <option value="no_asistio" <?php echo $cg['estado'] === 'no_asistio' ? 'selected' : ''; ?>>No Asistió</option>
                                         <option value="cancelada" <?php echo $cg['estado'] === 'cancelada' ? 'selected' : ''; ?>>Cancelada</option>
                                     </select>
                                     <button type="button" onclick="guardarEstadoOverviewPwa(<?php echo $cg['id']; ?>)" style="background: #111; color: #FFF; border: none; padding: 5px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; cursor: pointer;">
@@ -2120,24 +2169,22 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 <!-- Filtro Estado -->
                 <select id="pwaFiltroCitasEstado" onchange="filtrarCitasPwa()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
                     <option value="">Todos los estados</option>
-                    <option value="pendiente">Pendiente</option>
                     <option value="confirmada">Confirmada</option>
-                    <option value="en_atencion">En Atención</option>
                     <option value="completada">Completada</option>
                     <option value="cancelada">Cancelada</option>
                 </select>
 
-                <!-- Filtro Fecha -->
-                <input type="date" id="pwaFiltroCitasFecha" onchange="filtrarCitasPwa()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700;">
+                <!-- Filtro Fecha (Por defecto HOY) -->
+                <input type="date" id="pwaFiltroCitasFecha" value="<?php echo date('Y-m-d'); ?>" onchange="actualizarEstadoBotonHoyPwa(); filtrarCitasPwa();" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700;">
             </div>
 
-            <!-- Botones Rápidos: Cortes de Hoy / Limpiar -->
+            <!-- Botones Rápidos: Citas de Hoy / Limpiar -->
             <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
-                <button type="button" id="btnToggleHoyCitas" onclick="toggleFiltroHoyCitasPwa()" class="pwa-btn-secondary" style="font-size: 0.78rem; padding: 7px 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; border-radius: 8px; background: #F3F4F6; color: #111;">
-                    <i class="far fa-calendar"></i> <span id="txtBtnHoyCitas">Cortes de Hoy</span>
+                <button type="button" id="btnToggleHoyCitas" onclick="toggleFiltroHoyCitasPwa()" class="pwa-btn-secondary" style="font-size: 0.78rem; padding: 7px 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; border-radius: 8px; background: #111; color: #FFF;">
+                    <i class="far fa-calendar"></i> <span id="txtBtnHoyCitas">Viendo: Hoy</span>
                 </button>
                 <button type="button" onclick="limpiarFiltrosCitasPwa()" class="pwa-btn-secondary" style="font-size: 0.75rem; padding: 7px 10px; color: #666;">
-                    Limpiar Filtros
+                    Ver Todas las Fechas
                 </button>
             </div>
         </div>
@@ -2239,13 +2286,13 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                             <?php endif; ?>
                             <div>
                                 <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-dark);"><?php echo htmlspecialchars($cli['nombre']); ?></div>
-                                <div style="font-size: 0.78rem; color: var(--text-gray);"><?php echo htmlspecialchars($cli['telefono'] ?: ($cli['email'] ?? 'Sin teléfono')); ?></div>
+                                <div style="font-size: 0.78rem; color: var(--text-gray);"><?php echo htmlspecialchars(!empty($cli['telefono']) ? formatPhoneDisplay($cli['telefono']) : ($cli['email'] ?? 'Sin teléfono')); ?></div>
                                 <div style="font-size: 0.72rem; color: var(--gold-pwa); font-weight: 700; margin-top: 2px;">⭐ <?php echo intval($cli['puntos'] ?? 0); ?> Puntos • <?php echo intval($cli['total_citas'] ?? 0); ?> citas</div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 6px; align-items: center;">
                             <?php if (!empty($cli['telefono'])): ?>
-                                <a href="https://wa.me/<?php echo preg_replace('/\D/', '', $cli['telefono']); ?>" target="_blank" style="background: #25D366; color: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1rem;">
+                                <a href="https://wa.me/<?php echo formatPhoneForWhatsapp($cli['telefono']); ?>" target="_blank" style="background: #25D366; color: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1rem;">
                                     <i class="fab fa-whatsapp"></i>
                                 </a>
                             <?php endif; ?>
@@ -2344,8 +2391,8 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                             <span style="font-weight: 900; font-size: 1.15rem; color: <?php echo floatval($inv['cantidad']) > 0 ? 'var(--green-pwa)' : 'var(--red-pwa)'; ?>;">
                                 <?php echo number_format($inv['cantidad'], 0); ?> <span style="font-size: 0.75rem; font-weight: 600; color: #666;"><?php echo htmlspecialchars($inv['unidad'] ?? 'unid'); ?></span>
                             </span>
-                            <div style="margin-top: 6px;">
-                                <button type="button" onclick="abrirVentaInventarioPwa(<?php echo (int) $inv['id']; ?>)" class="pwa-btn-secondary" style="font-size: 0.72rem; padding: 4px 8px;" <?php echo $inv['cantidad'] > 0 ? '' : 'disabled'; ?>>Vender</button>
+                            <div style="margin-top: 6px; display: flex; gap: 4px; justify-content: flex-end;">
+                                <button type="button" onclick="abrirModalVenderInventarioPwa(<?php echo htmlspecialchars(json_encode($inv), ENT_QUOTES, 'UTF-8'); ?>)" class="pwa-btn-secondary" style="font-size: 0.72rem; padding: 4px 8px; background: #10B981; color: white; border: none; font-weight: 700;">Vender</button>
                                 <button type="button" onclick="abrirModalInventarioPwa(<?php echo htmlspecialchars(json_encode($inv), ENT_QUOTES, 'UTF-8'); ?>)" class="pwa-btn-secondary" style="font-size: 0.72rem; padding: 4px 8px;">Editar</button>
                             </div>
                         </div>
@@ -2792,6 +2839,27 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
         <form id="formPwaConfiguracionGeneral" onsubmit="guardarConfiguracionGeneralPwa(event)">
             <input type="hidden" name="action" value="save_configs">
             <input type="hidden" name="ajax" value="1">
+
+            <!-- Card 0: Estado Maestro del Programa de Referidos e Invita y Gana -->
+            <div class="pwa-item-card" style="padding: 16px; border-radius: 14px; margin-bottom: 16px; border: 1.5px solid <?php echo ($configsMap['sistema_referidos_activo'] ?? '0') === '1' ? '#10B981' : 'var(--border-pwa)'; ?>; background: <?php echo ($configsMap['sistema_referidos_activo'] ?? '0') === '1' ? '#F0FDF4' : '#FFFFFF'; ?>;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 0.95rem; color: var(--text-dark);">
+                        🎟️ Referidos & "Invita y Gana"
+                    </div>
+                    <span style="font-size: 0.68rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; <?php echo ($configsMap['sistema_referidos_activo'] ?? '0') === '1' ? 'background: #10B981; color: #FFFFFF;' : 'background: #6B7280; color: #FFFFFF;'; ?>">
+                        <?php echo ($configsMap['sistema_referidos_activo'] ?? '0') === '1' ? 'ACTIVO' : 'PAUSADO'; ?>
+                    </span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-gray); margin-bottom: 12px; line-height: 1.4;">
+                    Activa o desactiva la casilla de código en reservas y la sección "Invita y Gana" en el perfil de clientes.
+                </div>
+
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 800; cursor: pointer; background: #FAFAFA; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-pwa);">
+                    <input type="hidden" name="sistema_referidos_activo" value="0">
+                    <input type="checkbox" name="sistema_referidos_activo" value="1" <?php echo ($configsMap['sistema_referidos_activo'] ?? '0') === '1' ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #111111;">
+                    <span>Habilitar Programa de Referidos</span>
+                </label>
+            </div>
 
             <!-- Card 1: Puntos KORTZEN -->
             <div class="pwa-item-card" style="padding: 16px; border-radius: 14px; margin-bottom: 16px;">
@@ -3260,9 +3328,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 <div>
                     <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Estado</label>
                     <select name="estado" id="pwaCitaModalEstado" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px;">
-                        <option value="pendiente">Pendiente</option>
                         <option value="confirmada" selected>Confirmada</option>
-                        <option value="en_atencion">En Atención</option>
                         <option value="completada">Completada</option>
                         <option value="cancelada">Cancelada</option>
                     </select>
@@ -3329,66 +3395,221 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
     <span id="pwaToastText">Operación exitosa</span>
 </div>
 
-<div class="pwa-action-sheet" id="pwaVentaInventarioSheet" onclick="if(event.target===this) this.style.display='none'">
-    <div class="pwa-sheet-box">
-        <h2 style="font-size: 1.15rem;">Registrar venta de producto</h2>
-        <p id="pwaVentaProductoNombre" style="margin: 12px 0;"></p>
-        <form id="formPwaVentaInventario" onsubmit="guardarVentaInventarioPwa(event)">
-            <input type="hidden" name="action" value="registrar_venta">
-            <input type="hidden" name="ajax" value="1">
-            <input type="hidden" name="producto_id" id="pwaVentaProductoId">
-            <?php $vendedorSelectId = 'vendedorInventarioPwa'; $vendedorEsCobro = false; include 'includes/vendedor_select.php'; ?>
-            <label for="pwaVentaCantidadInventario">Cantidad</label>
-            <input type="number" name="cantidad" id="pwaVentaCantidadInventario" min="1" step="1" value="1" required style="width: 100%; padding: 12px; margin: 8px 0 16px;">
-            <button type="button" class="pwa-btn-secondary" onclick="document.getElementById('pwaVentaInventarioSheet').style.display='none'">Cancelar</button>
-            <button type="submit" class="pwa-btn-main">Registrar venta</button>
-        </form>
-    </div>
-</div>
-
 <!-- Modal Finalizar y Propina -->
 <div class="pwa-action-sheet" id="pwaTerminarCitaSheet" onclick="if(event.target===this) cerrarModalTerminarCitaPwa()">
-    <div class="pwa-sheet-box">
+    <div class="pwa-sheet-box" style="max-height: 90vh; overflow-y: auto;">
         <div style="width: 40px; height: 4px; background: #DDD; border-radius: 4px; margin: 0 auto 16px auto;"></div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
             <div>
-                <div style="font-size: 1.15rem; font-weight: 900; color: #10B981;">Finalizar Corte y Propina</div>
+                <div style="font-size: 1.15rem; font-weight: 900; color: #10B981;">Finalizar Corte y Cobro</div>
                 <div style="font-size: 0.8rem; color: var(--text-gray);" id="pwaTerminarSubtitle">Completar servicio</div>
             </div>
-            <button onclick="cerrarModalTerminarCitaPwa()" style="background: #F4F4F4; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">✕</button>
+            <button onclick="cerrarModalTerminarCitaPwa()" style="background: #F4F4F4; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: #666;">✕</button>
         </div>
 
         <form id="formPwaTerminarCita" onsubmit="guardarTerminarCitaPwa(event)" style="display: flex; flex-direction: column; gap: 12px;">
             <input type="hidden" name="action" value="completar">
             <input type="hidden" name="id" id="pwaTerminarCitaId" value="">
             <?php $vendedorSelectId = 'vendedorCobroPwa'; $vendedorEsCobro = true; include 'includes/vendedor_select.php'; ?>
+            <input type="hidden" name="precio_base" id="pwaTerminarPrecioBase" value="0.00">
             <input type="hidden" name="ajax" value="1">
 
-            <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 12px; padding: 14px;">
-                <label style="font-size: 0.78rem; font-weight: 800; color: #166534; text-transform: uppercase; display: block; margin-bottom: 6px;">Propina para el Barbero ($)</label>
+            <!-- Resumen Servicio Principal -->
+            <div style="background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-gray); font-weight: 800; display: block;">Servicio Agendado</span>
+                    <strong id="pwaTerminarServicioNombre" style="color: #111; font-size: 0.95rem;">-</strong>
+                    <div id="pwaTerminarBarberoNombre" style="font-size: 0.75rem; color: #555; margin-top: 2px;">-</div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-gray); font-weight: 800; display: block;">Precio Base</span>
+                    <strong id="pwaTerminarPrecioBaseTxt" style="color: #111; font-size: 1.15rem; font-weight: 900;">$0.00</strong>
+                </div>
+            </div>
+
+            <!-- Selector de Servicios Adicionales -->
+            <div style="background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 12px; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="font-size: 0.75rem; font-weight: 800; color: #0284C7; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">
+                        <i class="fas fa-plus-circle"></i> + Añadir Servicio Adicional
+                    </label>
+                    <span style="font-size: 0.7rem; color: #64748B;">(Barba, Cejas...)</span>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <select id="pwaSelectServicioAdicional" style="flex: 1; padding: 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; font-size: 0.8rem; background: #FFF;">
+                        <option value="">Seleccionar adicional...</option>
+                        <?php foreach ($serviciosList as $sItem): ?>
+                            <option value="<?php echo $sItem['id']; ?>" data-nombre="<?php echo htmlspecialchars($sItem['nombre']); ?>" data-precio="<?php echo $sItem['precio']; ?>">
+                                <?php echo htmlspecialchars($sItem['nombre']); ?> - $<?php echo number_format($sItem['precio'], 2); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" onclick="agregarServicioAdicionalPwa()" style="background: #0284C7; color: #FFF; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <i class="fas fa-plus"></i> Añadir
+                    </button>
+                </div>
+
+                <div id="pwaListaServiciosAdicionales" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+
+            <!-- Desglose de Cobro -->
+            <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🧾 Desglose de Cobro</span>
+                    <span id="pwaLabelComisionBarbero" style="color: #047857; font-weight: 800; background: #DCFCE7; padding: 2px 6px; border-radius: 4px;">Comisión: $0.00</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem;">
+                    <div style="display: flex; justify-content: space-between; color: #374151;">
+                        <span>Servicio Base:</span>
+                        <span id="pwaDesgloseBase">$0.00</span>
+                    </div>
+                    <div id="pwaDesgloseAdicionalesRow" style="display: none; justify-content: space-between; color: #0284C7; font-weight: 700;">
+                        <span>Adicionales (<span id="pwaDesgloseCantAdic">0</span>):</span>
+                        <span id="pwaDesgloseAdicionales">+$0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: #15803D; font-weight: 800;">
+                        <span>Total Servicios:</span>
+                        <span id="pwaDesgloseTotalServicios">$0.00</span>
+                    </div>
+                    <div id="pwaDesgloseProductosRow" style="display: none; justify-content: space-between; color: #166534; font-weight: 700;">
+                        <span>Productos / Insumos:</span>
+                        <span id="pwaDesgloseProductos">+$0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: #4B5563;">
+                        <span>Propina Barbero:</span>
+                        <span id="pwaDesglosePropina">+$0.00</span>
+                    </div>
+                    <div style="border-top: 1.5px dashed #86EFAC; margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="color: #14532D; font-size: 0.9rem;">TOTAL A COBRAR:</strong>
+                        <strong id="pwaDesgloseTotalCobrar" style="color: #15803D; font-size: 1.25rem; font-weight: 900;">$0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campo Propina -->
+            <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 12px;">
+                <label style="font-size: 0.72rem; font-weight: 800; color: #92400E; text-transform: uppercase; display: block; margin-bottom: 4px;">Propina para el Barbero ($)</label>
                 <div style="position: relative;">
-                    <span style="position: absolute; left: 12px; top: 11px; font-weight: 900; color: #166534;">$</span>
-                    <input type="number" step="0.5" min="0" name="propina" id="pwaTerminarPropina" value="0.00" style="width: 100%; padding: 10px 10px 10px 28px; border-radius: 8px; border: 1.5px solid #86EFAC; font-weight: 900; font-size: 1.1rem; color: #166534;">
+                    <span style="position: absolute; left: 12px; top: 10px; font-weight: 900; color: #92400E;">$</span>
+                    <input type="number" step="0.5" min="0" name="propina" id="pwaTerminarPropina" value="0.00" oninput="recalcularTotalesTerminarPwa()" style="width: 100%; padding: 8px 10px 8px 28px; border-radius: 8px; border: 1.5px solid #FCD34D; font-weight: 900; font-size: 1rem; color: #92400E;">
                 </div>
             </div>
 
             <div>
-                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Material / Producto consumido (opcional)</label>
-                <select name="materiales[]" style="width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px;">
-                    <option value="">Ninguno / Sin insumos adicionales</option>
-                    <?php foreach ($inventarioList as $item): ?>
-                        <option value="<?php echo $item['id']; ?>">
-                            <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Material consumido / Producto vendido (opcional)</label>
+                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                    <select name="materiales[]" id="pwaTerminarMaterialSelect" onchange="pwaActualizarMaterialPrecio(this)" style="flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem;">
+                        <option value="" data-precio="0.00">Ninguno / Sin insumos</option>
+                        <?php foreach ($inventarioList as $item): ?>
+                            <option value="<?php echo $item['id']; ?>" data-precio="<?php echo number_format($item['precio'], 2, '.', ''); ?>">
+                                <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="number" name="cantidades[]" id="pwaTerminarMaterialCant" min="1" value="1" placeholder="Cant." oninput="recalcularTotalesTerminarPwa()" style="width: 65px; padding: 8px 6px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem; text-align: center;">
+                </div>
+                <div id="pwaPrecioCobradoMaterialWrapper" style="display: none; margin-top: 6px; background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 8px; padding: 8px 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase;">Precio Cobrado ($)</span>
+                        <span style="font-size: 0.68rem; color: #15803D; font-weight: 600;">(Editable si aplica descuento)</span>
+                    </div>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 10px; top: 6px; font-weight: 900; color: #166534;">$</span>
+                        <input type="number" step="0.01" min="0" name="precios_materiales[]" id="pwaTerminarMaterialPrecio" value="0.00" oninput="recalcularTotalesTerminarPwa()" style="width: 100%; padding: 6px 10px 6px 24px; border-radius: 6px; border: 1.5px solid #86EFAC; font-weight: 800; font-size: 0.95rem; color: #166534;">
+                    </div>
+                </div>
             </div>
 
-            <label for="pwaVentaCantidad">Cantidad del producto</label>
-            <input id="pwaVentaCantidad" name="cantidades[]" type="number" min="1" step="1" value="1" required style="width: 100%; padding: 10px; border: 1px solid #CCC; border-radius: 8px;">
-
-            <button type="submit" id="btnSubmitPwaTerminar" class="pwa-btn-main" style="background: #10B981; color: #FFF; font-weight: 900; margin-top: 8px;">Confirmar y Finalizar Cita</button>
+            <button type="submit" id="btnSubmitPwaTerminar" class="pwa-btn-main" style="background: #10B981; color: #FFF; font-weight: 900; margin-top: 6px; padding: 12px;">Confirmar y Finalizar Cita</button>
         </form>
+    </div>
+</div>
+
+<!-- Modal Recibo Digital PWA -->
+<div class="pwa-action-sheet" id="pwaReciboSheet" onclick="if(event.target===this) cerrarModalReciboPwa()">
+    <div class="pwa-sheet-box" style="max-height: 92vh; overflow-y: auto;">
+        <div style="width: 40px; height: 4px; background: #DDD; border-radius: 4px; margin: 0 auto 16px auto;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #E5E7EB; padding-bottom: 10px;">
+            <div style="font-size: 1.1rem; font-weight: 900; color: #111; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-receipt" style="color: #10B981;"></i> Recibo de Cobro
+            </div>
+            <button onclick="cerrarModalReciboPwa()" style="background: #F4F4F4; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">✕</button>
+        </div>
+
+        <div id="pwaReciboPrintArea" style="background: #FAFAFA; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 16px; font-family: monospace, monospace;">
+            <div style="text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
+                <div style="font-size: 1.15rem; font-weight: 900; color: #111;">KORTZEN BARBERÍA</div>
+                <div id="pwaReciboSucursal" style="font-size: 0.75rem; color: #666;">Quito, Ecuador</div>
+                <div id="pwaReciboFechaHora" style="font-size: 0.72rem; color: #666; margin-top: 2px;">-</div>
+            </div>
+
+            <div style="font-size: 0.78rem; line-height: 1.5; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
+                <div><strong>Cita:</strong> #<span id="pwaReciboCitaId">-</span></div>
+                <div><strong>Cliente:</strong> <span id="pwaReciboCliente">-</span></div>
+                <div><strong>Barbero:</strong> <span id="pwaReciboBarbero">-</span></div>
+            </div>
+
+            <div style="font-size: 0.8rem; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span id="pwaReciboItemPrincipal">Servicio Principal</span>
+                    <strong id="pwaReciboPrecioPrincipal">$0.00</strong>
+                </div>
+                <div id="pwaReciboItemsAdicionales"></div>
+            </div>
+
+            <!-- Desglose de Productos PWA -->
+            <div id="pwaReciboProductosSection" style="display: none; font-size: 0.8rem; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                    <i class="fas fa-boxes"></i> Productos / Insumos Comprados
+                </div>
+                <div id="pwaReciboItemsProductos"></div>
+                <div style="display: flex; justify-content: space-between; margin-top: 4px; font-weight: 800; color: #166534;">
+                    <span>Subtotal Productos:</span>
+                    <strong id="pwaReciboSubtotalProductos">$0.00</strong>
+                </div>
+            </div>
+
+            <div style="font-size: 0.82rem; line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Subtotal Servicios:</span>
+                    <strong id="pwaReciboSubtotal">$0.00</strong>
+                </div>
+                <div id="pwaReciboFilaSubtotalProd" style="display: none; justify-content: space-between; color: #166534; font-weight: 700;">
+                    <span>Subtotal Productos:</span>
+                    <strong id="pwaReciboSubtotalProdResumen">+$0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #B45309;">
+                    <span>Propina Barbero:</span>
+                    <strong id="pwaReciboPropina">+$0.00</strong>
+                </div>
+                <div style="border-top: 2px solid #111; margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-size: 1.05rem;">
+                    <strong>TOTAL PAGADO:</strong>
+                    <strong id="pwaReciboTotal" style="color: #10B981;">$0.00</strong>
+                </div>
+                <div style="margin-top: 6px; font-size: 0.7rem; color: #666; border-top: 1px dotted #CBD5E1; padding-top: 6px; display: flex; justify-content: space-between;">
+                    <span>Comisión Barbero (<span id="pwaReciboComisionPct">50</span>%):</span>
+                    <strong id="pwaReciboComisionBarbero">$0.00</strong>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+            <a id="pwaBtnPedirCalificacionWhatsApp" href="#" target="_blank" style="background: #F59E0B; color: #FFF; text-decoration: none; padding: 11px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);">
+                <i class="fas fa-star"></i> ⭐ Pedir Calificación (WhatsApp)
+            </a>
+            <a id="pwaBtnReciboWhatsApp" href="#" target="_blank" style="background: #25D366; color: #FFF; text-decoration: none; padding: 11px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fab fa-whatsapp"></i> Enviar Recibo a WhatsApp
+            </a>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" onclick="imprimirReciboPwa()" class="pwa-btn-secondary" style="flex: 1; padding: 10px; font-weight: 700; font-size: 0.8rem; background: #F3F4F6; border: 1px solid #D1D5DB; border-radius: 8px;">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button type="button" onclick="cerrarModalReciboPwa()" class="pwa-btn-main" style="flex: 1; background: #111; color: #FFF; padding: 10px; font-weight: 800; font-size: 0.8rem; border-radius: 8px;">
+                    Listo / Aceptar
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -3696,6 +3917,54 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
     </div>
 </div>
 
+<!-- Modal Vender Producto PWA -->
+<div class="pwa-action-sheet" id="pwaVenderProductoSheet" onclick="if(event.target===this) cerrarModalVenderInventarioPwa()">
+    <div class="pwa-sheet-box" style="max-height: 90vh; overflow-y: auto;">
+        <div style="width: 40px; height: 4px; background: #DDD; border-radius: 4px; margin: 0 auto 16px auto;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #111;">Registrar Venta</div>
+                <div style="font-size: 0.8rem; color: var(--text-gray);" id="pwaVenderProdNombre">Producto</div>
+            </div>
+            <button onclick="cerrarModalVenderInventarioPwa()" style="background: #F4F4F4; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">✕</button>
+        </div>
+
+        <form id="formPwaVenderProducto" onsubmit="guardarVentaInventarioPwa(event)" style="display: flex; flex-direction: column; gap: 12px;">
+            <input type="hidden" name="action" value="sell">
+            <input type="hidden" name="id" id="pwaVenderProdId" value="">
+            <input type="hidden" name="ajax" value="1">
+
+            <div>
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Cantidad a Vender</label>
+                <input type="number" name="cantidad" id="pwaVenderCantidad" min="1" value="1" required oninput="actualizarTotalVentaPwa()" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 800; font-size: 1rem; margin-top: 4px;">
+                <div style="font-size: 0.72rem; color: #666; margin-top: 2px;">Stock disponible: <span id="pwaVenderStockMax" style="font-weight: 700;">-</span></div>
+            </div>
+
+            <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 10px; padding: 12px;">
+                <label style="font-size: 0.75rem; font-weight: 800; color: #166534; text-transform: uppercase; display: block; margin-bottom: 4px;">
+                    Precio Cobrado Unitario ($)
+                </label>
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 12px; top: 10px; font-weight: 900; color: #166534;">$</span>
+                    <input type="number" step="0.01" min="0" name="precio_venta" id="pwaVenderPrecioCobrado" required oninput="actualizarTotalVentaPwa()" style="width: 100%; padding: 8px 10px 8px 28px; border-radius: 8px; border: 1.5px solid #86EFAC; font-weight: 900; font-size: 1.1rem; color: #166534;">
+                </div>
+                <div style="font-size: 0.72rem; color: #15803D; margin-top: 4px;">
+                    Precio catálogo: $<span id="pwaVenderPrecioCatalogoDisplay">0.00</span>. Editable si se aplica descuento.
+                </div>
+            </div>
+
+            <?php $vendedorSelectId = 'pwaVenderUsuarioId'; $vendedorEsCobro = false; include 'includes/vendedor_select.php'; ?>
+
+            <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: #334155;">TOTAL A COBRAR:</span>
+                <span style="font-size: 1.3rem; font-weight: 900; color: #10B981;">$<span id="pwaVenderTotalDisplay">0.00</span></span>
+            </div>
+
+            <button type="submit" id="btnSubmitPwaVender" class="pwa-btn-main" style="background: #10B981; color: #FFF; font-weight: 900; margin-top: 8px; padding: 12px;">Confirmar Venta</button>
+        </form>
+    </div>
+</div>
+
 <!-- Modal Crear / Editar Servicio -->
 <div class="pwa-action-sheet" id="pwaServicioSheet" onclick="if(event.target===this) cerrarModalServicioPwa()">
     <div class="pwa-sheet-box" style="max-height: 85vh; overflow-y: auto;">
@@ -3767,6 +4036,40 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 <textarea name="que_incluye" id="pwaServQueIncluye" rows="3" placeholder="• Lavado capilar premium&#10;• Perfilado con navaja&#10;• Toalla caliente relajante" style="width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 600; font-size: 0.82rem; margin-top: 4px; font-family: inherit;"></textarea>
             </div>
 
+            <!-- Sucursales Disponibles -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="font-size: 0.72rem; font-weight: 800; color: var(--text-gray); text-transform: uppercase;">Sucursales Disponibles *</label>
+                    <button type="button" onclick="toggleAllServSucursalesPwa()" style="background: none; border: none; font-size: 0.72rem; color: #111; font-weight: 800; cursor: pointer; text-decoration: underline;">Alternar Todas</button>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+                    <?php foreach ($sucursalesList as $s): ?>
+                        <label style="display: flex; align-items: center; gap: 6px; background: #F8FAFC; border: 1.5px solid var(--border-pwa); padding: 8px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+                            <input type="checkbox" name="sucursales[]" value="<?php echo $s['id']; ?>" class="pwa-serv-suc-cb" checked style="width: 16px; height: 16px; accent-color: #111;">
+                            <span><?php echo htmlspecialchars($s['nombre']); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <small style="color: var(--text-gray); font-size: 0.7rem; margin-top: 4px; display: block;">* El servicio estará activo en las sucursales marcadas.</small>
+            </div>
+
+            <!-- Barberos que realizan el servicio -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="font-size: 0.72rem; font-weight: 800; color: var(--text-gray); text-transform: uppercase;">Barberos Asignados *</label>
+                    <button type="button" onclick="toggleAllServBarberosPwa()" style="background: none; border: none; font-size: 0.72rem; color: #111; font-weight: 800; cursor: pointer; text-decoration: underline;">Alternar Todos</button>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; max-height: 150px; overflow-y: auto; padding-right: 2px;">
+                    <?php foreach ($barberosList as $b): ?>
+                        <label style="display: flex; align-items: center; gap: 6px; background: #F8FAFC; border: 1.5px solid var(--border-pwa); padding: 7px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                            <input type="checkbox" name="barberos[]" value="<?php echo $b['id']; ?>" class="pwa-serv-barb-cb" checked style="width: 16px; height: 16px; accent-color: #111;">
+                            <span><?php echo htmlspecialchars($b['nombre']); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <small style="color: var(--text-gray); font-size: 0.7rem; margin-top: 4px; display: block;">* Los clientes podrán agendar con los barberos seleccionados.</small>
+            </div>
+
             <div>
                 <label style="font-size: 0.72rem; font-weight: 800; color: var(--text-gray); text-transform: uppercase;">Imagen / Fotografía (Opcional)</label>
                 <input type="file" name="foto_file" id="pwaServFotoFile" accept="image/*" style="width: 100%; padding: 8px; border-radius: 8px; border: 1.5px dashed var(--border-pwa); font-size: 0.8rem; margin-top: 4px;">
@@ -3835,6 +4138,14 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
         <form id="formPwaConfig" onsubmit="guardarConfiguracionPwa(event)" style="display: flex; flex-direction: column; gap: 12px;">
             <input type="hidden" name="action" value="save_configs">
             <input type="hidden" name="ajax" value="1">
+
+            <div>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 800; cursor: pointer; background: #FAFAFA; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-pwa);">
+                    <input type="hidden" name="sistema_referidos_activo" value="0">
+                    <input type="checkbox" name="sistema_referidos_activo" value="1" <?php echo ($configsMap['sistema_referidos_activo'] ?? '0') === '1' ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #111111;">
+                    <span>Habilitar Referidos & Códigos</span>
+                </label>
+            </div>
 
             <div>
                 <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Puntos por Corte</label>
@@ -3936,6 +4247,30 @@ let allPwaResenasData = <?php echo json_encode($resenasList, JSON_HEX_TAG | JSON
 let selectedClientForCita = null;
 let clientSearchDebounce = null;
 
+function formatPhoneForWhatsappJS(phone) {
+    let clean = (phone || '').replace(/\D/g, '');
+    if (!clean) return '';
+    if (clean.startsWith('00593')) clean = clean.substring(2);
+    if (clean.startsWith('5930') && clean.length >= 12) clean = '593' + clean.substring(4);
+    if (clean.startsWith('593') && clean.length >= 11) return clean;
+    if (clean.startsWith('0')) return '593' + clean.substring(1);
+    if (clean.length === 9) return '593' + clean;
+    return clean;
+}
+
+function formatPhoneDisplayJS(phone) {
+    if (!phone) return '';
+    let clean = String(phone).replace(/\D/g, '');
+    if (clean.startsWith('00593')) clean = clean.substring(2);
+    if (clean.startsWith('5930') && clean.length >= 12) clean = '593' + clean.substring(4);
+    if (clean.startsWith('593') && clean.length >= 11) {
+        return '0' + clean.substring(3);
+    }
+    if (clean.startsWith('0')) return clean;
+    if (clean.length === 9) return '0' + clean;
+    return phone;
+}
+
 function mostrarToastPwa(msg) {
     const toast = document.getElementById('pwaToastNotification');
     const text = document.getElementById('pwaToastText');
@@ -4014,7 +4349,8 @@ function renderizarResultadosPredictivosPwa(clientes, query) {
             : `<span>${initials}</span>`;
 
         const nomHighlight = highlightMatch(c.nombre || '', query);
-        const telHighlight = highlightMatch(c.telefono || '', query);
+        const telDisplay = formatPhoneDisplayJS(c.telefono || '');
+        const telHighlight = highlightMatch(telDisplay, query);
 
         html += `
             <div class="pwa-client-result-item" onclick="selectClientPwa(${JSON.stringify(c).replace(/"/g, '&quot;')})">
@@ -4056,7 +4392,7 @@ function selectClientPwa(c) {
     const metaEl = document.getElementById('pwaSelectedClientMeta');
     if (metaEl) {
         metaEl.innerHTML = `
-            ${c.telefono ? `<span><i class="fas fa-phone-alt" style="font-size: 0.68rem;"></i> ${escapeHtml(c.telefono)}</span>` : ''}
+            ${c.telefono ? `<span><i class="fas fa-phone-alt" style="font-size: 0.68rem;"></i> ${escapeHtml(formatPhoneDisplayJS(c.telefono))}</span>` : ''}
             ${c.email ? `<span>• ${escapeHtml(c.email)}</span>` : ''}
         `;
     }
@@ -4587,7 +4923,7 @@ function toggleFiltroHoyCitasPwa() {
     const inputFecha = document.getElementById('pwaFiltroCitasFecha');
     const txtBtn = document.getElementById('txtBtnHoyCitas');
     const btn = document.getElementById('btnToggleHoyCitas');
-    const hoyStr = new Date().toISOString().split('T')[0];
+    const hoyStr = '<?php echo date('Y-m-d'); ?>';
 
     if (inputFecha.value === hoyStr) {
         inputFecha.value = '';
@@ -4607,6 +4943,27 @@ function toggleFiltroHoyCitasPwa() {
     renderizarCitasTab();
 }
 
+function actualizarEstadoBotonHoyPwa() {
+    const inputFecha = document.getElementById('pwaFiltroCitasFecha');
+    const txtBtn = document.getElementById('txtBtnHoyCitas');
+    const btn = document.getElementById('btnToggleHoyCitas');
+    const hoyStr = '<?php echo date('Y-m-d'); ?>';
+
+    if (inputFecha && inputFecha.value === hoyStr) {
+        if (txtBtn) txtBtn.innerText = 'Viendo: Hoy';
+        if (btn) {
+            btn.style.background = '#111';
+            btn.style.color = '#FFF';
+        }
+    } else {
+        if (txtBtn) txtBtn.innerText = 'Cortes de Hoy';
+        if (btn) {
+            btn.style.background = '#F3F4F6';
+            btn.style.color = '#111';
+        }
+    }
+}
+
 function limpiarFiltrosCitasPwa() {
     if (document.getElementById('pwaFiltroCitasBuscar')) document.getElementById('pwaFiltroCitasBuscar').value = '';
     if (document.getElementById('pwaFiltroCitasSucursal')) document.getElementById('pwaFiltroCitasSucursal').value = '';
@@ -4614,13 +4971,12 @@ function limpiarFiltrosCitasPwa() {
     if (document.getElementById('pwaFiltroCitasEstado')) document.getElementById('pwaFiltroCitasEstado').value = '';
     if (document.getElementById('pwaFiltroCitasFecha')) document.getElementById('pwaFiltroCitasFecha').value = '';
 
-    const txtBtn = document.getElementById('txtBtnHoyCitas');
-    const btn = document.getElementById('btnToggleHoyCitas');
-    if (txtBtn) txtBtn.innerText = 'Cortes de Hoy';
-    if (btn) {
-        btn.style.background = '#F3F4F6';
-        btn.style.color = '#111';
-    }
+    actualizarEstadoBotonHoyPwa();
+    renderizarCitasTab();
+}
+
+function filtrarCitasPwa() {
+    actualizarEstadoBotonHoyPwa();
     renderizarCitasTab();
 }
 
@@ -4652,8 +5008,16 @@ function renderizarCitasTab() {
     });
 
     if (filtradas.length === 0) {
-        cont.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-gray); font-size: 0.9rem;">No se encontraron citas con los filtros seleccionados.</div>';
+        const msg = fechaFiltro ? `No hay citas agendadas para la fecha seleccionada (${fechaFiltro.split('-').reverse().join('/')}).` : 'No se encontraron citas con los filtros seleccionados.';
+        cont.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-gray); font-size: 0.9rem;">${msg}</div>`;
         return;
+    }
+
+    // Si es un día específico (como hoy), ordenar cronológicamente de la mañana a la noche (ASC)
+    if (fechaFiltro) {
+        filtradas.sort((a, b) => (a.fecha_hora || '').localeCompare(b.fecha_hora || ''));
+    } else {
+        filtradas.sort((a, b) => (b.fecha_hora || '').localeCompare(a.fecha_hora || ''));
     }
 
     let html = '';
@@ -4661,7 +5025,7 @@ function renderizarCitasTab() {
         const fechaHora = c.fecha_hora ? c.fecha_hora.split(' ') : ['', ''];
         const fStr = fechaHora[0] ? fechaHora[0].split('-').reverse().join('/') : '';
         const hStr = fechaHora[1] ? fechaHora[1].substring(0, 5) : '';
-        const telLimpio = (c.cliente_telefono || '').replace(/\D/g, '');
+        const telLimpio = formatPhoneForWhatsappJS(c.cliente_telefono);
         const cFoto = c.barbero_foto;
         const barberoAvatar = cFoto
             ? `<img src="${escapeHtml(cFoto)}" alt="${escapeHtml(c.barbero_nombre)}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1.5px solid #E5E7EB; flex-shrink: 0;" onerror="this.onerror=null; this.outerHTML='<div class=\\'pwa-chip-avatar\\' style=\\'width:24px;height:24px;font-size:0.65rem;\\'>${escapeHtml((c.barbero_nombre||'B').substring(0,2).toUpperCase())}</div>';">`
@@ -4699,7 +5063,7 @@ function renderizarCitasTab() {
                         <div style="font-size: 1rem; font-weight: 900; color: #111;">${escapeHtml(c.cliente_nombre || 'Cliente')}</div>
                         ${c.cliente_telefono ? `
                             <div style="font-size: 0.78rem; color: var(--text-gray); font-weight: 600; margin-top: 2px; display: flex; align-items: center; gap: 6px;">
-                                <span>📞 ${escapeHtml(c.cliente_telefono)}</span>
+                                <span>📞 ${escapeHtml(formatPhoneDisplayJS(c.cliente_telefono))}</span>
                             </div>
                         ` : ''}
                     </div>
@@ -4708,7 +5072,7 @@ function renderizarCitasTab() {
                             <a href="https://wa.me/${telLimpio}?text=${encodeURIComponent('Hola ' + (c.cliente_nombre || '').split(' ')[0] + ', te escribo de Kortzen Barbería sobre tu cita.')}" target="_blank" style="background: #25D366; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(37,211,102,0.3);">
                                 <i class="fab fa-whatsapp"></i>
                             </a>
-                            <a href="tel:${telLimpio}" style="background: #111; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.85rem;">
+                            <a href="tel:${escapeHtml(c.cliente_telefono || '')}" style="background: #111; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.85rem;">
                                 <i class="fas fa-phone"></i>
                             </a>
                         ` : ''}
@@ -4718,12 +5082,29 @@ function renderizarCitasTab() {
                 <!-- Servicio & Barbero -->
                 <div style="background: #F9FAFB; border-radius: 10px; padding: 10px; margin-bottom: 10px; border: 1px solid #F3F4F6;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">
-                            ✂️ ${escapeHtml(c.servicio_nombre || 'Servicio')}
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">
+                                ✂️ ${escapeHtml(c.servicio_nombre || 'Servicio')}
+                            </div>
+                            ${c.servicios_adicionales_txt ? `
+                                <div style="font-size: 0.72rem; color: #0284C7; font-weight: 700; margin-top: 2px;">
+                                    <i class="fas fa-plus-circle" style="font-size: 0.65rem;"></i> ${escapeHtml(c.servicios_adicionales_txt)}
+                                </div>
+                            ` : ''}
+                            ${c.productos_vendidos_txt ? `
+                                <div style="font-size: 0.72rem; color: #166534; font-weight: 700; margin-top: 2px;">
+                                    <i class="fas fa-boxes" style="font-size: 0.65rem;"></i> ${escapeHtml(c.productos_vendidos_txt)} (+` + (parseFloat(c.total_productos || 0) > 0 ? `$${parseFloat(c.total_productos).toFixed(2)}` : '') + `)
+                                </div>
+                            ` : ''}
                         </div>
-                        <span style="font-weight: 900; font-size: 0.95rem; color: var(--text-dark);">
-                            $${parseFloat(c.precio_final > 0 ? c.precio_final : (c.servicio_precio || 0)).toFixed(2)}
-                        </span>
+                        <div style="text-align: right;">
+                            <span style="font-weight: 900; font-size: 0.95rem; color: var(--text-dark);">
+                                $${(parseFloat(c.precio_final > 0 ? c.precio_final : (c.servicio_precio || 0)) + parseFloat(c.total_productos || 0)).toFixed(2)}
+                            </span>
+                            ${parseFloat(c.total_productos || 0) > 0 ? `
+                                <div style="font-size: 0.65rem; color: #64748B;">(Serv: $${parseFloat(c.precio_final > 0 ? c.precio_final : (c.servicio_precio || 0)).toFixed(2)} | Prod: $${parseFloat(c.total_productos).toFixed(2)})</div>
+                            ` : ''}
+                        </div>
                     </div>
 
                     ${descuentoVal > 0 ? `
@@ -4760,9 +5141,7 @@ function renderizarCitasTab() {
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.72rem; font-weight: 800; color: var(--text-gray); text-transform: uppercase;">Estado:</span>
                         <select id="pwa_select_estado_cita_${c.id}" style="padding: 5px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem; border: 1.5px solid ${estSt.border}; background: ${estSt.bg}; color: ${estSt.text};">
-                            <option value="pendiente" ${c.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
                             <option value="confirmada" ${c.estado === 'confirmada' ? 'selected' : ''}>Confirmada</option>
-                            <option value="en_atencion" ${c.estado === 'en_atencion' ? 'selected' : ''}>En Atención</option>
                             <option value="completada" ${c.estado === 'completada' ? 'selected' : ''}>Completada</option>
                             <option value="cancelada" ${c.estado === 'cancelada' ? 'selected' : ''}>Cancelada</option>
                         </select>
@@ -4775,10 +5154,14 @@ function renderizarCitasTab() {
                 <!-- Barra de Acciones de la Cita -->
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                     ${(c.estado !== 'completada' && c.estado !== 'cancelada') ? `
-                        <button type="button" onclick="abrirModalTerminarCitaPwa(${c.id}, '${escapeHtml(c.cliente_nombre || '')}')" style="flex: 1; min-width: 130px; background: #10B981; color: #FFF; border: none; padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <button type="button" onclick="abrirModalTerminarCitaPwa(${c.id})" style="flex: 1; min-width: 130px; background: #10B981; color: #FFF; border: none; padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
                             <i class="fas fa-check-double"></i> FINALIZAR Y PROPINA
                         </button>
-                    ` : ''}
+                    ` : (c.estado === 'completada' ? `
+                        <button type="button" onclick="abrirModalReciboPwa(${c.id})" style="flex: 1; min-width: 90px; background: #ECFDF5; color: #047857; border: 1.5px solid #A7F3D0; padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <i class="fas fa-receipt"></i> RECIBO
+                        </button>
+                    ` : '')}
                     <button type="button" onclick="abrirModalEditarCitaPwa(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; min-width: 70px; background: #F3F4F6; color: #111; border: 1px solid #D1D5DB; padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
                         <i class="fas fa-edit"></i> EDITAR
                     </button>
@@ -5022,16 +5405,205 @@ function agendarSlotPwa(targetDate, horaInicio, barberoId) {
     });
 }
 
-function abrirModalTerminarCitaPwa(citaId, clienteNombre) {
+let citaActualTerminarPwa = null;
+let serviciosAdicionalesSeleccionadosPwa = [];
+
+function abrirModalTerminarCitaPwa(citaOrId, clienteNombre) {
     document.getElementById('formPwaTerminarCita').reset();
-    document.getElementById('pwaTerminarCitaId').value = citaId;
-    document.getElementById('pwaTerminarSubtitle').innerText = 'Cliente: ' + (clienteNombre || 'Cliente');
-    document.getElementById('pwaTerminarPropina').value = '0.00';
+    let cita = null;
+    if (typeof citaOrId === 'object' && citaOrId !== null) {
+        cita = citaOrId;
+    } else {
+        const id = parseInt(citaOrId);
+        cita = rawCitasList.find(c => c.id == id);
+        if (!cita) {
+            cita = {
+                id: id,
+                cliente_nombre: clienteNombre || 'Cliente',
+                cliente_telefono: '',
+                servicio_nombre: 'Servicio',
+                servicio_precio: 0,
+                precio_final: 0,
+                barbero_nombre: 'Barbero',
+                barbero_comision: 50,
+                barbero_comision_finde: 50,
+                fecha_hora: ''
+            };
+        }
+    }
+
+    citaActualTerminarPwa = cita;
+    serviciosAdicionalesSeleccionadosPwa = [];
+
+    document.getElementById('pwaTerminarCitaId').value = cita.id;
+    const precioBase = parseFloat(cita.servicio_precio > 0 ? cita.servicio_precio : (cita.precio_final || 0));
+    document.getElementById('pwaTerminarPrecioBase').value = precioBase.toFixed(2);
+    document.getElementById('pwaTerminarSubtitle').innerText = 'Cliente: ' + (cita.cliente_nombre || 'Cliente');
+    document.getElementById('pwaTerminarServicioNombre').innerText = cita.servicio_nombre || 'Servicio';
+    document.getElementById('pwaTerminarPrecioBaseTxt').innerText = '$' + precioBase.toFixed(2);
+    document.getElementById('pwaTerminarBarberoNombre').innerText = 'Barbero: ' + (cita.barbero_nombre || 'Asignado');
+
+    const pInput = document.getElementById('pwaTerminarPropina');
+    if (pInput) pInput.value = '0.00';
+
+    const mSelect = document.getElementById('pwaTerminarMaterialSelect');
+    if (mSelect) {
+        mSelect.value = '';
+        pwaActualizarMaterialPrecio(mSelect);
+    }
+
+    const sSelect = document.getElementById('pwaSelectServicioAdicional');
+    if (sSelect) sSelect.value = '';
+
+    renderizarListaServiciosAdicionalesPwa();
+    recalcularTotalesTerminarPwa();
+
+    const btn = document.getElementById('btnSubmitPwaTerminar');
+    if (btn) {
+        btn.disabled = false;
+    }
     document.getElementById('pwaTerminarCitaSheet').style.display = 'flex';
 }
 
 function cerrarModalTerminarCitaPwa() {
     document.getElementById('pwaTerminarCitaSheet').style.display = 'none';
+}
+
+function pwaActualizarMaterialPrecio(select) {
+    if (!select) return;
+    const opt = select.options[select.selectedIndex];
+    const precio = opt ? (opt.getAttribute('data-precio') || '0.00') : '0.00';
+    const wrapper = document.getElementById('pwaPrecioCobradoMaterialWrapper');
+    const input = document.getElementById('pwaTerminarMaterialPrecio');
+    if (select.value && select.value !== '') {
+        if (input) input.value = parseFloat(precio).toFixed(2);
+        if (wrapper) wrapper.style.display = 'block';
+    } else {
+        if (input) input.value = '0.00';
+        if (wrapper) wrapper.style.display = 'none';
+    }
+    recalcularTotalesTerminarPwa();
+}
+
+function agregarServicioAdicionalPwa() {
+    const select = document.getElementById('pwaSelectServicioAdicional');
+    if (!select || !select.value) return;
+
+    const opt = select.options[select.selectedIndex];
+    const srvId = parseInt(select.value);
+    const srvNombre = opt.getAttribute('data-nombre') || opt.text.split('-')[0].trim();
+    const srvPrecio = parseFloat(opt.getAttribute('data-precio') || 0);
+
+    serviciosAdicionalesSeleccionadosPwa.push({
+        id: srvId,
+        nombre: srvNombre,
+        precio: srvPrecio
+    });
+
+    select.value = '';
+    renderizarListaServiciosAdicionalesPwa();
+    recalcularTotalesTerminarPwa();
+}
+
+function quitarServicioAdicionalPwa(index) {
+    if (index >= 0 && index < serviciosAdicionalesSeleccionadosPwa.length) {
+        serviciosAdicionalesSeleccionadosPwa.splice(index, 1);
+        renderizarListaServiciosAdicionalesPwa();
+        recalcularTotalesTerminarPwa();
+    }
+}
+
+function renderizarListaServiciosAdicionalesPwa() {
+    const cont = document.getElementById('pwaListaServiciosAdicionales');
+    if (!cont) return;
+
+    if (serviciosAdicionalesSeleccionadosPwa.length === 0) {
+        cont.innerHTML = '<span style="font-size: 0.72rem; color: #94A3B8; font-style: italic;">Sin servicios adicionales añadidos.</span>';
+        return;
+    }
+
+    let html = '';
+    serviciosAdicionalesSeleccionadosPwa.forEach((item, idx) => {
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 6px 10px; border-radius: 8px;">
+                <div style="font-weight: 700; font-size: 0.78rem; color: #1E293B; display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #0284C7; font-weight: 900;">•</span> ${escapeHtml(item.nombre)}
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <strong style="color: #0F172A; font-size: 0.8rem;">+$${item.precio.toFixed(2)}</strong>
+                    <button type="button" onclick="quitarServicioAdicionalPwa(${idx})" style="background: #FEE2E2; color: #DC2626; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 0.65rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                </div>
+            </div>
+        `;
+    });
+    cont.innerHTML = html;
+}
+
+function recalcularTotalesTerminarPwa() {
+    if (!citaActualTerminarPwa) return;
+
+    const precioBase = parseFloat(document.getElementById('pwaTerminarPrecioBase').value || 0);
+    let sumaAdicionales = 0;
+    serviciosAdicionalesSeleccionadosPwa.forEach(s => sumaAdicionales += s.precio);
+
+    const totalServicios = precioBase + sumaAdicionales;
+
+    // Calcular productos / insumos seleccionados
+    const matSel = document.getElementById('pwaTerminarMaterialSelect');
+    const matCant = document.getElementById('pwaTerminarMaterialCant');
+    const matPrec = document.getElementById('pwaTerminarMaterialPrecio');
+    let totalProductos = 0;
+    if (matSel && matSel.value) {
+        const cant = parseFloat(matCant ? matCant.value : 1) || 1;
+        const prec = parseFloat(matPrec ? matPrec.value : 0) || 0;
+        totalProductos = cant * prec;
+    }
+
+    const prodRow = document.getElementById('pwaDesgloseProductosRow');
+    if (prodRow) {
+        if (totalProductos > 0) {
+            prodRow.style.display = 'flex';
+            document.getElementById('pwaDesgloseProductos').innerText = '+$' + totalProductos.toFixed(2);
+        } else {
+            prodRow.style.display = 'none';
+        }
+    }
+
+    const pInput = document.getElementById('pwaTerminarPropina');
+    const propina = parseFloat(pInput && pInput.value ? pInput.value : 0);
+    const totalCobrar = totalServicios + totalProductos + (isNaN(propina) ? 0 : propina);
+
+    let esFinde = false;
+    if (citaActualTerminarPwa.fecha_hora) {
+        const dt = new Date(citaActualTerminarPwa.fecha_hora.replace(/-/g, '/'));
+        const day = dt.getDay();
+        esFinde = (day === 0 || day === 6);
+    }
+    const comPct = esFinde ? parseFloat(citaActualTerminarPwa.barbero_comision_finde || 50) : parseFloat(citaActualTerminarPwa.barbero_comision || 50);
+    const comisionBarbero = (totalServicios * comPct / 100);
+
+    document.getElementById('pwaDesgloseBase').innerText = '$' + precioBase.toFixed(2);
+    
+    const adicRow = document.getElementById('pwaDesgloseAdicionalesRow');
+    if (adicRow) {
+        if (serviciosAdicionalesSeleccionadosPwa.length > 0) {
+            adicRow.style.display = 'flex';
+            document.getElementById('pwaDesgloseCantAdic').innerText = serviciosAdicionalesSeleccionadosPwa.length;
+            document.getElementById('pwaDesgloseAdicionales').innerText = '+$' + sumaAdicionales.toFixed(2);
+        } else {
+            adicRow.style.display = 'none';
+        }
+    }
+
+    document.getElementById('pwaDesgloseTotalServicios').innerText = '$' + totalServicios.toFixed(2);
+    document.getElementById('pwaLabelComisionBarbero').innerText = `Comisión (${comPct}%): $${comisionBarbero.toFixed(2)}`;
+    document.getElementById('pwaDesglosePropina').innerText = '+$' + (isNaN(propina) ? 0 : propina).toFixed(2);
+    document.getElementById('pwaDesgloseTotalCobrar').innerText = '$' + totalCobrar.toFixed(2);
+
+    const btn = document.getElementById('btnSubmitPwaTerminar');
+    if (btn) {
+        btn.innerText = `Confirmar y Finalizar ($${totalCobrar.toFixed(2)})`;
+    }
 }
 
 function guardarTerminarCitaPwa(e) {
@@ -5044,6 +5616,9 @@ function guardarTerminarCitaPwa(e) {
     btn.innerText = 'Finalizando...';
 
     const fd = new FormData(document.getElementById('formPwaTerminarCita'));
+    serviciosAdicionalesSeleccionadosPwa.forEach(item => {
+        fd.append('servicios_adicionales[]', item.id);
+    });
 
     fetch('api/citas_action.php', { method: 'POST', body: fd })
         .then(res => res.json())
@@ -5058,10 +5633,26 @@ function guardarTerminarCitaPwa(e) {
                 if (target) {
                     target.estado = 'completada';
                     target.propina = prop;
+                    if (data.nuevo_precio_final) {
+                        target.precio_final = data.nuevo_precio_final;
+                    }
+                    if (data.total_productos) {
+                        target.total_productos = data.total_productos;
+                    }
+                    if (data.recibo && data.recibo.servicios_adicionales && data.recibo.servicios_adicionales.length > 0) {
+                        target.servicios_adicionales_txt = data.recibo.servicios_adicionales.map(a => a.nombre + ' ($' + parseFloat(a.precio).toFixed(2) + ')').join(', ');
+                    }
+                    if (data.recibo && data.recibo.productos && data.recibo.productos.length > 0) {
+                        target.productos_vendidos_txt = data.recibo.productos.map(p => p.nombre + ' (x' + p.cantidad + ')').join(', ');
+                    }
                 }
                 renderizarCitasTab();
                 cargarDatosHorariosPwa();
-                alert('Cita finalizada con éxito.');
+                if (data.recibo) {
+                    mostrarReciboEnModalPwa(data.recibo);
+                } else {
+                    alert('Cita finalizada con éxito.');
+                }
             } else {
                 alert('Error: ' + (data.message || data.error || 'No se pudo finalizar la cita.'));
             }
@@ -5071,6 +5662,155 @@ function guardarTerminarCitaPwa(e) {
             btn.innerText = 'Confirmar y Finalizar Cita';
             alert('Error de conexión al finalizar la cita.');
         });
+}
+
+function mostrarReciboEnModalPwa(r) {
+    document.getElementById('pwaReciboCitaId').innerText = r.cita_id;
+    document.getElementById('pwaReciboSucursal').innerText = r.sucursal_nombre || 'Kortzen Barbería';
+    document.getElementById('pwaReciboFechaHora').innerText = r.fecha_hora_formateada || '';
+    document.getElementById('pwaReciboCliente').innerText = r.cliente_nombre || 'Cliente';
+    document.getElementById('pwaReciboBarbero').innerText = r.barbero_nombre || 'Barbero';
+
+    document.getElementById('pwaReciboItemPrincipal').innerText = r.servicio_principal || 'Corte';
+    document.getElementById('pwaReciboPrecioPrincipal').innerText = '$' + parseFloat(r.precio_principal || 0).toFixed(2);
+
+    const adicCont = document.getElementById('pwaReciboItemsAdicionales');
+    if (adicCont) {
+        let adicHtml = '';
+        if (r.servicios_adicionales && r.servicios_adicionales.length > 0) {
+            r.servicios_adicionales.forEach(ad => {
+                adicHtml += `
+                    <div style="display: flex; justify-content: space-between; margin-top: 3px; color: #0284C7;">
+                        <span>+ ${escapeHtml(ad.nombre)}</span>
+                        <strong>+$${parseFloat(ad.precio || 0).toFixed(2)}</strong>
+                    </div>
+                `;
+            });
+        }
+        adicCont.innerHTML = adicHtml;
+    }
+
+    const prodSec = document.getElementById('pwaReciboProductosSection');
+    const prodItemsCont = document.getElementById('pwaReciboItemsProductos');
+    const filaProdResumen = document.getElementById('pwaReciboFilaSubtotalProd');
+
+    if (r.productos && r.productos.length > 0) {
+        let prodHtml = '';
+        r.productos.forEach(p => {
+            prodHtml += `
+                <div style="display: flex; justify-content: space-between; margin-top: 3px; color: #166534;">
+                    <span>• ${escapeHtml(p.nombre)} (x${p.cantidad}${p.precio_unitario ? ` a $${parseFloat(p.precio_unitario).toFixed(2)}` : ''})</span>
+                    <strong>+$${parseFloat(p.total).toFixed(2)}</strong>
+                </div>
+            `;
+        });
+        if (prodItemsCont) prodItemsCont.innerHTML = prodHtml;
+        if (prodSec) prodSec.style.display = 'block';
+        if (filaProdResumen) filaProdResumen.style.display = 'flex';
+        document.getElementById('pwaReciboSubtotalProductos').innerText = '$' + parseFloat(r.total_productos || 0).toFixed(2);
+        document.getElementById('pwaReciboSubtotalProdResumen').innerText = '+$' + parseFloat(r.total_productos || 0).toFixed(2);
+    } else {
+        if (prodSec) prodSec.style.display = 'none';
+        if (filaProdResumen) filaProdResumen.style.display = 'none';
+    }
+
+    document.getElementById('pwaReciboSubtotal').innerText = '$' + parseFloat(r.total_servicios || 0).toFixed(2);
+    document.getElementById('pwaReciboPropina').innerText = '+$' + parseFloat(r.propina || 0).toFixed(2);
+    document.getElementById('pwaReciboTotal').innerText = '$' + parseFloat(r.total_a_cobrar || r.total_pagado || 0).toFixed(2);
+    document.getElementById('pwaReciboComisionPct').innerText = r.comision_porcentaje || 50;
+    document.getElementById('pwaReciboComisionBarbero').innerText = '$' + parseFloat(r.comision_barbero || 0).toFixed(2);
+
+    const waBtn = document.getElementById('pwaBtnReciboWhatsApp');
+    if (waBtn) {
+        let telLimpio = (r.cliente_telefono || '').replace(/\D/g, '');
+        if (telLimpio.startsWith('0')) telLimpio = '593' + telLimpio.substring(1);
+        if (!telLimpio.startsWith('593') && telLimpio.length === 9) telLimpio = '593' + telLimpio;
+
+        let msg = `*KORTZEN BARBERÍA - COMPROBANTE DE PAGO*\n`;
+        msg += `Hola ${r.cliente_nombre ? r.cliente_nombre.split(' ')[0] : ''}, te compartimos el detalle de tu visita hoy:\n\n`;
+        msg += `✂️ *Servicio Principal:* ${r.servicio_principal} ($${parseFloat(r.precio_principal || 0).toFixed(2)})\n`;
+        if (r.servicios_adicionales && r.servicios_adicionales.length > 0) {
+            r.servicios_adicionales.forEach(ad => {
+                msg += `➕ *Adicional:* ${ad.nombre} ($${parseFloat(ad.precio || 0).toFixed(2)})\n`;
+            });
+        }
+        msg += `*Subtotal Servicios:* $${parseFloat(r.total_servicios || 0).toFixed(2)}\n`;
+
+        if (r.productos && r.productos.length > 0) {
+            msg += `\n🧴 *Productos / Insumos:* \n`;
+            r.productos.forEach(p => {
+                msg += `• ${p.nombre} (x${p.cantidad}${p.precio_unitario ? ` a $${parseFloat(p.precio_unitario).toFixed(2)}` : ''}): $${parseFloat(p.total).toFixed(2)}\n`;
+            });
+            msg += `*Subtotal Productos:* $${parseFloat(r.total_productos || 0).toFixed(2)}\n`;
+        }
+
+        msg += `\n💈 *Barbero:* ${r.barbero_nombre}\n`;
+        if (parseFloat(r.propina || 0) > 0) {
+            msg += `🎁 *Propina:* $${parseFloat(r.propina).toFixed(2)}\n`;
+        }
+        msg += `\n💰 *TOTAL PAGADO:* $${parseFloat(r.total_a_cobrar || r.total_pagado || 0).toFixed(2)}\n\n`;
+        const linkCalifReceiptPwa = r.link_calificar || (window.location.origin + '/calificar.php?c=' + (r.cita_id || ''));
+        msg += `⭐ *Califica tu experiencia con ${r.barbero_nombre}:*\n${linkCalifReceiptPwa}\n\n`;
+        msg += `¡Muchas gracias por tu preferencia! Te esperamos pronto en Kortzen.`;
+
+        waBtn.href = telLimpio ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    }
+
+    const calificarBtn = document.getElementById('pwaBtnPedirCalificacionWhatsApp');
+    if (calificarBtn) {
+        let telLimpioCal = (r.cliente_telefono || '').replace(/\D/g, '');
+        if (telLimpioCal.startsWith('0')) telLimpioCal = '593' + telLimpioCal.substring(1);
+        if (!telLimpioCal.startsWith('593') && telLimpioCal.length === 9) telLimpioCal = '593' + telLimpioCal;
+
+        const linkCal = r.link_calificar || (window.location.origin + '/calificar.php?c=' + (r.cita_id || ''));
+        const cliNom = r.cliente_nombre ? r.cliente_nombre.split(' ')[0] : 'Cliente';
+        const barbNom = r.barbero_nombre || 'tu barbero';
+        const msgCal = r.wa_msg_calificar || `¡Hola ${cliNom}! Gracias por visitarnos hoy en Kortzen. ¿Cómo calificarías tu corte con ${barbNom}? Déjanos tu calificación de 1 a 5 estrellas aquí: ${linkCal}`;
+
+        calificarBtn.href = telLimpioCal ? `https://wa.me/${telLimpioCal}?text=${encodeURIComponent(msgCal)}` : `https://wa.me/?text=${encodeURIComponent(msgCal)}`;
+    }
+
+    document.getElementById('pwaReciboSheet').style.display = 'flex';
+}
+
+function abrirModalReciboPwa(reciboOrId) {
+    if (typeof reciboOrId === 'object' && reciboOrId !== null) {
+        mostrarReciboEnModalPwa(reciboOrId);
+        return;
+    }
+    const id = parseInt(reciboOrId);
+    fetch('api/citas_action.php?action=get_recibo&id=' + id)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.recibo) {
+                mostrarReciboEnModalPwa(data.recibo);
+            } else {
+                alert('No se pudo cargar el recibo: ' + (data.error || 'Cita no encontrada.'));
+            }
+        })
+        .catch(err => {
+            alert('Error al consultar el recibo.');
+        });
+}
+
+function cerrarModalReciboPwa() {
+    document.getElementById('pwaReciboSheet').style.display = 'none';
+}
+
+function imprimirReciboPwa() {
+    const contenido = document.getElementById('pwaReciboPrintArea').innerHTML;
+    const ventana = window.open('', '', 'height=600,width=450');
+    ventana.document.write('<html><head><title>Recibo Kortzen</title>');
+    ventana.document.write('<style>body{font-family:monospace;padding:16px;color:#111;margin:0;} strong{font-weight:900;} div{margin-bottom:3px;}</style>');
+    ventana.document.write('</head><body>');
+    ventana.document.write(contenido);
+    ventana.document.write('</body></html>');
+    ventana.document.close();
+    ventana.focus();
+    setTimeout(() => {
+        ventana.print();
+        ventana.close();
+    }, 300);
 }
 
 function eliminarCitaPwa(citaId) {
@@ -5179,7 +5919,7 @@ function abrirModalDetalleCitaPwa(c) {
 
     if (c.cliente_telefono) {
         act.innerHTML += `
-            <a href="https://wa.me/${c.cliente_telefono.replace(/\D/g,'')}" target="_blank" class="pwa-btn-main" style="background: #25D366; color: #fff;">
+            <a href="https://wa.me/${formatPhoneForWhatsappJS(c.cliente_telefono)}" target="_blank" class="pwa-btn-main" style="background: #25D366; color: #fff;">
                 <i class="fab fa-whatsapp"></i> WhatsApp Cliente
             </a>
         `;
@@ -5531,7 +6271,7 @@ function abrirModalClientePwa(cli) {
         document.getElementById('pwaCliAction').value = 'update';
         document.getElementById('pwaCliId').value = cli.id || '';
         document.getElementById('pwaCliNombre').value = cli.nombre || '';
-        document.getElementById('pwaCliTelefono').value = cli.telefono || '';
+        document.getElementById('pwaCliTelefono').value = formatPhoneDisplayJS(cli.telefono || '');
         document.getElementById('pwaCliEmail').value = cli.email || '';
         document.getElementById('pwaCliPuntos').value = cli.puntos || 0;
         document.getElementById('pwaCliNotas').value = cli.notas || '';
@@ -5647,7 +6387,7 @@ function filtrarClientesPwa() {
                         <span style="font-size: 0.68rem; color: var(--gold-pwa); font-weight: 800;">⭐ ${parseInt(c.puntos || 0)} pts</span>
                     </div>
                     <div style="font-size: 0.72rem; color: #666; margin-top: 1px;">
-                        📞 ${highlightMatch(c.telefono || c.email || 'Sin teléfono', q)}
+                        📞 ${highlightMatch(c.telefono ? formatPhoneDisplayJS(c.telefono) : (c.email || 'Sin teléfono'), q)}
                     </div>
                 </div>
             </div>
@@ -5836,37 +6576,6 @@ function seleccionarSucursalPredictivaPwa(s) {
     }, 100);
 }
 
-// Venta desde Inventario, con vendedor seleccionado explícitamente.
-function abrirVentaInventarioPwa(id) {
-    const producto = allPwaInventarioData.find(item => Number(item.id) === Number(id));
-    if (!producto) return;
-    document.getElementById('formPwaVentaInventario').reset();
-    document.getElementById('pwaVentaProductoId').value = id;
-    document.getElementById('pwaVentaProductoNombre').textContent = producto.producto + ' - $' + Number(producto.precio).toFixed(2);
-    document.getElementById('pwaVentaCantidadInventario').max = producto.cantidad;
-    document.getElementById('pwaVentaInventarioSheet').style.display = 'flex';
-}
-
-async function guardarVentaInventarioPwa(event) {
-    event.preventDefault();
-    const form = event.target;
-    if (!form.reportValidity()) return;
-    const boton = form.querySelector('[type="submit"]');
-    boton.disabled = true;
-    try {
-        const respuesta = await fetch('api/inventario_action.php', {
-            method: 'POST', body: new FormData(form), headers: {'Accept': 'application/json'}
-        });
-        const datos = await respuesta.json();
-        if (!datos.success) throw new Error(datos.message || 'No se pudo registrar la venta.');
-        alert(datos.message);
-        window.location.reload();
-    } catch (error) {
-        alert(error.message || 'Error de conexión al registrar la venta.');
-        boton.disabled = false;
-    }
-}
-
 // 4. INVENTARIO
 function abrirModalInventarioPwa(inv) {
     const form = document.getElementById('formPwaInventario');
@@ -5942,6 +6651,75 @@ function eliminarInventarioPwa() {
         .then(() => window.location.reload())
         .catch(() => window.location.reload());
     }
+}
+
+let pwaVenderPrecioCatalogo = 0;
+
+function abrirModalVenderInventarioPwa(inv) {
+    if (!inv) return;
+    document.getElementById('formPwaVenderProducto').reset();
+    document.getElementById('pwaVenderProdId').value = inv.id;
+    document.getElementById('pwaVenderProdNombre').innerText = (inv.producto || 'Producto') + ' (Stock: ' + (inv.cantidad || 0) + ')';
+    document.getElementById('pwaVenderStockMax').innerText = (inv.cantidad || 0) + ' ' + (inv.unidad || 'unidades');
+
+    const cantInput = document.getElementById('pwaVenderCantidad');
+    cantInput.max = inv.cantidad || 1;
+    cantInput.value = 1;
+
+    pwaVenderPrecioCatalogo = parseFloat(inv.precio) || 0;
+    document.getElementById('pwaVenderPrecioCatalogoDisplay').innerText = pwaVenderPrecioCatalogo.toFixed(2);
+    document.getElementById('pwaVenderPrecioCobrado').value = pwaVenderPrecioCatalogo.toFixed(2);
+
+    actualizarTotalVentaPwa();
+    const btn = document.getElementById('btnSubmitPwaVender');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerText = 'Confirmar Venta';
+    }
+    document.getElementById('pwaVenderProductoSheet').style.display = 'flex';
+}
+
+function cerrarModalVenderInventarioPwa() {
+    document.getElementById('pwaVenderProductoSheet').style.display = 'none';
+}
+
+function actualizarTotalVentaPwa() {
+    const cant = parseFloat(document.getElementById('pwaVenderCantidad').value) || 0;
+    const precio = parseFloat(document.getElementById('pwaVenderPrecioCobrado').value) || 0;
+    const total = cant * precio;
+    document.getElementById('pwaVenderTotalDisplay').innerText = total.toFixed(2);
+}
+
+function guardarVentaInventarioPwa(e) {
+    e.preventDefault();
+    if (!document.getElementById('formPwaVenderProducto').reportValidity()) return;
+    const btn = document.getElementById('btnSubmitPwaVender');
+    btn.disabled = true;
+    btn.innerText = 'Procesando...';
+
+    const formData = new FormData(document.getElementById('formPwaVenderProducto'));
+
+    fetch('api/inventario_action.php', {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Venta registrada con éxito.');
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo registrar la venta.'));
+            btn.disabled = false;
+            btn.innerText = 'Confirmar Venta';
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerText = 'Confirmar Venta';
+        alert('Error de conexión al registrar la venta.');
+    });
 }
 
 function filtrarInventarioPwa() {
@@ -6116,6 +6894,18 @@ function aplicarFiltrosServiciosPwa() {
     });
 }
 
+function toggleAllServSucursalesPwa() {
+    const cbs = document.querySelectorAll('.pwa-serv-suc-cb');
+    const allChecked = Array.from(cbs).every(cb => cb.checked);
+    cbs.forEach(cb => cb.checked = !allChecked);
+}
+
+function toggleAllServBarberosPwa() {
+    const cbs = document.querySelectorAll('.pwa-serv-barb-cb');
+    const allChecked = Array.from(cbs).every(cb => cb.checked);
+    cbs.forEach(cb => cb.checked = !allChecked);
+}
+
 function abrirModalServicioPwa(srv) {
     const form = document.getElementById('formPwaServicio');
     form.reset();
@@ -6136,6 +6926,29 @@ function abrirModalServicioPwa(srv) {
         document.getElementById('pwaServQueIncluye').value = srv.que_incluye || '';
         document.getElementById('pwaServFotoUrl').value = srv.foto_url || srv.imagen_url || '';
         btnDel.style.display = 'block';
+
+        // Pre-seleccionar sucursales asignadas
+        const assignedSucs = Array.isArray(srv.sucursales_ids) ? srv.sucursales_ids.map(Number) : [];
+        document.querySelectorAll('.pwa-serv-suc-cb').forEach(cb => {
+            if (assignedSucs.length === 0) {
+                // Si no tenía sucursal explícita, marcar todas para asegurar visibilidad
+                cb.checked = true;
+            } else {
+                cb.checked = assignedSucs.includes(Number(cb.value));
+            }
+        });
+
+        // Pre-seleccionar barberos asignados
+        const assignedBarbs = Array.isArray(srv.barberos_ids) ? srv.barberos_ids.map(Number) : [];
+        document.querySelectorAll('.pwa-serv-barb-cb').forEach(cb => {
+            if (assignedBarbs.length === 0) {
+                // Si no tenía barbero explícito, marcar todos por defecto
+                cb.checked = true;
+            } else {
+                cb.checked = assignedBarbs.includes(Number(cb.value));
+            }
+        });
+
     } else {
         title.innerText = 'Nuevo Servicio';
         document.getElementById('pwaServAction').value = 'create';
@@ -6145,6 +6958,10 @@ function abrirModalServicioPwa(srv) {
         document.getElementById('pwaServOrden').value = '0';
         document.getElementById('pwaServActivo').value = '1';
         btnDel.style.display = 'none';
+
+        // Para nuevo servicio, todas las sucursales y barberos marcados por defecto
+        document.querySelectorAll('.pwa-serv-suc-cb').forEach(cb => cb.checked = true);
+        document.querySelectorAll('.pwa-serv-barb-cb').forEach(cb => cb.checked = true);
     }
     document.getElementById('pwaServicioSheet').style.display = 'flex';
 }
