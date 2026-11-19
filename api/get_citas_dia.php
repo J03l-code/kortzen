@@ -17,14 +17,14 @@ try {
     $pdo = getConnection();
 
     $sql = "SELECT c.id, c.fecha_hora, c.estado, c.precio_final, 
-                   u.nombre as barbero, 
+                   CASE WHEN c.reasignacion_pendiente=1 THEN 'Sin barbero asignado' ELSE u.nombre END as barbero,
                    s.nombre as servicio, 
                    cli.nombre as cliente,
                    suc.nombre as sucursal_nombre,
                    ref.codigo_usado as referido_codigo,
                    ref.descuento_aplicado as referido_descuento
             FROM citas c
-            JOIN usuarios u ON c.barbero_id = u.id
+            LEFT JOIN usuarios u ON c.barbero_id = u.id
             JOIN servicios s ON c.servicio_id = s.id
             JOIN clientes cli ON c.cliente_id = cli.id
             JOIN sucursales suc ON c.sucursal_id = suc.id
@@ -51,7 +51,7 @@ try {
             }
         }
     } elseif ($currentUser['rol'] === 'barbero') {
-        $sql .= " AND c.barbero_id = ?";
+        $sql .= " AND c.barbero_id = ? AND c.reasignacion_pendiente=0";
         $params[] = $currentUser['id'];
     }
 

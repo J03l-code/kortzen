@@ -186,7 +186,7 @@ try {
 
             // Validar si el barbero ya tiene citas activas en esta fecha
             $diaSemCita = date('w', strtotime($fecha));
-            $stmtCitasCount = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE barbero_id = ? AND DATE(fecha_hora) = ? AND estado NOT IN ('cancelada', 'no_asistio')");
+            $stmtCitasCount = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND DATE(fecha_hora) = ? AND estado NOT IN ('cancelada', 'no_asistio')");
             $stmtCitasCount->execute([$barbero_id, $fecha]);
             $hasCitasOnDate = intval($stmtCitasCount->fetchColumn() ?? 0) > 0;
 
@@ -267,6 +267,16 @@ try {
                 throw new Exception('Todos los campos son obligatorios para actualizar la cita.');
             }
 
+            $estadoPrevio = $pdo->prepare('SELECT estado, reasignacion_pendiente FROM citas WHERE id = ?');
+            $estadoPrevio->execute([$id]);
+            $citaPrevia = $estadoPrevio->fetch(PDO::FETCH_ASSOC);
+            if ($estado === 'completada' && ($citaPrevia['estado'] ?? '') !== 'completada') {
+                throw new Exception('Finaliza la cita desde el modal de cobro para registrar su método de pago.');
+            }
+            if (!empty($citaPrevia['reasignacion_pendiente'])) {
+                throw new Exception('Esta cita está sin barbero asignado. Usa Reasignar en Citas antes de editarla.');
+            }
+
             // Duración del servicio
             $stmtServ = $pdo->prepare("SELECT nombre, duracion_minutos, precio FROM servicios WHERE id = ?");
             $stmtServ->execute([$servicio_id]);
@@ -336,6 +346,7 @@ try {
                 throw new Exception('La sesión del formulario expiró. Actualiza la página.');
             }
 
+            $metodoPago = validarMetodoPago($_POST['metodo_pago'] ?? null);
             $id = intval($_POST['id'] ?? 0);
             $propina = floatval($_POST['propina'] ?? 0.00);
             if ($propina < 0) $propina = 0.00;
@@ -384,12 +395,13 @@ try {
                 }
             }
             $pdo->beginTransaction();
-            $stmtCitaVenta = $pdo->prepare('SELECT sucursal_id, estado FROM citas WHERE id = ? FOR UPDATE');
+            $stmtCitaVenta = $pdo->prepare('SELECT sucursal_id, estado, reasignacion_pendiente FROM citas WHERE id = ? FOR UPDATE');
             $stmtCitaVenta->execute([$id]);
             $citaVenta = $stmtCitaVenta->fetch(PDO::FETCH_ASSOC);
             if (!$citaVenta || in_array($citaVenta['estado'], ['completada', 'cancelada'], true)) {
                 throw new Exception('La cita no existe, ya fue finalizada o está cancelada.');
             }
+            if (!empty($citaVenta['reasignacion_pendiente'])) throw new Exception('Asigna un barbero disponible antes de finalizar esta cita.');
             validarSucursalVenta($pdo, getOperadorVenta($pdo, (int) $_SESSION['user_id']), (int) $citaVenta['sucursal_id']);
 
             // Cargar datos previos de la cita para cálculo de precio y comisiones
@@ -509,7 +521,7 @@ try {
             $totalProductos = 0.00;
             if ($productosVenta) {
                 $ventaProductos = registrarVentaProductos($pdo, $productosVenta, $_POST['vendedor_id'] ?? null,
-                    (int) $_SESSION['user_id'], $id, (int) $citaVenta['sucursal_id']);
+                    (int) $_SESSION['user_id'], $id, (int) $citaVenta['sucursal_id'], $metodoPago);
                 $itemsProductos = $ventaProductos['items'];
                 $totalProductos = $ventaProductos['total'];
             }
@@ -524,6 +536,16 @@ try {
             ");
             $stmtCDetails->execute([$id]);
             $cD = $stmtCDetails->fetch(PDO::FETCH_ASSOC);
+            $cobroId = registrarCobroCaja($pdo, ['cita_id' => $id, 'sucursal_id' => $citaVenta['sucursal_id'],
+                'registrado_por' => (int) $_SESSION['user_id'], 'metodo_pago' => $metodoPago,
+                'servicios' => $nuevoPrecioFinal, 'productos' => $totalProductos, 'propina' => $propina]);
+            $stmtMetodo = $pdo->prepare('UPDATE citas SET metodo_pago = ? WHERE id = ?');
+            $stmtMetodo->execute([$metodoPago, $id]);
+            if ($ventaProductos !== null) {
+                $idsVenta = $ventaProductos['ventas_ids'];
+                $stmtCobro = $pdo->prepare('UPDATE ventas_productos SET cobro_id = ? WHERE id IN (' . implode(',', array_fill(0, count($idsVenta), '?')) . ')');
+                $stmtCobro->execute(array_merge([$cobroId], $idsVenta));
+            }
             $pdo->commit();
             if ($ventaProductos !== null) {
                 notificarStockVentas($pdo, $ventaProductos, (int) $citaBase['barbero_id']);
@@ -569,6 +591,8 @@ try {
             // a los 30 minutos de finalizada la cita mediante el cron / procesador en segundo plano.
 
             $reciboData = [
+                'metodo_pago' => $metodoPago,
+                'metodo_pago_label' => metodosPagoKortzen()[$metodoPago],
                 'cita_id' => $id,
                 'fecha_hora' => $citaBase['fecha_hora'],
                 'fecha_hora_formateada' => date('d/m/Y H:i', strtotime($citaBase['fecha_hora'])),
@@ -630,6 +654,10 @@ try {
                 throw new Exception('La cita no existe.');
             }
 
+            $stmtCobroHistorico = $pdo->prepare('SELECT * FROM cobros_caja WHERE cita_id = ?');
+            $stmtCobroHistorico->execute([$id]);
+            $cobroHistorico = $stmtCobroHistorico->fetch(PDO::FETCH_ASSOC);
+
             // Obtener adicionales de la tabla de servicios adicionales
             $stmtAd = $pdo->prepare("SELECT id, servicio_id, nombre, precio FROM citas_servicios_adicionales WHERE cita_id = ? ORDER BY id ASC");
             $stmtAd->execute([$id]);
@@ -642,6 +670,10 @@ try {
 
             $precioFinal = floatval($citaR['precio_final'] > 0 ? $citaR['precio_final'] : ($citaR['servicio_precio'] + $sumaAdic));
             $precioBase = floatval($citaR['servicio_precio']);
+            if ($cobroHistorico) {
+                $precioFinal = (float) $cobroHistorico['servicios'];
+                $precioBase = max(0, $precioFinal - $sumaAdic);
+            }
             if ($precioFinal > $sumaAdic && $precioBase == 0) {
                 $precioBase = $precioFinal - $sumaAdic;
             }
@@ -673,7 +705,8 @@ try {
                 ];
             }
 
-            $propina = floatval($citaR['propina'] ?? 0.00);
+            if ($cobroHistorico) $totalProductos = (float) $cobroHistorico['productos'];
+            $propina = (float) ($cobroHistorico['propina'] ?? $citaR['propina'] ?? 0.00);
             $totalCobrar = $precioFinal + $totalProductos + $propina;
             $esFinde = in_array(date('w', strtotime($citaR['fecha_hora'])), [0, 6]);
             $comPct = $esFinde ? floatval($citaR['barbero_comision_finde']) : floatval($citaR['barbero_comision']);
@@ -697,6 +730,8 @@ try {
 
             responderAccionCita(true, '', 'Recibo obtenido con éxito.', [
                 'recibo' => [
+                    'metodo_pago' => $cobroHistorico['metodo_pago'] ?? $citaR['metodo_pago'] ?? null,
+                    'metodo_pago_label' => metodosPagoKortzen()[$cobroHistorico['metodo_pago'] ?? $citaR['metodo_pago'] ?? ''] ?? 'Sin especificar',
                     'cita_id' => $id,
                     'fecha_hora' => $citaR['fecha_hora'],
                     'fecha_hora_formateada' => date('d/m/Y H:i', strtotime($citaR['fecha_hora'])),
@@ -816,6 +851,8 @@ try {
             $nuevoEstado = trim($_POST['estado'] ?? $_GET['estado'] ?? '');
             $propina = floatval($_POST['propina'] ?? 0.00);
             if ($propina < 0) $propina = 0.00;
+
+            if ($nuevoEstado === 'completada') throw new Exception('Usa Finalizar Cita para registrar el método de pago y el cobro.');
 
             $validEstados = ['pendiente', 'confirmada', 'en_atencion', 'completada', 'cancelada', 'no_asistio'];
 

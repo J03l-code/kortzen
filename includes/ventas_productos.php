@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/finanzas.php';
 /** Ventas acreditadas al vendedor, independientemente de quien realiza el cobro. */
 function getVendedoresVenta(PDO $pdo): array
 {
@@ -36,12 +37,13 @@ function getOperadorVenta(PDO $pdo, int $usuarioId): array
  * Admite una transacción externa para que el cobro, los puntos y el stock sean atómicos.
  * usuario_id conserva el significado de beneficiario de la comisión en los reportes existentes.
  */
-function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $operadorId, ?int $citaId = null, ?int $sucursalCitaId = null): array
+function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $operadorId, ?int $citaId = null, ?int $sucursalCitaId = null, $metodoPago = null): array
 {
     $vendedorId = filter_var($vendedorId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     if (!$vendedorId) {
         throw new InvalidArgumentException('Selecciona un vendedor para registrar la venta.');
     }
+    $metodoPago = validarMetodoPago($metodoPago);
     if (!$items) {
         throw new InvalidArgumentException('Selecciona al menos un producto para vender.');
     }
@@ -87,9 +89,11 @@ function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $opera
         $stock = $pdo->prepare('SELECT * FROM inventario WHERE id = ? FOR UPDATE');
         $descontar = $pdo->prepare('UPDATE inventario SET cantidad = cantidad - ? WHERE id = ? AND cantidad >= ?');
         $insertar = $pdo->prepare('INSERT INTO ventas_productos
-            (cita_id, producto_id, cantidad, precio_unitario, sucursal_id, usuario_id, registrado_por, vendedor_nombre, comision_porcentaje)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            (cita_id, producto_id, cantidad, precio_unitario, sucursal_id, usuario_id, registrado_por, vendedor_nombre, comision_porcentaje, metodo_pago)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $totalCentavos = 0;
+        $ventasIds = [];
+        $sucursalesVenta = [];
         $itemsRecibo = [];
         $alertasStock = [];
         foreach ($cantidades as $productoId => $cantidad) {
@@ -119,7 +123,9 @@ function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $opera
                 $precio = $centavos / 100.0;
                 $subtotalCentavos = $cantidadLinea * $centavos;
                 $insertar->execute([$citaId, $productoId, $cantidadLinea, $precio, $sucursalId,
-                    $vendedorId, $operadorId, $vendedor['nombre'], $porcentaje]);
+                    $vendedorId, $operadorId, $vendedor['nombre'], $porcentaje, $metodoPago]);
+                $ventasIds[] = (int) $pdo->lastInsertId();
+                $sucursalesVenta[$sucursalId] = true;
                 $totalCentavos += $subtotalCentavos;
                 $itemsRecibo[] = ['id' => $productoId, 'nombre' => $producto['producto'], 'cantidad' => $cantidadLinea,
                     'precio_unitario' => $precio, 'total' => $subtotalCentavos / 100.0];
@@ -130,11 +136,20 @@ function registrarVentaProductos(PDO $pdo, array $items, $vendedorId, int $opera
                 $alertasStock[] = ['producto_id' => $productoId, 'cantidad' => $restante, 'stock_minimo' => $minimo];
             }
         }
+        $cobroId = null;
+        if ($citaId === null) {
+            if (count($sucursalesVenta) !== 1) throw new InvalidArgumentException('Registra por separado las ventas de distintas sucursales.');
+            $cobroId = registrarCobroCaja($pdo, ['sucursal_id' => array_key_first($sucursalesVenta),
+                'registrado_por' => $operadorId, 'metodo_pago' => $metodoPago, 'productos' => $totalCentavos / 100.0]);
+            $vincular = $pdo->prepare('UPDATE ventas_productos SET cobro_id = ? WHERE id IN (' . implode(',', array_fill(0, count($ventasIds), '?')) . ')');
+            $vincular->execute(array_merge([$cobroId], $ventasIds));
+        }
         if ($propia) {
             $pdo->commit();
         }
         return ['vendedor_id' => $vendedorId, 'vendedor_nombre' => $vendedor['nombre'],
             'barbero_id' => ($vendedor['rol'] === 'barbero' ? $vendedorId : null),
+            'ventas_ids' => $ventasIds, 'cobro_id' => $cobroId, 'metodo_pago' => $metodoPago,
             'total' => $totalCentavos / 100.0, 'items' => $itemsRecibo, 'alertas_stock' => $alertasStock];
     } catch (Throwable $e) {
         if ($propia && $pdo->inTransaction()) {

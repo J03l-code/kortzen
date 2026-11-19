@@ -115,7 +115,7 @@ try {
             INNER JOIN servicios serv ON c.servicio_id = serv.id
             INNER JOIN usuarios barb ON c.barbero_id = barb.id
             LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
-            WHERE c.estado IN ('confirmada', 'pendiente')
+            WHERE c.reasignacion_pendiente=0 AND c.estado IN ('confirmada', 'pendiente')
               AND (c.recordatorio_2h_enviado IS NULL OR c.recordatorio_2h_enviado = 0)
               AND (
                   (c.fecha_hora >= NOW() - INTERVAL 30 MINUTE AND c.fecha_hora <= NOW() + INTERVAL 180 MINUTE)

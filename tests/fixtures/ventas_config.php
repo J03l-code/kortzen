@@ -2,16 +2,22 @@
 // Dependencias aisladas para ejecutar los endpoints reales sin acceder a producción.
 $peticionTest = json_decode(file_get_contents(__DIR__ . '/request.json'), true, 512, JSON_THROW_ON_ERROR);
 require_once $peticionTest['helper'];
+require_once dirname($peticionTest['helper']) . '/reasignacion.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 $_POST = $peticionTest['post'];
-$_GET = [];
+$_GET = $peticionTest['get'] ?? [];
 $_SERVER['HTTP_ACCEPT'] = 'application/json';
+$_SERVER['REQUEST_METHOD'] = 'POST';
 $_SESSION = ['user_id' => $peticionTest['operador'] ?? 1, 'user_rol' => $peticionTest['rol'] ?? 'admin', 'csrf_token' => 'token-pruebas'];
 
 class VentasEndpointTestPDO extends PDO
 {
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
+        if (str_contains($query,'ON DUPLICATE KEY UPDATE')) {
+            $query=preg_replace('/ON DUPLICATE KEY UPDATE[\s\S]*$/',
+                'ON CONFLICT(barbero_id,dia_semana) DO UPDATE SET hora_inicio=excluded.hora_inicio,hora_fin=excluded.hora_fin,activo=excluded.activo',$query);
+        }
         return parent::prepare(str_replace(' FOR UPDATE', '', $query), $options);
     }
 
@@ -50,3 +56,11 @@ function query($sql, $params = []): array
     $stmt->execute($params);
     return $stmt->fetchAll();
 }
+
+function getUsuarioSucursalesIds($id): array
+{
+    $usuario = query('SELECT rol,sucursal_id FROM usuarios WHERE id = ?', [$id])[0] ?? [];
+    if (($usuario['rol'] ?? '') === 'admin') return array_map('intval', array_column(query('SELECT id FROM sucursales'), 'id'));
+    return array_map('intval', array_column(query('SELECT sucursal_id FROM usuarios_sucursales WHERE usuario_id = ?', [$id]), 'sucursal_id')) ?: [(int) ($usuario['sucursal_id'] ?? 0)];
+}
+function canManageSchedules(): bool { return isAdminTecnico() || isAdminLocal(); }

@@ -347,7 +347,7 @@ $lowStock = query("SELECT i.producto, i.cantidad, i.stock_minimo, s.nombre as su
                    ORDER BY i.cantidad ASC LIMIT 5");
 
 // Agenda General de Hoy
-$agendaGlobal = query("SELECT c.*, u.nombre as barbero, COALESCE(u.foto_url, '') as barbero_foto, s.nombre as servicio, suc.nombre as sucursal_nombre, cli.nombre as cliente, cli.telefono, cli.id as cliente_id 
+$agendaGlobal = query("SELECT c.*, CASE WHEN c.reasignacion_pendiente=1 THEN 'Sin barbero asignado' ELSE u.nombre END as barbero, CASE WHEN c.reasignacion_pendiente=1 THEN '' ELSE COALESCE(u.foto_url, '') END as barbero_foto, s.nombre as servicio, suc.nombre as sucursal_nombre, cli.nombre as cliente, cli.telefono, cli.id as cliente_id
                        FROM citas c
                        JOIN usuarios u ON c.barbero_id = u.id
                        JOIN servicios s ON c.servicio_id = s.id
@@ -601,8 +601,8 @@ try {
             s.nombre as servicio_nombre,
             COALESCE(s.precio, 0.00) as servicio_precio,
             COALESCE(s.duracion_minutos, 45) as duracion_minutos,
-            u.nombre as barbero_nombre,
-            COALESCE(u.foto_url, '') as barbero_foto,
+            CASE WHEN c.reasignacion_pendiente=1 THEN 'Sin barbero asignado' ELSE u.nombre END as barbero_nombre,
+            CASE WHEN c.reasignacion_pendiente=1 THEN '' ELSE COALESCE(u.foto_url, '') END as barbero_foto,
             COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
             COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
             su.nombre as sucursal_nombre,
@@ -615,7 +615,7 @@ try {
             FROM citas c
             INNER JOIN clientes cl ON c.cliente_id = cl.id
             INNER JOIN servicios s ON c.servicio_id = s.id
-            INNER JOIN usuarios u ON c.barbero_id = u.id
+            LEFT JOIN usuarios u ON c.barbero_id = u.id
             INNER JOIN sucursales su ON c.sucursal_id = su.id
             LEFT JOIN referidos ref ON c.id = ref.cita_id
             LEFT JOIN clientes ref_cli ON ref.referente_id = ref_cli.id
@@ -639,6 +639,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>KORTZEN Admin</title>
+    <link rel="stylesheet" href="css/gestion-operativa.css">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon.png?v=10">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/favicon.png?v=10">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2101,6 +2102,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
         </div>
 
         <!-- Feed de Citas y Disponibilidad del Día -->
+        <div id="pwaPendientesAgenda" class="kortzen-aviso" hidden></div>
         <div id="pwaAgendaFeed">
             <div style="text-align: center; padding: 40px; color: var(--text-light);">
                 <i class="fas fa-spinner fa-spin fa-2x"></i>
@@ -2122,6 +2124,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
     <!-- VIEW 3: CITAS (GESTIÓN COMPLETA IGUAL A LA WEB CON ESTILO PWA) -->
     <!-- ========================================================================= -->
     <section id="viewCitas" class="pwa-view-panel <?php echo $activeTab === 'citas' ? 'active' : ''; ?>">
+        <div class="kortzen-aviso"><a href="citas.php?vista=calendario">Abrir calendario y gestionar citas sin barbero asignado</a> · <a href="caja.php">Cierre de Caja y Contabilidad</a></div>
         <!-- Header con Título y Botón + Cita -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
             <div>
@@ -2356,6 +2359,12 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
     <!-- VIEW 7: INVENTARIO -->
     <!-- ========================================================================= -->
     <section id="viewInventario" class="pwa-view-panel <?php echo $activeTab === 'inventario' ? 'active' : ''; ?>">
+        <div data-inventario-tabs>
+        <div class="kortzen-filtros" role="tablist" aria-label="Inventario">
+            <button type="button" class="pwa-btn-secondary" data-inventario-tab="stock" aria-selected="true">Productos y stock</button>
+            <button type="button" class="pwa-btn-secondary" data-inventario-tab="historial" aria-selected="false">Historial de Ventas de Productos</button>
+        </div>
+        <div data-inventario-panel="stock">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
             <div>
                 <h2 style="font-size: 1.3rem; font-weight: 900; color: var(--text-dark);">Inventario</h2>
@@ -2401,6 +2410,9 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
             <?php endforeach; ?>
         </div>
         <?php include 'includes/ventas_resumen.php'; ?>
+        </div>
+        <div data-inventario-panel="historial" hidden><?php include 'includes/historial_ventas.php'; ?></div>
+        </div>
     </section>
 
     <!-- ========================================================================= -->
@@ -2556,6 +2568,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
 
                 <form id="formPwaHorariosSemanal" onsubmit="guardarHorariosSemanalPwa(event)">
                     <input type="hidden" name="action" value="guardar_horarios">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="barbero_id" id="pwaHorariosBarberoId" value="<?php echo $barberosList[0]['id'] ?? 0; ?>">
                     <input type="hidden" name="ajax" value="1">
 
@@ -3548,6 +3561,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 <div><strong>Cita:</strong> #<span id="pwaReciboCitaId">-</span></div>
                 <div><strong>Cliente:</strong> <span id="pwaReciboCliente">-</span></div>
                 <div><strong>Barbero:</strong> <span id="pwaReciboBarbero">-</span></div>
+                <div><strong>Pago:</strong> <span id="pwaReciboMetodoPago">-</span></div>
             </div>
 
             <div style="font-size: 0.8rem; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
@@ -4594,6 +4608,23 @@ function cargarDatosHorariosPwa() {
         .then(data => {
             if (data.success) {
                 agendaJsonData = data;
+                const pendientesAgenda = document.getElementById('pwaPendientesAgenda');
+                pendientesAgenda.replaceChildren();
+                pendientesAgenda.hidden = !(data.citas_sin_barbero || []).length;
+                if (!pendientesAgenda.hidden) {
+                    const titulo = document.createElement('strong');
+                    titulo.textContent = 'Sin barbero asignado · Pendientes de reasignación';
+                    pendientesAgenda.append(titulo);
+                    data.citas_sin_barbero.forEach(cita => {
+                        const fila = document.createElement('p');
+                        fila.textContent = '#' + cita.id + ' · ' + cita.fecha_hora.slice(0,16) + ' · ' + cita.cliente + ' · ' + cita.servicio;
+                        pendientesAgenda.append(fila);
+                    });
+                    const enlace = document.createElement('a');
+                    enlace.href = 'citas.php?vista=calendario';
+                    enlace.textContent = 'Asignar las citas a un barbero disponible';
+                    pendientesAgenda.append(enlace);
+                }
                 actualizarMesHeader(data.rango.mes_nombre);
                 renderizarDateStripPwa(data);
                 renderizarFeedHorariosPwa(data);
@@ -5670,6 +5701,7 @@ function mostrarReciboEnModalPwa(r) {
     document.getElementById('pwaReciboFechaHora').innerText = r.fecha_hora_formateada || '';
     document.getElementById('pwaReciboCliente').innerText = r.cliente_nombre || 'Cliente';
     document.getElementById('pwaReciboBarbero').innerText = r.barbero_nombre || 'Barbero';
+    document.getElementById('pwaReciboMetodoPago').innerText = r.metodo_pago_label || 'Sin especificar';
 
     document.getElementById('pwaReciboItemPrincipal').innerText = r.servicio_principal || 'Corte';
     document.getElementById('pwaReciboPrecioPrincipal').innerText = '$' + parseFloat(r.precio_principal || 0).toFixed(2);
@@ -7203,6 +7235,7 @@ function agregarBloqueoDiaPwa(e) {
 
     const fd = new FormData();
     fd.append('action', 'agregar_bloqueo');
+    fd.append('csrf_token', <?php echo json_encode(generateCSRFToken()); ?>);
     fd.append('barbero_id', barberoId);
     fd.append('fecha', fecha);
     fd.append('motivo', motivo);
@@ -7235,6 +7268,7 @@ function eliminarBloqueoDiaPwa(bloqueoId) {
 
     const fd = new FormData();
     fd.append('action', 'eliminar_bloqueo');
+    fd.append('csrf_token', <?php echo json_encode(generateCSRFToken()); ?>);
     fd.append('barbero_id', barberoId);
     fd.append('bloqueo_id', bloqueoId);
     fd.append('ajax', '1');
@@ -7275,6 +7309,7 @@ function agregarBloqueoHoraPwa(e) {
 
     const fd = new FormData();
     fd.append('action', 'agregar_bloqueo_hora');
+    fd.append('csrf_token', <?php echo json_encode(generateCSRFToken()); ?>);
     fd.append('barbero_id', barberoId);
     fd.append('fecha', fecha);
     fd.append('hora_inicio', horaInicio);
@@ -7308,6 +7343,7 @@ function eliminarBloqueoHoraPwa(bloqueoId) {
 
     const fd = new FormData();
     fd.append('action', 'eliminar_bloqueo_hora');
+    fd.append('csrf_token', <?php echo json_encode(generateCSRFToken()); ?>);
     fd.append('barbero_id', barberoId);
     fd.append('bloqueo_id', bloqueoId);
     fd.append('ajax', '1');
@@ -7778,5 +7814,6 @@ document.addEventListener('click', function(e) {
 </script>
 
 <script src="js/ventas-vendedor.js" defer></script>
+<script src="js/historial-ventas.js" defer></script>
 </body>
 </html>

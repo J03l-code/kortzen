@@ -150,6 +150,9 @@
                     <span>Citas</span>
                 </a>
 
+                <?php if (esAdministradorCaja($currentUser)): ?>
+                    <a href="caja.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) === 'caja.php' ? 'active' : ''; ?>"><span>Cierre de Caja y Contabilidad</span></a>
+                <?php endif; ?>
                 <?php if (canManageSchedules()): ?>
                     <a href="horarios.php"
                         class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'horarios.php' ? 'active' : ''; ?>">

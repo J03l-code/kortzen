@@ -144,7 +144,7 @@ try {
             LEFT JOIN usuarios u ON c.barbero_id = u.id
             LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
             LEFT JOIN referidos ref ON c.id = ref.cita_id
-            WHERE c.barbero_id IN ($inBarbers)
+            WHERE c.reasignacion_pendiente = 0 AND c.barbero_id IN ($inBarbers)
               AND c.fecha_hora >= ?
               AND c.fecha_hora <= ?
               AND c.estado NOT IN ('cancelada', 'no_asistio')
@@ -333,6 +333,15 @@ try {
         $currentTs += 86400; // Siguiente día
     }
 
+    $paramsSinBarbero = [$startDate . ' 00:00:00', $endDate . ' 23:59:59'];
+    $filtroSinBarbero = alcanceReporte($currentUser, 'c', $paramsSinBarbero, $filterSucursalId ?: null);
+    $stmtSinBarbero = $pdo->prepare("SELECT c.id,c.fecha_hora,cl.nombre AS cliente,s.nombre AS servicio,
+        c.motivo_reasignacion FROM citas c LEFT JOIN clientes cl ON cl.id=c.cliente_id
+        LEFT JOIN servicios s ON s.id=c.servicio_id WHERE c.reasignacion_pendiente=1
+        AND c.estado IN ('pendiente','confirmada') AND c.fecha_hora >= ? AND c.fecha_hora <= ?" . $filtroSinBarbero . ' ORDER BY c.fecha_hora');
+    $stmtSinBarbero->execute($paramsSinBarbero);
+    $citasSinBarbero = $stmtSinBarbero->fetchAll(PDO::FETCH_ASSOC);
+
     echo json_encode([
         'success' => true,
         'rango' => [
@@ -351,6 +360,7 @@ try {
         'sucursales' => $sucursales,
         'barberos' => $barberos,
         'citas' => $citas,
+        'citas_sin_barbero' => $citasSinBarbero,
         'citas_por_fecha' => $citasPorFecha,
         'disponibilidad' => $disponibilidadPorFecha
     ], JSON_UNESCAPED_UNICODE);

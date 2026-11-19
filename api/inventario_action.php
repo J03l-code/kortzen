@@ -121,7 +121,7 @@ try {
                 'producto_id' => $productoVentaId,
                 'cantidad' => $_POST['cantidad'] ?? null,
                 'precio_unitario' => $_POST['precio_venta'] ?? $_POST['precio_cobrado'] ?? null
-            ]], $_POST['vendedor_id'] ?? null, (int) $_SESSION['user_id']);
+            ]], $_POST['vendedor_id'] ?? null, (int) $_SESSION['user_id'], null, null, $_POST['metodo_pago'] ?? null);
             notificarStockVentas($pdo, $venta);
             registrarLog('VENTA', 'inventario', (int) $productoVentaId,
                 'Venta acreditada a ' . $venta['vendedor_nombre'] . ' (#' . $venta['vendedor_id'] . ') por $' . number_format($venta['total'], 2));

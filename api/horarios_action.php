@@ -30,6 +30,26 @@ if ($barberoId <= 0 && $action !== 'get_barbero_horarios') {
 try {
     $pdo = getConnection();
 
+    $operadorHorario = getOperadorVenta($pdo, (int) $_SESSION['user_id']);
+    if (!esAdministradorCaja($operadorHorario)) throw new Exception('Solo administración puede modificar horarios.');
+    if ($action !== 'get_barbero_horarios') {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !is_string($_POST['csrf_token'] ?? null) || !verifyCSRFToken($_POST['csrf_token'])) {
+            throw new Exception('Actualiza la página antes de modificar el horario.');
+        }
+    }
+    if (!in_array($operadorHorario['rol'], ['admin','superadmin','administrador'], true)) {
+        $permitidas = getUsuarioSucursalesIds($operadorHorario['id']);
+        $delBarbero = getUsuarioSucursalesIds($barberoId);
+        if (!array_intersect($permitidas, $delBarbero)) throw new Exception('No puedes gestionar este barbero.');
+    }
+    if (in_array($action, ['guardar_horarios','agregar_bloqueo','agregar_bloqueo_hora'], true)) {
+        $pdo->beginTransaction();
+        $bloquearBarbero = $pdo->prepare('SELECT id FROM usuarios WHERE id = ? FOR UPDATE');
+        $bloquearBarbero->execute([$barberoId]);
+        if (!$bloquearBarbero->fetchColumn()) throw new Exception('El barbero no existe.');
+    }
+    $textoReasignacion = '';
+
     switch ($action) {
         case 'get_barbero_horarios':
             $h = query("SELECT * FROM horarios_barberos WHERE barbero_id = ? ORDER BY dia_semana ASC", [$barberoId]);
@@ -61,6 +81,13 @@ try {
                 $inicio = $horaInicio[$dia] ?? '10:00';
                 $fin = $horaFin[$dia] ?? '20:00';
 
+                if (!is_string($inicio) || !is_string($fin) ||
+                    !preg_match('/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/', $inicio) ||
+                    !preg_match('/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/', $fin) ||
+                    ($esActivo && substr($inicio,0,5) >= substr($fin,0,5))) {
+                    throw new Exception('Revisa las horas de inicio y fin de los días activos.');
+                }
+
                 // Insertar o actualizar (UPSERT)
                 $sql = "INSERT INTO horarios_barberos (barbero_id, dia_semana, hora_inicio, hora_fin, activo) 
                         VALUES (?, ?, ?, ?, ?)
@@ -73,11 +100,15 @@ try {
                 $stmt->execute([$barberoId, $dia, $inicio, $fin, $esActivo]);
             }
 
+            $afectadas = marcarCitasSinBarbero($pdo, $barberoId, $operadorHorario);
+            $pdo->commit();
+            $textoReasignacion = $afectadas > 0 ? " Hay {$afectadas} cita(s) sin barbero asignado. Revísalas en Citas." : '';
+
             registrarLog('UPDATE', 'horarios_barberos', $barberoId, 'Horarios actualizados');
 
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'message' => 'Horarios del barbero guardados correctamente']);
+                echo json_encode(['success' => true, 'message' => 'Horarios del barbero guardados correctamente' . $textoReasignacion]);
                 exit;
             }
 
@@ -106,11 +137,15 @@ try {
             $stmt->execute([$barberoId, $fecha, $motivo, $_SESSION['user_id']]);
 
             $newId = $pdo->lastInsertId();
+            $afectadas = marcarCitasSinBarbero($pdo, $barberoId, $operadorHorario);
+            $pdo->commit();
+            $textoReasignacion = $afectadas > 0 ? " Hay {$afectadas} cita(s) sin barbero asignado. Revísalas en Citas." : '';
+
             registrarLog('INSERT', 'dias_bloqueados', $newId, "Día bloqueado: $fecha - $motivo");
 
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'message' => 'Día bloqueado agregado exitosamente', 'id' => $newId]);
+                echo json_encode(['success' => true, 'message' => 'Día bloqueado agregado exitosamente' . $textoReasignacion, 'id' => $newId]);
                 exit;
             }
 
@@ -163,11 +198,15 @@ try {
             $stmt->execute([$barberoId, $fecha, $horaInicio, $horaFin, $motivo, $_SESSION['user_id']]);
 
             $newBhId = $pdo->lastInsertId();
+            $afectadas = marcarCitasSinBarbero($pdo, $barberoId, $operadorHorario);
+            $pdo->commit();
+            $textoReasignacion = $afectadas > 0 ? " Hay {$afectadas} cita(s) sin barbero asignado. Revísalas en Citas." : '';
+
             registrarLog('INSERT', 'bloqueos_horas', $newBhId, "Bloqueo hora: $fecha ($horaInicio-$horaFin) - $motivo");
 
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'message' => 'Bloqueo de horario agregado exitosamente', 'id' => $newBhId]);
+                echo json_encode(['success' => true, 'message' => 'Bloqueo de horario agregado exitosamente' . $textoReasignacion, 'id' => $newBhId]);
                 exit;
             }
 
@@ -207,6 +246,7 @@ try {
     }
 
 } catch (PDOException $e) {
+    if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
     error_log("Error en horarios_action.php: " . $e->getMessage());
 
     $msg = (strpos($e->getMessage(), 'Duplicate entry') !== false) 
@@ -223,6 +263,7 @@ try {
     exit;
 
 } catch (Exception $e) {
+    if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
     if ($isAjax) {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);

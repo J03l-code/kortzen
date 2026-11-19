@@ -19,3 +19,5 @@ try {
     <small style="display: block; margin-top: 6px; color: #666;">Selecciona a quien realizó la venta de productos.</small>
 </div>
 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
+
+<?php include __DIR__ . '/metodo_pago.php'; ?>

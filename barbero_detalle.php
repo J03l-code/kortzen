@@ -112,7 +112,7 @@ try {
         INNER JOIN clientes cl ON c.cliente_id = cl.id
         INNER JOIN servicios s ON c.servicio_id = s.id
         LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
-        WHERE c.barbero_id = ?
+        WHERE c.reasignacion_pendiente = 0 AND c.barbero_id = ?
         ORDER BY c.fecha_hora DESC
     ");
     $stmtCitas->execute([$barbero_id]);
@@ -135,7 +135,7 @@ try {
     $stmtGanMesServ = $pdo->prepare("
         SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN ? ELSE ? END) / 100)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
     ");
     $stmtGanMesServ->execute([$com_finde, $com_diaria, $barbero_id, $monthStart, $monthEnd]);
     $gananciaMesServicios = floatval($stmtGanMesServ->fetchColumn() ?? 0);
@@ -163,7 +163,7 @@ try {
     $stmtPropMes = $pdo->prepare("
         SELECT SUM(IFNULL(propina, 0)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
     ");
     $stmtPropMes->execute([$barbero_id, $monthStart, $monthEnd]);
     $propinasMes = floatval($stmtPropMes->fetchColumn() ?? 0);
@@ -179,7 +179,7 @@ try {
     $stmtGanHistServ = $pdo->prepare("
         SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN ? ELSE ? END) / 100)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada'
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada'
     ");
     $stmtGanHistServ->execute([$com_finde, $com_diaria, $barbero_id]);
     $gananciaHistServicios = floatval($stmtGanHistServ->fetchColumn() ?? 0);
@@ -205,7 +205,7 @@ try {
     $stmtPropHist = $pdo->prepare("
         SELECT SUM(IFNULL(propina, 0)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada'
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada'
     ");
     $stmtPropHist->execute([$barbero_id]);
     $propinasHist = floatval($stmtPropHist->fetchColumn() ?? 0);
@@ -255,7 +255,7 @@ try {
         INNER JOIN clientes cl ON c.cliente_id = cl.id
         INNER JOIN servicios s ON c.servicio_id = s.id
         LEFT JOIN sucursales suc ON c.sucursal_id = suc.id
-        WHERE c.barbero_id = ? AND DATE(c.fecha_hora) = CURDATE()
+        WHERE c.reasignacion_pendiente = 0 AND c.barbero_id = ? AND DATE(c.fecha_hora) = CURDATE()
         ORDER BY c.fecha_hora ASC
     ");
     $stmtCitasHoy->execute([$barbero_id]);

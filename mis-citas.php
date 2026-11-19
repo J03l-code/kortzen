@@ -19,7 +19,7 @@ if ($cliente_id) {
     try {
         $pdo = getConnection();
         // Citas futuras
-        $sqlFuturas = "SELECT c.*, s.nombre as servicio, u.nombre as barbero, suc.nombre as sucursal 
+        $sqlFuturas = "SELECT c.*, s.nombre as servicio, CASE WHEN c.reasignacion_pendiente=1 THEN 'Sin barbero asignado' ELSE u.nombre END as barbero, suc.nombre as sucursal
                        FROM citas c
                        LEFT JOIN servicios s ON c.servicio_id = s.id
                        LEFT JOIN usuarios u ON c.barbero_id = u.id
@@ -31,7 +31,7 @@ if ($cliente_id) {
         $citasFuturas = $stmtF->fetchAll(PDO::FETCH_ASSOC);
 
         // Historial
-        $sqlHistorial = "SELECT c.*, s.nombre as servicio, u.nombre as barbero 
+        $sqlHistorial = "SELECT c.*, s.nombre as servicio, CASE WHEN c.reasignacion_pendiente=1 THEN 'Sin barbero asignado' ELSE u.nombre END as barbero
                          FROM citas c
                          LEFT JOIN servicios s ON c.servicio_id = s.id
                          LEFT JOIN usuarios u ON c.barbero_id = u.id

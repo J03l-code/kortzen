@@ -75,7 +75,7 @@ try {
         $diaSem = date('w', $ts);
 
         // 1. Verificar si el barbero ya tiene citas agendadas en esta fecha (si tiene citas, claramente labora ese día)
-        $stmtCitasCount = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE barbero_id = ? AND DATE(fecha_hora) = ? AND estado NOT IN ('cancelada', 'no_asistio')");
+        $stmtCitasCount = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND DATE(fecha_hora) = ? AND estado NOT IN ('cancelada', 'no_asistio')");
         $stmtCitasCount->execute([$bId, $fDate]);
         $hasCitasOnDate = intval($stmtCitasCount->fetchColumn() ?? 0) > 0;
 
@@ -143,7 +143,7 @@ try {
         $sqlC = "SELECT c.fecha_hora, COALESCE(s.duracion_minutos, 60) as duracion_minutos 
                  FROM citas c 
                  LEFT JOIN servicios s ON c.servicio_id = s.id 
-                 WHERE c.barbero_id = ? AND c.estado NOT IN ('cancelada', 'no_asistio') AND DATE(c.fecha_hora) = ?";
+                 WHERE c.barbero_id = ? AND c.reasignacion_pendiente = 0 AND c.estado NOT IN ('cancelada', 'no_asistio') AND DATE(c.fecha_hora) = ?";
         $paramsC = [$bId, $fDate];
         if ($excludeId > 0) {
             $sqlC .= " AND c.id != ?";

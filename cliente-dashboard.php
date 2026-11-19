@@ -75,7 +75,7 @@ if ($cliente_id) {
 
         // Buscar TODAS las citas reservadas del cliente (activas, de hoy o futuras, por ID, email o teléfono)
         $sqlCitasCli = "
-            SELECT c.*, s.nombre as servicio_nombre, b.nombre as barbero_nombre, suc.nombre as sucursal_nombre
+            SELECT c.*, s.nombre as servicio_nombre, CASE WHEN c.reasignacion_pendiente=1 THEN 'Sin barbero asignado' ELSE b.nombre END as barbero_nombre, suc.nombre as sucursal_nombre
             FROM citas c
             LEFT JOIN servicios s ON c.servicio_id = s.id
             LEFT JOIN usuarios b ON c.barbero_id = b.id

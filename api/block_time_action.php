@@ -14,6 +14,7 @@ $action = $_POST['action'] ?? '';
 
 if ($action === 'bloquear_descanso_barbero') {
     try {
+        if (!is_string($_POST['csrf_token'] ?? null) || !verifyCSRFToken($_POST['csrf_token'])) throw new Exception('Actualiza la página antes de bloquear el horario.');
         $pdo = getConnection();
         $barberoId = $_SESSION['user_id'];
         $fecha = $_POST['fecha'] ?? date('Y-m-d');
@@ -44,12 +45,18 @@ if ($action === 'bloquear_descanso_barbero') {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
 
+        $pdo->beginTransaction();
+        $bloquearBarbero = $pdo->prepare('SELECT id FROM usuarios WHERE id = ? FOR UPDATE');
+        $bloquearBarbero->execute([$barberoId]);
         $stmt = $pdo->prepare("INSERT INTO bloqueos_horas (barbero_id, fecha, hora_inicio, hora_fin, motivo) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([$barberoId, $fecha, $horaInicioStr, $horaFinStr, $motivo]);
+        marcarCitasSinBarbero($pdo, (int) $barberoId, getOperadorVenta($pdo, (int) $barberoId));
+        $pdo->commit();
 
         header('Location: ../barber-dashboard.php?success=' . urlencode("Horario bloqueado ($horaInicioStr - $horaFinStr) por motivo: $motivo."));
         exit;
     } catch (Exception $e) {
+        if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
         header('Location: ../barber-dashboard.php?error=' . urlencode($e->getMessage()));
         exit;
     }

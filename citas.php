@@ -73,8 +73,8 @@ try {
             COALESCE(cl.foto_perfil, '') as cliente_foto,
             s.nombre as servicio_nombre,
             COALESCE(s.precio, 0.00) as servicio_precio,
-            u.nombre as barbero_nombre,
-            COALESCE(u.foto_url, '') as barbero_foto,
+            CASE WHEN c.reasignacion_pendiente=1 THEN 'Sin barbero asignado' ELSE u.nombre END as barbero_nombre,
+            CASE WHEN c.reasignacion_pendiente=1 THEN '' ELSE COALESCE(u.foto_url, '') END as barbero_foto,
             COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
             COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
             su.nombre as sucursal_nombre,
@@ -87,7 +87,7 @@ try {
             FROM citas c
             INNER JOIN clientes cl ON c.cliente_id = cl.id
             INNER JOIN servicios s ON c.servicio_id = s.id
-            INNER JOIN usuarios u ON c.barbero_id = u.id
+            LEFT JOIN usuarios u ON c.barbero_id = u.id
             INNER JOIN sucursales su ON c.sucursal_id = su.id
             LEFT JOIN referidos ref ON c.id = ref.cita_id
             LEFT JOIN clientes ref_cli ON ref.referente_id = ref_cli.id
@@ -97,7 +97,7 @@ try {
 
     // SI ES BARBERO: Solo ver sus citas
     if ($currentUser['rol'] === 'barbero') {
-        $sql .= " AND c.barbero_id = ?";
+        $sql .= " AND c.barbero_id = ? AND c.reasignacion_pendiente = 0";
         $params[] = $currentUser['id'];
     } elseif ($currentUser['rol'] === 'admin_local') {
         // Admin Local: Solo ver citas de sus sucursales asignadas
@@ -518,7 +518,8 @@ function toggleFiltroHoy() {
     }
 </style>
 
-<div class="table-container">
+<?php include 'includes/calendario_citas.php'; ?>
+<div class="table-container" id="citasVistaLista">
     <table class="table">
         <thead>
             <tr>
@@ -889,6 +890,7 @@ function toggleFiltroHoy() {
                 <div><strong>Cita:</strong> #<span id="reciboCitaId">-</span></div>
                 <div><strong>Cliente:</strong> <span id="reciboCliente">-</span></div>
                 <div><strong>Barbero:</strong> <span id="reciboBarbero">-</span></div>
+                <div><strong>Pago:</strong> <span id="reciboMetodoPago">-</span></div>
             </div>
 
             <div style="font-size: 0.82rem; margin-bottom: 12px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 10px;">
@@ -1253,6 +1255,7 @@ function toggleFiltroHoy() {
         document.getElementById('reciboFechaHora').innerText = r.fecha_hora_formateada || '';
         document.getElementById('reciboCliente').innerText = r.cliente_nombre || 'Cliente';
         document.getElementById('reciboBarbero').innerText = r.barbero_nombre || 'Barbero';
+        document.getElementById('reciboMetodoPago').innerText = r.metodo_pago_label || 'Sin especificar';
 
         document.getElementById('reciboItemPrincipal').innerText = r.servicio_principal || 'Corte';
         document.getElementById('reciboPrecioPrincipal').innerText = '$' + parseFloat(r.precio_principal || 0).toFixed(2);

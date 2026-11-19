@@ -32,6 +32,13 @@ $pageTitle = 'Inventario';
 include 'includes/header.php';
 ?>
 
+<link rel="stylesheet" href="css/gestion-operativa.css">
+<div data-inventario-tabs>
+<div class="kortzen-filtros" role="tablist" aria-label="Inventario">
+    <button type="button" class="btn-secondary" data-inventario-tab="stock" aria-selected="true">Productos y stock</button>
+    <button type="button" class="btn-secondary" data-inventario-tab="historial" aria-selected="false">Historial de Ventas de Productos</button>
+</div>
+<div data-inventario-panel="stock">
 <div class="page-header">
     <h1 class="page-title">Inventario de Materiales</h1>
     <?php if (!$isBarber): ?>
@@ -527,4 +534,8 @@ include 'includes/header.php';
     }
 </script>
 
+</div>
+<div data-inventario-panel="historial" hidden><?php include 'includes/historial_ventas.php'; ?></div>
+</div>
+<script src="js/historial-ventas.js" defer></script>
 <?php include 'includes/footer.php'; ?>

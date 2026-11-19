@@ -28,7 +28,8 @@ function fixtureVentas(): PDO
     $pdo->exec("INSERT INTO inventario VALUES (1, 'Cera', 10, 12.50, 1), (2, 'Champú', 1, 8, 1), (3, 'Otra sucursal', 5, 5, 2)");
     $pdo->exec('CREATE TABLE ventas_productos (id INTEGER PRIMARY KEY, cita_id INTEGER, producto_id INTEGER, cantidad INTEGER,
         precio_unitario DECIMAL, sucursal_id INTEGER, usuario_id INTEGER, registrado_por INTEGER,
-        vendedor_nombre TEXT, comision_porcentaje DECIMAL, fecha DATETIME DEFAULT CURRENT_TIMESTAMP)');
+        vendedor_nombre TEXT, comision_porcentaje DECIMAL, metodo_pago TEXT, cobro_id INTEGER, fecha DATETIME DEFAULT CURRENT_TIMESTAMP)');
+    $pdo->exec('CREATE TABLE cobros_caja (id INTEGER PRIMARY KEY, cita_id INTEGER UNIQUE, sucursal_id INTEGER, registrado_por INTEGER, metodo_pago TEXT, servicios DECIMAL, productos DECIMAL, propina DECIMAL, total DECIMAL, fecha_pago DATETIME DEFAULT CURRENT_TIMESTAMP)');
     return $pdo;
 }
 
@@ -58,6 +59,11 @@ function query($sql, $params = []): array
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function venderFixture(PDO $pdo, array $items, $vendedorId, int $operadorId, ?int $citaId = null, ?int $sucursalId = null): array
+{
+    return registrarVentaProductos($pdo, $items, $vendedorId, $operadorId, $citaId, $sucursalId, 'efectivo');
+}
+
 $pruebas = [
     'Equipo incluye recepción, administración y barberos activos' => function () {
         $equipo = getVendedoresVenta(fixtureVentas());
@@ -66,7 +72,7 @@ $pruebas = [
     },
     'Venta de recepción se acredita al vendedor y conserva al cajero' => function () {
         $pdo = fixtureVentas();
-        $resultado = registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 2]], 2, 1);
+        $resultado = venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 2]], 2, 1);
         $fila = $pdo->query('SELECT * FROM ventas_productos')->fetch(PDO::FETCH_ASSOC);
         comprobarVenta((int) $fila['usuario_id'] === 2 && (int) $fila['registrado_por'] === 1, 'Vendedor y operador deben ser distintos.');
         comprobarVenta($fila['vendedor_nombre'] === 'Sammy Pérez' && (float) $fila['comision_porcentaje'] === 15.0, 'Debe conservar nombre y comisión.');
@@ -79,14 +85,14 @@ $pruebas = [
     'Administración y barberos también pueden ser vendedores' => function () {
         foreach ([1, 3, 4] as $id) {
             $pdo = fixtureVentas();
-            registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1]], $id, 1);
+            venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 1]], $id, 1);
             comprobarVenta((int) $pdo->query('SELECT usuario_id FROM ventas_productos')->fetchColumn() === $id, 'La venta debe acreditarse a la selección.');
         }
     },
     'Vendedor obligatorio, válido y activo' => function () {
         foreach ([null, '', 0, -1, 999, 5, '2.5', []] as $id) {
             $pdo = fixtureVentas();
-            rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1]], $id, 1));
+            rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 1]], $id, 1));
             comprobarVenta((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 1')->fetchColumn() === 10, 'La validación no debe descontar stock.');
             comprobarVenta((int) $pdo->query('SELECT COUNT(*) FROM ventas_productos')->fetchColumn() === 0, 'La validación no debe guardar ventas.');
         }
@@ -94,24 +100,24 @@ $pruebas = [
     'Operador inactivo o inexistente no puede registrar ventas' => function () {
         foreach ([5, 999] as $operador) {
             $pdo = fixtureVentas();
-            rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1]], 2, $operador));
+            rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 1]], 2, $operador));
             comprobarVenta(!$pdo->inTransaction(), 'Debe cerrar su propia transacción.');
         }
     },
     'Cantidades inválidas y productos inexistentes no modifican inventario' => function () {
         foreach ([0, -1, '1.5', 'texto', null, []] as $cantidad) {
             $pdo = fixtureVentas();
-            rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => $cantidad]], 2, 1));
+            rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 1, 'cantidad' => $cantidad]], 2, 1));
         }
         $pdo = fixtureVentas();
-        rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 999, 'cantidad' => 1]], 2, 1));
-        rechazarVenta(fn () => registrarVentaProductos($pdo, [], 2, 1));
-        rechazarVenta(fn () => registrarVentaProductos($pdo, ['fila inválida'], 2, 1));
+        rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 999, 'cantidad' => 1]], 2, 1));
+        rechazarVenta(fn () => venderFixture($pdo, [], 2, 1));
+        rechazarVenta(fn () => venderFixture($pdo, ['fila inválida'], 2, 1));
         comprobarVenta((int) $pdo->query('SELECT SUM(cantidad) FROM inventario')->fetchColumn() === 16, 'El inventario debe permanecer intacto.');
     },
     'Stock insuficiente revierte también los productos procesados previamente' => function () {
         $pdo = fixtureVentas();
-        rechazarVenta(fn () => registrarVentaProductos($pdo, [
+        rechazarVenta(fn () => venderFixture($pdo, [
             ['producto_id' => 1, 'cantidad' => 2], ['producto_id' => 2, 'cantidad' => 3]
         ], 2, 1));
         comprobarVenta((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 1')->fetchColumn() === 10, 'Debe revertir el primer descuento.');
@@ -119,34 +125,34 @@ $pruebas = [
     },
     'Productos repetidos se consolidan y verifican contra el stock total' => function () {
         $pdo = fixtureVentas();
-        registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 2], ['producto_id' => 1, 'cantidad' => 3]], 2, 1);
+        venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 2], ['producto_id' => 1, 'cantidad' => 3]], 2, 1);
         comprobarVenta((int) $pdo->query('SELECT cantidad FROM ventas_productos')->fetchColumn() === 5, 'Debe consolidar cantidades.');
-        rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 3], ['producto_id' => 1, 'cantidad' => 3]], 2, 1));
+        rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 3], ['producto_id' => 1, 'cantidad' => 3]], 2, 1));
         comprobarVenta((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 1')->fetchColumn() === 5, 'La segunda venta debe rechazarse sin modificar stock.');
     },
     'Vender la última unidad no deja stock negativo' => function () {
         $pdo = fixtureVentas();
-        registrarVentaProductos($pdo, [['producto_id' => 2, 'cantidad' => 1]], 3, 1);
-        rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 2, 'cantidad' => 1]], 2, 1));
+        venderFixture($pdo, [['producto_id' => 2, 'cantidad' => 1]], 3, 1);
+        rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 2, 'cantidad' => 1]], 2, 1));
         comprobarVenta((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 2')->fetchColumn() === 0, 'El stock mínimo es cero.');
     },
     'Permisos de sucursal dependen del operador y no del vendedor elegido' => function () {
         $pdo = fixtureVentas();
-        rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 3, 'cantidad' => 1]], 1, 4));
+        rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 3, 'cantidad' => 1]], 1, 4));
         $pdo->exec('INSERT INTO usuarios_sucursales VALUES (3, 2)');
-        registrarVentaProductos($pdo, [['producto_id' => 3, 'cantidad' => 1]], 2, 3);
+        venderFixture($pdo, [['producto_id' => 3, 'cantidad' => 1]], 2, 3);
         comprobarVenta((int) $pdo->query('SELECT sucursal_id FROM ventas_productos')->fetchColumn() === 2, 'Debe respetar la sucursal real del producto y los permisos multisucursal.');
     },
     'Cobro guarda cita y sólo permite productos de su sucursal' => function () {
         $pdo = fixtureVentas();
-        registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1]], 3, 1, 42, 1);
+        venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 1]], 3, 1, 42, 1);
         comprobarVenta((int) $pdo->query('SELECT cita_id FROM ventas_productos')->fetchColumn() === 42, 'Debe vincular la venta a la cita.');
-        rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 3, 'cantidad' => 1]], 3, 1, 42, 1));
+        rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 3, 'cantidad' => 1]], 3, 1, 42, 1));
     },
     'La venta participa en el rollback de un cobro externo' => function () {
         $pdo = fixtureVentas();
         $pdo->beginTransaction();
-        registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1]], 2, 1, 42, 1);
+        venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 1]], 2, 1, 42, 1);
         comprobarVenta($pdo->inTransaction(), 'No debe confirmar la transacción del cobro.');
         $pdo->rollBack();
         comprobarVenta((int) $pdo->query('SELECT COUNT(*) FROM ventas_productos')->fetchColumn() === 0, 'El rollback del cobro debe eliminar la venta.');
@@ -155,8 +161,8 @@ $pruebas = [
     'Resumen incluye personal administrativo y conserva el cálculo histórico' => function () {
         $pdo = fixtureVentas();
         $GLOBALS['ventasReportTestPDO'] = $pdo;
-        registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 2]], 2, 1);
-        registrarVentaProductos($pdo, [['producto_id' => 2, 'cantidad' => 1]], 3, 1);
+        venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 2]], 2, 1);
+        venderFixture($pdo, [['producto_id' => 2, 'cantidad' => 1]], 3, 1);
         $pdo->exec('INSERT INTO ventas_productos (producto_id, cantidad, precio_unitario, sucursal_id, usuario_id) VALUES (1, 1, 10, 1, 1)');
         $currentUser = ['id' => 1, 'rol' => 'admin'];
         ob_start();
@@ -171,7 +177,7 @@ $pruebas = [
     },
     'Descuentos y líneas del mismo producto con precios distintos se conservan' => function () {
         $pdo = fixtureVentas();
-        $r = registrarVentaProductos($pdo, [
+        $r = venderFixture($pdo, [
             ['producto_id' => 1, 'cantidad' => 2, 'precio_unitario' => '11.00'],
             ['producto_id' => 1, 'cantidad' => 1, 'precio_unitario' => '9.50']
         ], 2, 1);
@@ -181,10 +187,10 @@ $pruebas = [
     },
     'Precio cero es válido y precios negativos o malformados no consumen stock' => function () {
         $pdo = fixtureVentas();
-        $r = registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1, 'precio_unitario' => '0.00']], 2, 1);
+        $r = venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 1, 'precio_unitario' => '0.00']], 2, 1);
         comprobarVenta($r['total'] === 0.0, 'Un descuento total debe conservar el precio cero.');
         foreach ([-1, 'incorrecto', [], '1e309', '100000000.00'] as $precio) {
-            rechazarVenta(fn () => registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1, 'precio_unitario' => $precio]], 2, 1));
+            rechazarVenta(fn () => venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 1, 'precio_unitario' => $precio]], 2, 1));
         }
         comprobarVenta((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 1')->fetchColumn() === 9, 'Las solicitudes inválidas no deben consumir stock.');
     },
@@ -192,7 +198,7 @@ $pruebas = [
         $pdo = fixtureVentas();
         $pdo->exec("CREATE TRIGGER fallo_venta BEFORE INSERT ON ventas_productos BEGIN SELECT RAISE(ABORT, 'Fallo de escritura'); END");
         try {
-            registrarVentaProductos($pdo, [['producto_id' => 1, 'cantidad' => 1]], 2, 1);
+            venderFixture($pdo, [['producto_id' => 1, 'cantidad' => 1]], 2, 1);
             throw new RuntimeException('La inserción debía fallar.');
         } catch (PDOException $e) {
             comprobarVenta((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 1')->fetchColumn() === 10, 'El error no debe consumir stock.');

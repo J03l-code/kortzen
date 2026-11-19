@@ -474,6 +474,7 @@ input:focus + .slider {
             <!-- Horario Semanal -->
             <form id="formHorarios" method="POST" action="api/horarios_action.php">
                 <input type="hidden" name="action" value="guardar_horarios">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="barbero_id" value="<?php echo $barberoId; ?>">
                 <input type="hidden" name="from_profile" value="<?php echo (isset($_GET['from_profile']) || isset($_POST['from_profile'])) ? '1' : '0'; ?>">
                 
@@ -552,6 +553,7 @@ input:focus + .slider {
                                 </div>
                                 <form method="POST" action="api/horarios_action.php" style="margin: 0;">
                                     <input type="hidden" name="action" value="eliminar_bloqueo">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="bloqueo_id" value="<?php echo $bloqueo['id']; ?>">
                                     <input type="hidden" name="barbero_id" value="<?php echo $barberoId; ?>">
                                     <button type="submit" class="btn-icon" title="Eliminar bloqueo">
@@ -566,6 +568,7 @@ input:focus + .slider {
                 <!-- Formulario Agregar Bloqueo (Simplificado) -->
                 <form method="POST" action="api/horarios_action.php" style="background: rgba(0,0,0,0.02); padding: 24px; border-radius: 12px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
                     <input type="hidden" name="action" value="agregar_bloqueo">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="barbero_id" value="<?php echo $barberoId; ?>">
                     
                     <div style="flex: 1; min-width: 200px;">
@@ -615,6 +618,7 @@ input:focus + .slider {
                                 </div>
                                 <form method="POST" action="api/horarios_action.php" style="margin: 0;">
                                     <input type="hidden" name="action" value="eliminar_bloqueo_hora">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="bloqueo_id" value="<?php echo $bh['id']; ?>">
                                     <input type="hidden" name="barbero_id" value="<?php echo $barberoId; ?>">
                                     <button type="submit" class="btn-icon" title="Eliminar bloqueo">
@@ -629,6 +633,7 @@ input:focus + .slider {
                 <!-- Formulario Horas -->
                 <form method="POST" action="api/horarios_action.php" style="background: rgba(0,0,0,0.02); padding: 24px; border-radius: 12px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
                     <input type="hidden" name="action" value="agregar_bloqueo_hora">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="barbero_id" value="<?php echo $barberoId; ?>">
                     
                     <div style="flex: 1; min-width: 150px;">

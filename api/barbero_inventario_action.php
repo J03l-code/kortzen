@@ -74,7 +74,7 @@ try {
             'producto_id' => $_POST['producto_id'] ?? null,
             'cantidad' => $_POST['cantidad'] ?? null,
             'precio_unitario' => $_POST['precio_venta'] ?? $_POST['precio_cobrado'] ?? null
-        ]], $_POST['vendedor_id'] ?? null, (int) $usuarioId);
+        ]], $_POST['vendedor_id'] ?? null, (int) $usuarioId, null, null, $_POST['metodo_pago'] ?? null);
         notificarStockVentas($pdo, $venta);
         registrarLog('VENTA', 'inventario', (int) $_POST['producto_id'], 'Venta acreditada a ' . $venta['vendedor_nombre']);
         echo json_encode(['success' => true,

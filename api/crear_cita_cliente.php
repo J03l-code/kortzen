@@ -172,7 +172,7 @@ try {
             $stmtC = $pdo->prepare("SELECT c.fecha_hora, COALESCE(s.duracion_minutos, 60) as duracion_minutos 
                                     FROM citas c 
                                     LEFT JOIN servicios s ON c.servicio_id = s.id 
-                                    WHERE c.barbero_id = ? AND c.estado NOT IN ('cancelada', 'no_asistio') AND DATE(c.fecha_hora) = ?");
+                                    WHERE c.barbero_id = ? AND c.reasignacion_pendiente = 0 AND c.estado NOT IN ('cancelada', 'no_asistio') AND DATE(c.fecha_hora) = ?");
             $stmtC->execute([$candId, $fecha]);
             $citas = $stmtC->fetchAll(PDO::FETCH_ASSOC);
             $hasCitaCol = false;
@@ -207,7 +207,7 @@ try {
         $nombreBarbero = $barberoData['nombre'];
 
         // Verificar si tiene citas activas en esta fecha
-        $stmtCitasCount = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE barbero_id = ? AND DATE(fecha_hora) = ? AND estado NOT IN ('cancelada', 'no_asistio')");
+        $stmtCitasCount = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND DATE(fecha_hora) = ? AND estado NOT IN ('cancelada', 'no_asistio')");
         $stmtCitasCount->execute([$barberoId, $fecha]);
         $hasCitasOnDate = intval($stmtCitasCount->fetchColumn() ?? 0) > 0;
 
@@ -257,7 +257,7 @@ try {
             SELECT c.fecha_hora, COALESCE(s.duracion_minutos, 60) as duracion_minutos 
             FROM citas c 
             LEFT JOIN servicios s ON c.servicio_id = s.id 
-            WHERE c.barbero_id = ? AND c.estado NOT IN ('cancelada', 'no_asistio') AND DATE(c.fecha_hora) = ?
+            WHERE c.barbero_id = ? AND c.reasignacion_pendiente = 0 AND c.estado NOT IN ('cancelada', 'no_asistio') AND DATE(c.fecha_hora) = ?
         ");
         $stmtCcheck->execute([$barberoId, $fecha]);
         $citasExistentes = $stmtCcheck->fetchAll(PDO::FETCH_ASSOC);

@@ -112,7 +112,7 @@ try {
     $r = query("
         SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
     ", [$barbero_id]);
     $gananciaHoyServicios = floatval($r[0]['total'] ?? 0);
 } catch (Throwable $e) {}
@@ -134,7 +134,7 @@ try {
     $r = query("
         SELECT SUM(IFNULL(propina, 0)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
     ", [$barbero_id]);
     $propinasHoy = floatval($r[0]['total'] ?? 0);
 } catch (Throwable $e) {}
@@ -151,7 +151,7 @@ try {
     $r = query("
         SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
     ", [$barbero_id, $monthStart, $monthEnd]);
     $gananciaMesServicios = floatval($r[0]['total'] ?? 0);
 } catch (Throwable $e) {}
@@ -171,7 +171,7 @@ try {
     $r = query("
         SELECT SUM(IFNULL(propina, 0)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada' AND DATE(fecha_hora) BETWEEN ? AND ?
     ", [$barbero_id, $monthStart, $monthEnd]);
     $propinasMes = floatval($r[0]['total'] ?? 0);
 } catch (Throwable $e) {}
@@ -185,7 +185,7 @@ try {
     $r = query("
         SELECT SUM((IFNULL(precio_final, 0) * (CASE WHEN DAYOFWEEK(fecha_hora) IN (1, 7) THEN $com_finde ELSE $com_diaria END) / 100)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada'
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada'
     ", [$barbero_id]);
     $gananciaHistServicios = floatval($r[0]['total'] ?? 0);
 } catch (Throwable $e) {}
@@ -205,7 +205,7 @@ try {
     $r = query("
         SELECT SUM(IFNULL(propina, 0)) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada'
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada'
     ", [$barbero_id]);
     $propinasHist = floatval($r[0]['total'] ?? 0);
 } catch (Throwable $e) {}
@@ -215,7 +215,7 @@ try {
     $r = query("
         SELECT COUNT(*) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada'
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada'
     ", [$barbero_id]);
     $citasCompletadasHist = intval($r[0]['total'] ?? 0);
 } catch (Throwable $e) {}
@@ -228,7 +228,7 @@ try {
     $countHoy = query("
         SELECT COUNT(*) as total
         FROM citas 
-        WHERE barbero_id = ? AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
+        WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND estado = 'completada' AND DATE(fecha_hora) = CURDATE()
     ", [$barbero_id]);
     $totalCitasHoy = intval($countHoy[0]['total'] ?? 0);
 } catch (Throwable $e) {}
@@ -241,7 +241,7 @@ try {
         FROM citas c
         LEFT JOIN servicios s ON c.servicio_id = s.id
         LEFT JOIN clientes cli ON c.cliente_id = cli.id
-        WHERE c.barbero_id = ? 
+        WHERE c.reasignacion_pendiente = 0 AND c.barbero_id = ?
         AND c.estado IN ('pendiente', 'confirmada')
         AND (DATE(c.fecha_hora) = CURDATE() OR c.fecha_hora >= NOW())
         ORDER BY c.fecha_hora ASC 
@@ -254,7 +254,7 @@ try {
             FROM citas c
             LEFT JOIN servicios s ON c.servicio_id = s.id
             LEFT JOIN clientes cli ON c.cliente_id = cli.id
-            WHERE c.barbero_id = ? 
+            WHERE c.reasignacion_pendiente = 0 AND c.barbero_id = ?
             AND c.estado IN ('pendiente', 'confirmada')
             AND (DATE(c.fecha_hora) = CURDATE() OR c.fecha_hora >= NOW())
             ORDER BY c.fecha_hora ASC 
@@ -282,7 +282,7 @@ try {
         LEFT JOIN servicios s ON c.servicio_id = s.id
         LEFT JOIN clientes cli ON c.cliente_id = cli.id
         LEFT JOIN referidos ref ON c.id = ref.cita_id
-        WHERE c.barbero_id = ? 
+        WHERE c.reasignacion_pendiente = 0 AND c.barbero_id = ?
           AND DATE(c.fecha_hora) >= CURDATE()
           AND c.estado != 'cancelada'
         ORDER BY c.fecha_hora ASC
@@ -297,7 +297,7 @@ try {
             FROM citas c
             LEFT JOIN servicios s ON c.servicio_id = s.id
             LEFT JOIN clientes cli ON c.cliente_id = cli.id
-            WHERE c.barbero_id = ? 
+            WHERE c.reasignacion_pendiente = 0 AND c.barbero_id = ?
               AND DATE(c.fecha_hora) >= CURDATE()
               AND c.estado != 'cancelada'
             ORDER BY c.fecha_hora ASC
