@@ -21,3 +21,9 @@ Este proyecto se desarrolla de forma simultánea desde dos máquinas/entornos:
 
 4. **Verificación continua de estado (`git status`):**
    - Comprobar `git status` antes de proponer o aplicar cambios importantes para garantizar que no existan modificaciones no rastreadas o inconsistencias en el árbol de trabajo.
+
+5. **Reporte Obligatorio Post-Implementación:**
+   - Al finalizar cualquier tarea, corrección o implementación, se debe presentar siempre un resumen estructurado que detalle con claridad:
+     - **Qué se ha implementado:** Descripción general y puntual de la funcionalidad, ajuste o solución realizada.
+     - **Cómo se ha implementado:** Detalle técnico de la solución aplicada (archivos creados o modificados, componentes/funciones afectadas y lógica empleada).
+     - **En qué consiste el cambio:** El impacto directo del cambio en el flujo del sistema, cómo se comportaba antes y cómo debe comportarse ahora.
