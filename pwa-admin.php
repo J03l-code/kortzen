@@ -603,6 +603,8 @@ try {
             COALESCE(s.duracion_minutos, 45) as duracion_minutos,
             u.nombre as barbero_nombre,
             COALESCE(u.foto_url, '') as barbero_foto,
+            COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
+            COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
             su.nombre as sucursal_nombre,
             ref.codigo_usado as referido_codigo,
             ref.descuento_aplicado as referido_descuento,
@@ -3369,32 +3371,103 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
 
 <!-- Modal Finalizar y Propina -->
 <div class="pwa-action-sheet" id="pwaTerminarCitaSheet" onclick="if(event.target===this) cerrarModalTerminarCitaPwa()">
-    <div class="pwa-sheet-box">
+    <div class="pwa-sheet-box" style="max-height: 90vh; overflow-y: auto;">
         <div style="width: 40px; height: 4px; background: #DDD; border-radius: 4px; margin: 0 auto 16px auto;"></div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
             <div>
-                <div style="font-size: 1.15rem; font-weight: 900; color: #10B981;">Finalizar Corte y Propina</div>
+                <div style="font-size: 1.15rem; font-weight: 900; color: #10B981;">Finalizar Corte y Cobro</div>
                 <div style="font-size: 0.8rem; color: var(--text-gray);" id="pwaTerminarSubtitle">Completar servicio</div>
             </div>
-            <button onclick="cerrarModalTerminarCitaPwa()" style="background: #F4F4F4; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">✕</button>
+            <button onclick="cerrarModalTerminarCitaPwa()" style="background: #F4F4F4; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: #666;">✕</button>
         </div>
 
         <form id="formPwaTerminarCita" onsubmit="guardarTerminarCitaPwa(event)" style="display: flex; flex-direction: column; gap: 12px;">
             <input type="hidden" name="action" value="completar">
             <input type="hidden" name="id" id="pwaTerminarCitaId" value="">
+            <input type="hidden" name="precio_base" id="pwaTerminarPrecioBase" value="0.00">
             <input type="hidden" name="ajax" value="1">
 
-            <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 12px; padding: 14px;">
-                <label style="font-size: 0.78rem; font-weight: 800; color: #166534; text-transform: uppercase; display: block; margin-bottom: 6px;">Propina para el Barbero ($)</label>
+            <!-- Resumen Servicio Principal -->
+            <div style="background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-gray); font-weight: 800; display: block;">Servicio Agendado</span>
+                    <strong id="pwaTerminarServicioNombre" style="color: #111; font-size: 0.95rem;">-</strong>
+                    <div id="pwaTerminarBarberoNombre" style="font-size: 0.75rem; color: #555; margin-top: 2px;">-</div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-gray); font-weight: 800; display: block;">Precio Base</span>
+                    <strong id="pwaTerminarPrecioBaseTxt" style="color: #111; font-size: 1.15rem; font-weight: 900;">$0.00</strong>
+                </div>
+            </div>
+
+            <!-- Selector de Servicios Adicionales -->
+            <div style="background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 12px; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="font-size: 0.75rem; font-weight: 800; color: #0284C7; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">
+                        <i class="fas fa-plus-circle"></i> + Añadir Servicio Adicional
+                    </label>
+                    <span style="font-size: 0.7rem; color: #64748B;">(Barba, Cejas...)</span>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <select id="pwaSelectServicioAdicional" style="flex: 1; padding: 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; font-size: 0.8rem; background: #FFF;">
+                        <option value="">Seleccionar adicional...</option>
+                        <?php foreach ($serviciosList as $sItem): ?>
+                            <option value="<?php echo $sItem['id']; ?>" data-nombre="<?php echo htmlspecialchars($sItem['nombre']); ?>" data-precio="<?php echo $sItem['precio']; ?>">
+                                <?php echo htmlspecialchars($sItem['nombre']); ?> - $<?php echo number_format($sItem['precio'], 2); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" onclick="agregarServicioAdicionalPwa()" style="background: #0284C7; color: #FFF; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <i class="fas fa-plus"></i> Añadir
+                    </button>
+                </div>
+
+                <div id="pwaListaServiciosAdicionales" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+
+            <!-- Desglose de Cobro -->
+            <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🧾 Desglose de Cobro</span>
+                    <span id="pwaLabelComisionBarbero" style="color: #047857; font-weight: 800; background: #DCFCE7; padding: 2px 6px; border-radius: 4px;">Comisión: $0.00</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem;">
+                    <div style="display: flex; justify-content: space-between; color: #374151;">
+                        <span>Servicio Base:</span>
+                        <span id="pwaDesgloseBase">$0.00</span>
+                    </div>
+                    <div id="pwaDesgloseAdicionalesRow" style="display: none; justify-content: space-between; color: #0284C7; font-weight: 700;">
+                        <span>Adicionales (<span id="pwaDesgloseCantAdic">0</span>):</span>
+                        <span id="pwaDesgloseAdicionales">+$0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: #15803D; font-weight: 800;">
+                        <span>Total Servicios:</span>
+                        <span id="pwaDesgloseTotalServicios">$0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: #4B5563;">
+                        <span>Propina Barbero:</span>
+                        <span id="pwaDesglosePropina">+$0.00</span>
+                    </div>
+                    <div style="border-top: 1.5px dashed #86EFAC; margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="color: #14532D; font-size: 0.9rem;">TOTAL A COBRAR:</strong>
+                        <strong id="pwaDesgloseTotalCobrar" style="color: #15803D; font-size: 1.25rem; font-weight: 900;">$0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campo Propina -->
+            <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 12px;">
+                <label style="font-size: 0.72rem; font-weight: 800; color: #92400E; text-transform: uppercase; display: block; margin-bottom: 4px;">Propina para el Barbero ($)</label>
                 <div style="position: relative;">
-                    <span style="position: absolute; left: 12px; top: 11px; font-weight: 900; color: #166534;">$</span>
-                    <input type="number" step="0.5" min="0" name="propina" id="pwaTerminarPropina" value="0.00" style="width: 100%; padding: 10px 10px 10px 28px; border-radius: 8px; border: 1.5px solid #86EFAC; font-weight: 900; font-size: 1.1rem; color: #166534;">
+                    <span style="position: absolute; left: 12px; top: 10px; font-weight: 900; color: #92400E;">$</span>
+                    <input type="number" step="0.5" min="0" name="propina" id="pwaTerminarPropina" value="0.00" oninput="recalcularTotalesTerminarPwa()" style="width: 100%; padding: 8px 10px 8px 28px; border-radius: 8px; border: 1.5px solid #FCD34D; font-weight: 900; font-size: 1rem; color: #92400E;">
                 </div>
             </div>
 
             <div>
-                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Material / Producto consumido (opcional)</label>
-                <select name="materiales[]" style="width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px;">
+                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Material consumido (opcional)</label>
+                <select name="materiales[]" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px; font-size: 0.8rem;">
                     <option value="">Ninguno / Sin insumos adicionales</option>
                     <?php foreach ($inventarioList as $item): ?>
                         <option value="<?php echo $item['id']; ?>">
@@ -3404,8 +3477,76 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 </select>
             </div>
 
-            <button type="submit" id="btnSubmitPwaTerminar" class="pwa-btn-main" style="background: #10B981; color: #FFF; font-weight: 900; margin-top: 8px;">Confirmar y Finalizar Cita</button>
+            <button type="submit" id="btnSubmitPwaTerminar" class="pwa-btn-main" style="background: #10B981; color: #FFF; font-weight: 900; margin-top: 6px; padding: 12px;">Confirmar y Finalizar Cita</button>
         </form>
+    </div>
+</div>
+
+<!-- Modal Recibo Digital PWA -->
+<div class="pwa-action-sheet" id="pwaReciboSheet" onclick="if(event.target===this) cerrarModalReciboPwa()">
+    <div class="pwa-sheet-box" style="max-height: 92vh; overflow-y: auto;">
+        <div style="width: 40px; height: 4px; background: #DDD; border-radius: 4px; margin: 0 auto 16px auto;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #E5E7EB; padding-bottom: 10px;">
+            <div style="font-size: 1.1rem; font-weight: 900; color: #111; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-receipt" style="color: #10B981;"></i> Recibo de Cobro
+            </div>
+            <button onclick="cerrarModalReciboPwa()" style="background: #F4F4F4; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">✕</button>
+        </div>
+
+        <div id="pwaReciboPrintArea" style="background: #FAFAFA; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 16px; font-family: monospace, monospace;">
+            <div style="text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
+                <div style="font-size: 1.15rem; font-weight: 900; color: #111;">KORTZEN BARBERÍA</div>
+                <div id="pwaReciboSucursal" style="font-size: 0.75rem; color: #666;">Quito, Ecuador</div>
+                <div id="pwaReciboFechaHora" style="font-size: 0.72rem; color: #666; margin-top: 2px;">-</div>
+            </div>
+
+            <div style="font-size: 0.78rem; line-height: 1.5; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
+                <div><strong>Cita:</strong> #<span id="pwaReciboCitaId">-</span></div>
+                <div><strong>Cliente:</strong> <span id="pwaReciboCliente">-</span></div>
+                <div><strong>Barbero:</strong> <span id="pwaReciboBarbero">-</span></div>
+            </div>
+
+            <div style="font-size: 0.8rem; margin-bottom: 10px; border-bottom: 1px dashed #CBD5E1; padding-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span id="pwaReciboItemPrincipal">Servicio Principal</span>
+                    <strong id="pwaReciboPrecioPrincipal">$0.00</strong>
+                </div>
+                <div id="pwaReciboItemsAdicionales"></div>
+            </div>
+
+            <div style="font-size: 0.82rem; line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Subtotal Servicios:</span>
+                    <strong id="pwaReciboSubtotal">$0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #B45309;">
+                    <span>Propina Barbero:</span>
+                    <strong id="pwaReciboPropina">+$0.00</strong>
+                </div>
+                <div style="border-top: 2px solid #111; margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-size: 1.05rem;">
+                    <strong>TOTAL PAGADO:</strong>
+                    <strong id="pwaReciboTotal" style="color: #10B981;">$0.00</strong>
+                </div>
+                <div style="margin-top: 6px; font-size: 0.7rem; color: #666; border-top: 1px dotted #CBD5E1; padding-top: 6px; display: flex; justify-content: space-between;">
+                    <span>Comisión Barbero (<span id="pwaReciboComisionPct">50</span>%):</span>
+                    <strong id="pwaReciboComisionBarbero">$0.00</strong>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+            <a id="pwaBtnReciboWhatsApp" href="#" target="_blank" style="background: #25D366; color: #FFF; text-decoration: none; padding: 11px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fab fa-whatsapp"></i> Enviar Recibo a WhatsApp
+            </a>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" onclick="imprimirReciboPwa()" class="pwa-btn-secondary" style="flex: 1; padding: 10px; font-weight: 700; font-size: 0.8rem; background: #F3F4F6; border: 1px solid #D1D5DB; border-radius: 8px;">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button type="button" onclick="cerrarModalReciboPwa()" class="pwa-btn-main" style="flex: 1; background: #111; color: #FFF; padding: 10px; font-weight: 800; font-size: 0.8rem; border-radius: 8px;">
+                    Listo / Aceptar
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -4830,8 +4971,15 @@ function renderizarCitasTab() {
                 <!-- Servicio & Barbero -->
                 <div style="background: #F9FAFB; border-radius: 10px; padding: 10px; margin-bottom: 10px; border: 1px solid #F3F4F6;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">
-                            ✂️ ${escapeHtml(c.servicio_nombre || 'Servicio')}
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">
+                                ✂️ ${escapeHtml(c.servicio_nombre || 'Servicio')}
+                            </div>
+                            ${c.servicios_adicionales_txt ? `
+                                <div style="font-size: 0.72rem; color: #0284C7; font-weight: 700; margin-top: 2px;">
+                                    <i class="fas fa-plus-circle" style="font-size: 0.65rem;"></i> ${escapeHtml(c.servicios_adicionales_txt)}
+                                </div>
+                            ` : ''}
                         </div>
                         <span style="font-weight: 900; font-size: 0.95rem; color: var(--text-dark);">
                             $${parseFloat(c.precio_final > 0 ? c.precio_final : (c.servicio_precio || 0)).toFixed(2)}
@@ -4885,10 +5033,14 @@ function renderizarCitasTab() {
                 <!-- Barra de Acciones de la Cita -->
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                     ${(c.estado !== 'completada' && c.estado !== 'cancelada') ? `
-                        <button type="button" onclick="abrirModalTerminarCitaPwa(${c.id}, '${escapeHtml(c.cliente_nombre || '')}')" style="flex: 1; min-width: 130px; background: #10B981; color: #FFF; border: none; padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <button type="button" onclick="abrirModalTerminarCitaPwa(${c.id})" style="flex: 1; min-width: 130px; background: #10B981; color: #FFF; border: none; padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
                             <i class="fas fa-check-double"></i> FINALIZAR Y PROPINA
                         </button>
-                    ` : ''}
+                    ` : (c.estado === 'completada' ? `
+                        <button type="button" onclick="abrirModalReciboPwa(${c.id})" style="flex: 1; min-width: 90px; background: #ECFDF5; color: #047857; border: 1.5px solid #A7F3D0; padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <i class="fas fa-receipt"></i> RECIBO
+                        </button>
+                    ` : '')}
                     <button type="button" onclick="abrirModalEditarCitaPwa(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; min-width: 70px; background: #F3F4F6; color: #111; border: 1px solid #D1D5DB; padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
                         <i class="fas fa-edit"></i> EDITAR
                     </button>
@@ -5132,15 +5284,160 @@ function agendarSlotPwa(targetDate, horaInicio, barberoId) {
     });
 }
 
-function abrirModalTerminarCitaPwa(citaId, clienteNombre) {
-    document.getElementById('pwaTerminarCitaId').value = citaId;
-    document.getElementById('pwaTerminarSubtitle').innerText = 'Cliente: ' + (clienteNombre || 'Cliente');
-    document.getElementById('pwaTerminarPropina').value = '0.00';
+let citaActualTerminarPwa = null;
+let serviciosAdicionalesSeleccionadosPwa = [];
+
+function abrirModalTerminarCitaPwa(citaOrId, clienteNombre) {
+    let cita = null;
+    if (typeof citaOrId === 'object' && citaOrId !== null) {
+        cita = citaOrId;
+    } else {
+        const id = parseInt(citaOrId);
+        cita = rawCitasList.find(c => c.id == id);
+        if (!cita) {
+            cita = {
+                id: id,
+                cliente_nombre: clienteNombre || 'Cliente',
+                cliente_telefono: '',
+                servicio_nombre: 'Servicio',
+                servicio_precio: 0,
+                precio_final: 0,
+                barbero_nombre: 'Barbero',
+                barbero_comision: 50,
+                barbero_comision_finde: 50,
+                fecha_hora: ''
+            };
+        }
+    }
+
+    citaActualTerminarPwa = cita;
+    serviciosAdicionalesSeleccionadosPwa = [];
+
+    document.getElementById('pwaTerminarCitaId').value = cita.id;
+    const precioBase = parseFloat(cita.servicio_precio > 0 ? cita.servicio_precio : (cita.precio_final || 0));
+    document.getElementById('pwaTerminarPrecioBase').value = precioBase.toFixed(2);
+    document.getElementById('pwaTerminarSubtitle').innerText = 'Cliente: ' + (cita.cliente_nombre || 'Cliente');
+    document.getElementById('pwaTerminarServicioNombre').innerText = cita.servicio_nombre || 'Servicio';
+    document.getElementById('pwaTerminarPrecioBaseTxt').innerText = '$' + precioBase.toFixed(2);
+    document.getElementById('pwaTerminarBarberoNombre').innerText = 'Barbero: ' + (cita.barbero_nombre || 'Asignado');
+
+    const pInput = document.getElementById('pwaTerminarPropina');
+    if (pInput) pInput.value = '0.00';
+
+    const sSelect = document.getElementById('pwaSelectServicioAdicional');
+    if (sSelect) sSelect.value = '';
+
+    renderizarListaServiciosAdicionalesPwa();
+    recalcularTotalesTerminarPwa();
+
+    const btn = document.getElementById('btnSubmitPwaTerminar');
+    if (btn) {
+        btn.disabled = false;
+    }
     document.getElementById('pwaTerminarCitaSheet').style.display = 'flex';
 }
 
 function cerrarModalTerminarCitaPwa() {
     document.getElementById('pwaTerminarCitaSheet').style.display = 'none';
+}
+
+function agregarServicioAdicionalPwa() {
+    const select = document.getElementById('pwaSelectServicioAdicional');
+    if (!select || !select.value) return;
+
+    const opt = select.options[select.selectedIndex];
+    const srvId = parseInt(select.value);
+    const srvNombre = opt.getAttribute('data-nombre') || opt.text.split('-')[0].trim();
+    const srvPrecio = parseFloat(opt.getAttribute('data-precio') || 0);
+
+    serviciosAdicionalesSeleccionadosPwa.push({
+        id: srvId,
+        nombre: srvNombre,
+        precio: srvPrecio
+    });
+
+    select.value = '';
+    renderizarListaServiciosAdicionalesPwa();
+    recalcularTotalesTerminarPwa();
+}
+
+function quitarServicioAdicionalPwa(index) {
+    if (index >= 0 && index < serviciosAdicionalesSeleccionadosPwa.length) {
+        serviciosAdicionalesSeleccionadosPwa.splice(index, 1);
+        renderizarListaServiciosAdicionalesPwa();
+        recalcularTotalesTerminarPwa();
+    }
+}
+
+function renderizarListaServiciosAdicionalesPwa() {
+    const cont = document.getElementById('pwaListaServiciosAdicionales');
+    if (!cont) return;
+
+    if (serviciosAdicionalesSeleccionadosPwa.length === 0) {
+        cont.innerHTML = '<span style="font-size: 0.72rem; color: #94A3B8; font-style: italic;">Sin servicios adicionales añadidos.</span>';
+        return;
+    }
+
+    let html = '';
+    serviciosAdicionalesSeleccionadosPwa.forEach((item, idx) => {
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 6px 10px; border-radius: 8px;">
+                <div style="font-weight: 700; font-size: 0.78rem; color: #1E293B; display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #0284C7; font-weight: 900;">•</span> ${escapeHtml(item.nombre)}
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <strong style="color: #0F172A; font-size: 0.8rem;">+$${item.precio.toFixed(2)}</strong>
+                    <button type="button" onclick="quitarServicioAdicionalPwa(${idx})" style="background: #FEE2E2; color: #DC2626; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 0.65rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                </div>
+            </div>
+        `;
+    });
+    cont.innerHTML = html;
+}
+
+function recalcularTotalesTerminarPwa() {
+    if (!citaActualTerminarPwa) return;
+
+    const precioBase = parseFloat(document.getElementById('pwaTerminarPrecioBase').value || 0);
+    let sumaAdicionales = 0;
+    serviciosAdicionalesSeleccionadosPwa.forEach(s => sumaAdicionales += s.precio);
+
+    const totalServicios = precioBase + sumaAdicionales;
+    const pInput = document.getElementById('pwaTerminarPropina');
+    const propina = parseFloat(pInput && pInput.value ? pInput.value : 0);
+    const totalCobrar = totalServicios + (isNaN(propina) ? 0 : propina);
+
+    let esFinde = false;
+    if (citaActualTerminarPwa.fecha_hora) {
+        const dt = new Date(citaActualTerminarPwa.fecha_hora.replace(/-/g, '/'));
+        const day = dt.getDay();
+        esFinde = (day === 0 || day === 6);
+    }
+    const comPct = esFinde ? parseFloat(citaActualTerminarPwa.barbero_comision_finde || 50) : parseFloat(citaActualTerminarPwa.barbero_comision || 50);
+    const comisionBarbero = (totalServicios * comPct / 100);
+
+    document.getElementById('pwaDesgloseBase').innerText = '$' + precioBase.toFixed(2);
+    
+    const adicRow = document.getElementById('pwaDesgloseAdicionalesRow');
+    if (adicRow) {
+        if (serviciosAdicionalesSeleccionadosPwa.length > 0) {
+            adicRow.style.display = 'flex';
+            document.getElementById('pwaDesgloseCantAdic').innerText = serviciosAdicionalesSeleccionadosPwa.length;
+            document.getElementById('pwaDesgloseAdicionales').innerText = '+$' + sumaAdicionales.toFixed(2);
+        } else {
+            adicRow.style.display = 'none';
+        }
+    }
+
+    document.getElementById('pwaDesgloseTotalServicios').innerText = '$' + totalServicios.toFixed(2);
+    document.getElementById('pwaLabelComisionBarbero').innerText = `Comisión (${comPct}%): $${comisionBarbero.toFixed(2)}`;
+    document.getElementById('pwaDesglosePropina').innerText = '+$' + (isNaN(propina) ? 0 : propina).toFixed(2);
+    document.getElementById('pwaDesgloseTotalCobrar').innerText = '$' + totalCobrar.toFixed(2);
+
+    const btn = document.getElementById('btnSubmitPwaTerminar');
+    if (btn) {
+        btn.innerText = `Confirmar y Finalizar ($${totalCobrar.toFixed(2)})`;
+    }
 }
 
 function guardarTerminarCitaPwa(e) {
@@ -5150,6 +5447,9 @@ function guardarTerminarCitaPwa(e) {
     btn.innerText = 'Finalizando...';
 
     const fd = new FormData(document.getElementById('formPwaTerminarCita'));
+    serviciosAdicionalesSeleccionadosPwa.forEach(item => {
+        fd.append('servicios_adicionales[]', item.id);
+    });
 
     fetch('api/citas_action.php', { method: 'POST', body: fd })
         .then(res => res.json())
@@ -5164,10 +5464,20 @@ function guardarTerminarCitaPwa(e) {
                 if (target) {
                     target.estado = 'completada';
                     target.propina = prop;
+                    if (data.nuevo_precio_final) {
+                        target.precio_final = data.nuevo_precio_final;
+                    }
+                    if (data.recibo && data.recibo.servicios_adicionales && data.recibo.servicios_adicionales.length > 0) {
+                        target.servicios_adicionales_txt = data.recibo.servicios_adicionales.map(a => a.nombre + ' ($' + parseFloat(a.precio).toFixed(2) + ')').join(', ');
+                    }
                 }
                 renderizarCitasTab();
                 cargarDatosHorariosPwa();
-                alert('Cita finalizada con éxito.');
+                if (data.recibo) {
+                    mostrarReciboEnModalPwa(data.recibo);
+                } else {
+                    alert('Cita finalizada con éxito.');
+                }
             } else {
                 alert('Error: ' + (data.message || data.error || 'No se pudo finalizar la cita.'));
             }
@@ -5177,6 +5487,105 @@ function guardarTerminarCitaPwa(e) {
             btn.innerText = 'Confirmar y Finalizar Cita';
             alert('Error de conexión al finalizar la cita.');
         });
+}
+
+function mostrarReciboEnModalPwa(r) {
+    document.getElementById('pwaReciboCitaId').innerText = r.cita_id;
+    document.getElementById('pwaReciboSucursal').innerText = r.sucursal_nombre || 'Kortzen Barbería';
+    document.getElementById('pwaReciboFechaHora').innerText = r.fecha_hora_formateada || '';
+    document.getElementById('pwaReciboCliente').innerText = r.cliente_nombre || 'Cliente';
+    document.getElementById('pwaReciboBarbero').innerText = r.barbero_nombre || 'Barbero';
+
+    document.getElementById('pwaReciboItemPrincipal').innerText = r.servicio_principal || 'Corte';
+    document.getElementById('pwaReciboPrecioPrincipal').innerText = '$' + parseFloat(r.precio_principal || 0).toFixed(2);
+
+    const adicCont = document.getElementById('pwaReciboItemsAdicionales');
+    if (adicCont) {
+        let adicHtml = '';
+        if (r.servicios_adicionales && r.servicios_adicionales.length > 0) {
+            r.servicios_adicionales.forEach(ad => {
+                adicHtml += `
+                    <div style="display: flex; justify-content: space-between; margin-top: 3px; color: #0284C7;">
+                        <span>+ ${escapeHtml(ad.nombre)}</span>
+                        <strong>+$${parseFloat(ad.precio || 0).toFixed(2)}</strong>
+                    </div>
+                `;
+            });
+        }
+        adicCont.innerHTML = adicHtml;
+    }
+
+    document.getElementById('pwaReciboSubtotal').innerText = '$' + parseFloat(r.total_servicios || 0).toFixed(2);
+    document.getElementById('pwaReciboPropina').innerText = '+$' + parseFloat(r.propina || 0).toFixed(2);
+    document.getElementById('pwaReciboTotal').innerText = '$' + parseFloat(r.total_a_cobrar || 0).toFixed(2);
+    document.getElementById('pwaReciboComisionPct').innerText = r.comision_porcentaje || 50;
+    document.getElementById('pwaReciboComisionBarbero').innerText = '$' + parseFloat(r.comision_barbero || 0).toFixed(2);
+
+    const waBtn = document.getElementById('pwaBtnReciboWhatsApp');
+    if (waBtn) {
+        let telLimpio = (r.cliente_telefono || '').replace(/\D/g, '');
+        if (telLimpio.startsWith('0')) telLimpio = '593' + telLimpio.substring(1);
+        if (!telLimpio.startsWith('593') && telLimpio.length === 9) telLimpio = '593' + telLimpio;
+
+        let msg = `*KORTZEN BARBERÍA - COMPROBANTE DE PAGO*\n`;
+        msg += `Hola ${r.cliente_nombre ? r.cliente_nombre.split(' ')[0] : ''}, te compartimos el detalle de tu visita hoy:\n\n`;
+        msg += `✂️ *Servicio:* ${r.servicio_principal} ($${parseFloat(r.precio_principal || 0).toFixed(2)})\n`;
+        if (r.servicios_adicionales && r.servicios_adicionales.length > 0) {
+            r.servicios_adicionales.forEach(ad => {
+                msg += `➕ *Adicional:* ${ad.nombre} ($${parseFloat(ad.precio || 0).toFixed(2)})\n`;
+            });
+        }
+        msg += `💈 *Barbero:* ${r.barbero_nombre}\n`;
+        if (parseFloat(r.propina || 0) > 0) {
+            msg += `🎁 *Propina:* $${parseFloat(r.propina).toFixed(2)}\n`;
+        }
+        msg += `\n💰 *TOTAL PAGADO:* $${parseFloat(r.total_a_cobrar || 0).toFixed(2)}\n\n`;
+        msg += `¡Muchas gracias por tu preferencia! Te esperamos pronto en Kortzen.`;
+
+        waBtn.href = telLimpio ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    }
+
+    document.getElementById('pwaReciboSheet').style.display = 'flex';
+}
+
+function abrirModalReciboPwa(reciboOrId) {
+    if (typeof reciboOrId === 'object' && reciboOrId !== null) {
+        mostrarReciboEnModalPwa(reciboOrId);
+        return;
+    }
+    const id = parseInt(reciboOrId);
+    fetch('api/citas_action.php?action=get_recibo&id=' + id)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.recibo) {
+                mostrarReciboEnModalPwa(data.recibo);
+            } else {
+                alert('No se pudo cargar el recibo: ' + (data.error || 'Cita no encontrada.'));
+            }
+        })
+        .catch(err => {
+            alert('Error al consultar el recibo.');
+        });
+}
+
+function cerrarModalReciboPwa() {
+    document.getElementById('pwaReciboSheet').style.display = 'none';
+}
+
+function imprimirReciboPwa() {
+    const contenido = document.getElementById('pwaReciboPrintArea').innerHTML;
+    const ventana = window.open('', '', 'height=600,width=450');
+    ventana.document.write('<html><head><title>Recibo Kortzen</title>');
+    ventana.document.write('<style>body{font-family:monospace;padding:16px;color:#111;margin:0;} strong{font-weight:900;} div{margin-bottom:3px;}</style>');
+    ventana.document.write('</head><body>');
+    ventana.document.write(contenido);
+    ventana.document.write('</body></html>');
+    ventana.document.close();
+    ventana.focus();
+    setTimeout(() => {
+        ventana.print();
+        ventana.close();
+    }, 300);
 }
 
 function eliminarCitaPwa(citaId) {

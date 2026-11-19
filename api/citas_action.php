@@ -344,13 +344,98 @@ try {
                 throw new Exception('ID inválido');
             }
 
-            // 1. Marcar completada con propina
+            // Asegurar que las columnas y tablas necesarias existan
             try {
                 $pdo->exec("ALTER TABLE citas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER precio_final");
             } catch (Exception $exP) {}
 
-            $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', propina = ? WHERE id = ?");
-            $stmtComp->execute([$propina, $id]);
+            try {
+                $pdo->exec("ALTER TABLE citas ADD COLUMN servicios_adicionales_txt VARCHAR(255) NULL AFTER precio_final");
+            } catch (Exception $exSat) {}
+
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS citas_servicios_adicionales (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        cita_id INT UNSIGNED NOT NULL,
+                        servicio_id INT UNSIGNED NOT NULL,
+                        nombre VARCHAR(150) NOT NULL,
+                        precio DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_csa_cita (cita_id),
+                        INDEX idx_csa_servicio (servicio_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (Exception $exCsa) {}
+
+            // Cargar datos previos de la cita para cálculo de precio y comisiones
+            $stmtCitaBase = $pdo->prepare("
+                SELECT c.*, s.nombre as servicio_nombre, COALESCE(s.precio, 0.00) as servicio_precio,
+                       u.nombre as barbero_nombre, COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
+                       COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
+                       cl.nombre as cliente_nombre, cl.telefono as cliente_telefono
+                FROM citas c
+                LEFT JOIN servicios s ON c.servicio_id = s.id
+                LEFT JOIN usuarios u ON c.barbero_id = u.id
+                LEFT JOIN clientes cl ON c.cliente_id = cl.id
+                WHERE c.id = ?
+            ");
+            $stmtCitaBase->execute([$id]);
+            $citaBase = $stmtCitaBase->fetch(PDO::FETCH_ASSOC);
+            if (!$citaBase) {
+                throw new Exception('La cita no existe.');
+            }
+
+            // Calcular precio base del servicio agendado
+            $precioBase = isset($_POST['precio_base']) && floatval($_POST['precio_base']) > 0
+                ? floatval($_POST['precio_base'])
+                : floatval($citaBase['servicio_precio'] > 0 ? $citaBase['servicio_precio'] : ($citaBase['precio_final'] ?? 0));
+
+            // Procesar servicios adicionales
+            $serviciosAdicionalesIds = $_POST['servicios_adicionales'] ?? [];
+            if (!is_array($serviciosAdicionalesIds)) {
+                $serviciosAdicionalesIds = [];
+            }
+
+            // Limpiar registros previos de servicios adicionales para esta cita (evitar duplicidad)
+            $stmtDelAdic = $pdo->prepare("DELETE FROM citas_servicios_adicionales WHERE cita_id = ?");
+            $stmtDelAdic->execute([$id]);
+
+            $sumaAdicionales = 0.00;
+            $nombresAdicionales = [];
+            $itemsAdicionales = [];
+
+            if (!empty($serviciosAdicionalesIds)) {
+                $stmtInsAdic = $pdo->prepare("INSERT INTO citas_servicios_adicionales (cita_id, servicio_id, nombre, precio) VALUES (?, ?, ?, ?)");
+                $stmtGetSrv = $pdo->prepare("SELECT id, nombre, precio FROM servicios WHERE id = ?");
+
+                foreach ($serviciosAdicionalesIds as $srvId) {
+                    $srvId = intval($srvId);
+                    if ($srvId > 0) {
+                        $stmtGetSrv->execute([$srvId]);
+                        $srvData = $stmtGetSrv->fetch(PDO::FETCH_ASSOC);
+                        if ($srvData) {
+                            $srvPrecio = floatval($srvData['precio']);
+                            $srvNombre = $srvData['nombre'];
+                            $stmtInsAdic->execute([$id, $srvId, $srvNombre, $srvPrecio]);
+                            $sumaAdicionales += $srvPrecio;
+                            $nombresAdicionales[] = $srvNombre . " ($" . number_format($srvPrecio, 2) . ")";
+                            $itemsAdicionales[] = [
+                                'id' => $srvId,
+                                'nombre' => $srvNombre,
+                                'precio' => $srvPrecio
+                            ];
+                        }
+                    }
+                }
+            }
+
+            $nuevoPrecioFinal = $precioBase + $sumaAdicionales;
+            $txtAdicionales = !empty($nombresAdicionales) ? implode(', ', $nombresAdicionales) : null;
+
+            // 1. Marcar completada con propina, precio_final actualizado y servicios adicionales
+            $stmtComp = $pdo->prepare("UPDATE citas SET estado = 'completada', propina = ?, precio_final = ?, servicios_adicionales_txt = ? WHERE id = ?");
+            $stmtComp->execute([$propina, $nuevoPrecioFinal, $txtAdicionales, $id]);
 
             // Cargar puntos configurados
             $stmtCfg = $pdo->query("SELECT clave, valor FROM configuracion");
@@ -438,13 +523,116 @@ try {
             $bNombre = $cD ? $cD['barbero_nombre'] : "Barbero";
             $precioVal = number_format(floatval($cD['precio_final'] ?? 0), 2);
 
-            registrarLog('COMPLETAR', 'citas', $id, "Cita #$id finalizada para el cliente '$cNombre' (Servicio: '$sNombre', Barbero: '$bNombre', Valor: $$precioVal, Propina: $$propina, +$puntosPorCorte pts ganados)");
+            $esFinde = in_array(date('w', strtotime($citaBase['fecha_hora'])), [0, 6]);
+            $comPct = $esFinde 
+                ? floatval($citaBase['barbero_comision_finde'] ?? ($citaBase['barbero_comision'] ?? 50.0))
+                : floatval($citaBase['barbero_comision'] ?? 50.0);
+            $comisionTotalBarbero = ($nuevoPrecioFinal * $comPct / 100);
+
+            $detalleAdicLog = !empty($txtAdicionales) ? " + Adicionales: [$txtAdicionales]" : "";
+            registrarLog('COMPLETAR', 'citas', $id, "Cita #$id finalizada para el cliente '$cNombre' (Servicio: '$sNombre'$detalleAdicLog, Barbero: '$bNombre', Valor Final: $$precioVal, Comisión Barbero ({$comPct}%): $$comisionTotalBarbero, Propina: $$propina, +$puntosPorCorte pts ganados)");
 
             $msgOk = 'Cita completada con éxito.';
             if ($propina > 0) {
                 $msgOk .= ' Propina registrada para el barbero: $' . number_format($propina, 2);
             }
-            responderAccionCita($isAjax, $redirect_url, $msgOk, ['cita_id' => $id, 'propina' => $propina]);
+
+            $reciboData = [
+                'cita_id' => $id,
+                'fecha_hora' => $citaBase['fecha_hora'],
+                'fecha_hora_formateada' => date('d/m/Y H:i', strtotime($citaBase['fecha_hora'])),
+                'cliente_nombre' => $cNombre,
+                'cliente_telefono' => $cD['cliente_telefono'] ?? ($citaBase['cliente_telefono'] ?? ''),
+                'barbero_nombre' => $bNombre,
+                'servicio_principal' => $sNombre,
+                'precio_principal' => $precioBase,
+                'servicios_adicionales' => $itemsAdicionales,
+                'suma_adicionales' => $sumaAdicionales,
+                'total_servicios' => $nuevoPrecioFinal,
+                'propina' => $propina,
+                'total_a_cobrar' => $nuevoPrecioFinal + $propina,
+                'comision_porcentaje' => $comPct,
+                'comision_barbero' => $comisionTotalBarbero,
+                'ganancia_neta_negocio' => $nuevoPrecioFinal - $comisionTotalBarbero
+            ];
+
+            responderAccionCita($isAjax, $redirect_url, $msgOk, [
+                'cita_id' => $id,
+                'propina' => $propina,
+                'nuevo_precio_final' => $nuevoPrecioFinal,
+                'recibo' => $reciboData
+            ]);
+
+        case 'get_recibo':
+            $id = intval($_GET['id'] ?? $_POST['id'] ?? 0);
+            if ($id <= 0) {
+                throw new Exception('ID de cita inválido.');
+            }
+
+            $stmtR = $pdo->prepare("
+                SELECT c.*, 
+                       cl.nombre as cliente_nombre, cl.telefono as cliente_telefono,
+                       s.nombre as servicio_nombre, COALESCE(s.precio, 0.00) as servicio_precio,
+                       u.nombre as barbero_nombre, COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
+                       COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
+                       su.nombre as sucursal_nombre, su.direccion as sucursal_direccion
+                FROM citas c
+                LEFT JOIN clientes cl ON c.cliente_id = cl.id
+                LEFT JOIN servicios s ON c.servicio_id = s.id
+                LEFT JOIN usuarios u ON c.barbero_id = u.id
+                LEFT JOIN sucursales su ON c.sucursal_id = su.id
+                WHERE c.id = ?
+            ");
+            $stmtR->execute([$id]);
+            $citaR = $stmtR->fetch(PDO::FETCH_ASSOC);
+            if (!$citaR) {
+                throw new Exception('La cita no existe.');
+            }
+
+            // Obtener adicionales de la tabla de servicios adicionales
+            $stmtAd = $pdo->prepare("SELECT id, servicio_id, nombre, precio FROM citas_servicios_adicionales WHERE cita_id = ? ORDER BY id ASC");
+            $stmtAd->execute([$id]);
+            $adicionales = $stmtAd->fetchAll(PDO::FETCH_ASSOC);
+
+            $sumaAdic = 0.00;
+            foreach ($adicionales as $ad) {
+                $sumaAdic += floatval($ad['precio']);
+            }
+
+            $precioFinal = floatval($citaR['precio_final'] > 0 ? $citaR['precio_final'] : ($citaR['servicio_precio'] + $sumaAdic));
+            $precioBase = floatval($citaR['servicio_precio']);
+            if ($precioFinal > $sumaAdic && $precioBase == 0) {
+                $precioBase = $precioFinal - $sumaAdic;
+            }
+
+            $propina = floatval($citaR['propina'] ?? 0.00);
+            $esFinde = in_array(date('w', strtotime($citaR['fecha_hora'])), [0, 6]);
+            $comPct = $esFinde ? floatval($citaR['barbero_comision_finde']) : floatval($citaR['barbero_comision']);
+            $comisionBarbero = ($precioFinal * $comPct / 100);
+
+            responderAccionCita(true, '', 'Recibo obtenido con éxito.', [
+                'recibo' => [
+                    'cita_id' => $id,
+                    'fecha_hora' => $citaR['fecha_hora'],
+                    'fecha_hora_formateada' => date('d/m/Y H:i', strtotime($citaR['fecha_hora'])),
+                    'sucursal_nombre' => $citaR['sucursal_nombre'] ?? 'Kortzen Barbería',
+                    'sucursal_direccion' => $citaR['sucursal_direccion'] ?? '',
+                    'cliente_nombre' => $citaR['cliente_nombre'] ?? 'Cliente',
+                    'cliente_telefono' => $citaR['cliente_telefono'] ?? '',
+                    'barbero_nombre' => $citaR['barbero_nombre'] ?? 'Barbero',
+                    'servicio_principal' => $citaR['servicio_nombre'] ?? 'Corte',
+                    'precio_principal' => $precioBase,
+                    'servicios_adicionales' => $adicionales,
+                    'suma_adicionales' => $sumaAdic,
+                    'total_servicios' => $precioFinal,
+                    'propina' => $propina,
+                    'total_a_cobrar' => $precioFinal + $propina,
+                    'comision_porcentaje' => $comPct,
+                    'comision_barbero' => $comisionBarbero,
+                    'ganancia_neta_negocio' => $precioFinal - $comisionBarbero
+                ]
+            ]);
+            break;
 
         case 'marcar_no_asistio':
             $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);

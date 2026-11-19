@@ -240,6 +240,25 @@ function getConnection()
 
                 try {
                     $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS citas_servicios_adicionales (
+                            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                            cita_id INT UNSIGNED NOT NULL,
+                            servicio_id INT UNSIGNED NOT NULL,
+                            nombre VARCHAR(150) NOT NULL,
+                            precio DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            INDEX idx_csa_cita (cita_id),
+                            INDEX idx_csa_servicio (servicio_id)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                    ");
+                } catch (Throwable $e_csa) {}
+
+                try {
+                    $pdo->exec("ALTER TABLE citas ADD COLUMN servicios_adicionales_txt VARCHAR(255) NULL AFTER precio_final");
+                } catch (Throwable $e_csatxt) {}
+
+                try {
+                    $pdo->exec("
                         CREATE TABLE IF NOT EXISTS push_subscriptions (
                             id INT AUTO_INCREMENT PRIMARY KEY,
                             cliente_id INT NULL,

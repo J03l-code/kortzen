@@ -229,6 +229,7 @@ CREATE TABLE `citas` (
     `estado` ENUM('confirmada','completada','cancelada') NOT NULL DEFAULT 'confirmada',
     `notas` TEXT DEFAULT NULL,
     `precio_final` DECIMAL(10, 2) DEFAULT NULL,
+    `servicios_adicionales_txt` VARCHAR(255) DEFAULT NULL,
     `propina` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     `asistencia_confirmada` TINYINT(1) DEFAULT 0,
     `recordatorio_2h_enviado` TINYINT(1) DEFAULT 0,
@@ -244,6 +245,21 @@ CREATE TABLE `citas` (
     CONSTRAINT `fk_citas_servicio` FOREIGN KEY (`servicio_id`) REFERENCES `servicios` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_citas_barbero` FOREIGN KEY (`barbero_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
     CONSTRAINT `fk_citas_sucursal` FOREIGN KEY (`sucursal_id`) REFERENCES `sucursales` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla 12.1: citas_servicios_adicionales (Servicios extra cobrados en la cita)
+DROP TABLE IF EXISTS `citas_servicios_adicionales`;
+CREATE TABLE `citas_servicios_adicionales` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `cita_id` INT UNSIGNED NOT NULL,
+    `servicio_id` INT UNSIGNED NOT NULL,
+    `nombre` VARCHAR(150) NOT NULL,
+    `precio` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `fecha_creacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_csa_cita` (`cita_id`),
+    INDEX `idx_csa_servicio` (`servicio_id`),
+    CONSTRAINT `fk_csa_cita` FOREIGN KEY (`cita_id`) REFERENCES `citas` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabla 13: horarios_barberos (Jornadas semanales)
