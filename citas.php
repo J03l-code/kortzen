@@ -148,40 +148,55 @@ $pageTitle = 'Citas';
 include 'includes/header.php';
 ?>
 
-<div class="page-header" style="flex-wrap: wrap; gap: 14px; align-items: center;">
-    <div>
-        <h1 class="page-title" style="margin: 0;">
-            <?php echo $currentUser['rol'] === 'barbero' ? 'Mis Citas' : 'Gestión de Citas'; ?>
-        </h1>
-        <?php if ($es_hoy): ?>
-            <span style="display: inline-block; margin-top: 4px; font-size: 0.78rem; font-weight: 800; color: #10B981; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">
-                ● Mostrando citas de hoy (<?php echo date('d/m/Y'); ?>)
-            </span>
-        <?php elseif (!empty($fecha)): ?>
-            <span style="display: inline-block; margin-top: 4px; font-size: 0.78rem; font-weight: 800; color: #1E40AF; background: #DBEAFE; border: 1px solid #93C5FD; padding: 2px 8px; border-radius: 6px;">
-                ● Mostrando citas del <?php echo date('d/m/Y', strtotime($fecha)); ?>
-            </span>
-        <?php else: ?>
-            <span style="display: inline-block; margin-top: 4px; font-size: 0.78rem; font-weight: 700; color: #6B7280; background: #F3F4F6; padding: 2px 8px; border-radius: 6px;">
-                ● Mostrando histórico completo de todas las fechas
-            </span>
-        <?php endif; ?>
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <form method="GET" id="filterForm" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <?php if ($currentUser['rol'] !== 'barbero'): ?>
-                <!-- Filtro Sucursal -->
-                <select name="sucursal_id" class="filter-select" onchange="this.form.submit()">
-                    <option value="">Todas las sucursales</option>
-                    <?php foreach ($sucursales_lista as $suc): ?>
-                        <option value="<?php echo $suc['id']; ?>" <?php echo $sucursal_id == $suc['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($suc['nombre']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+<div class="kortzen-aviso" style="margin-bottom: 16px;">
+    <a href="citas.php?vista=calendario">Abrir calendario y gestionar citas sin barbero asignado</a> · <a href="caja.php">Cierre de Caja y Contabilidad</a>
+</div>
 
-                <!-- Filtro Barbero -->
-                <select name="barbero_id" class="filter-select" onchange="this.form.submit()">
+<!-- Header con Título y Botón + Cita (Estilo idéntico a PWA y Web) -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+    <div>
+        <h2 style="font-size: 1.35rem; font-weight: 900; color: #111; margin: 0;">
+            <?php echo $currentUser['rol'] === 'barbero' ? 'Mis Citas' : 'Gestión de Citas'; ?>
+        </h2>
+        <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0;">Historial, cobros, estados y propinas</p>
+    </div>
+    <?php if ($currentUser['rol'] === 'admin'): ?>
+        <a href="citas_crear.php" class="btn" style="background: #111; color: #fff; font-weight: 800; font-size: 0.78rem; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
+            <i class="fas fa-plus"></i> + AÑADIR CITA
+        </a>
+    <?php endif; ?>
+</div>
+
+<!-- Filtros Idénticos a la PWA y Web (Tarjeta Blanca 2 Columnas) -->
+<div class="pwa-item-card" style="margin-bottom: 16px; padding: 14px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+    <!-- Buscador en tiempo real predictivo -->
+    <div style="position: relative; margin-bottom: 10px;">
+        <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: #9CA3AF; font-size: 0.85rem; pointer-events: none;"></i>
+        <input type="text" 
+               id="predictiveCitaSearch" 
+               placeholder="Buscar cliente, teléfono o servicio..." 
+               class="search-input"
+               autocomplete="off"
+               style="width: 100%; padding: 10px 10px 10px 34px; border-radius: 8px; border: 1.5px solid #E5E7EB; font-size: 0.85rem; font-weight: 600; box-sizing: border-box; background: #FFF; outline: none;">
+        <div id="predictiveCitaDropdown" class="predictive-dropdown"></div>
+    </div>
+
+    <!-- Formulario de Selectores -->
+    <form method="GET" id="filterForm" style="margin: 0;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 8px;">
+            <!-- Filtro Sucursal -->
+            <select name="sucursal_id" class="filter-select" onchange="this.form.submit()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid #E5E7EB; font-size: 0.78rem; font-weight: 700; background: #FFF; width: 100%; box-sizing: border-box;">
+                <option value="">Todas las sucursales</option>
+                <?php foreach ($sucursales_lista as $suc): ?>
+                    <option value="<?php echo $suc['id']; ?>" <?php echo $sucursal_id == $suc['id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($suc['nombre']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+
+            <!-- Filtro Barbero -->
+            <?php if ($currentUser['rol'] !== 'barbero'): ?>
+                <select name="barbero_id" class="filter-select" onchange="this.form.submit()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid #E5E7EB; font-size: 0.78rem; font-weight: 700; background: #FFF; width: 100%; box-sizing: border-box;">
                     <option value="">Todos los barberos</option>
                     <?php foreach ($barberos_lista as $barb): ?>
                         <option value="<?php echo $barb['id']; ?>" <?php echo $barbero_id == $barb['id'] ? 'selected' : ''; ?>>
@@ -189,58 +204,43 @@ include 'includes/header.php';
                         </option>
                     <?php endforeach; ?>
                 </select>
+            <?php else: ?>
+                <div style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid #E5E7EB; font-size: 0.78rem; font-weight: 700; background: #F8FAFC; color: #475569; display: flex; align-items: center; box-sizing: border-box;">
+                    <i class="fas fa-user-check" style="margin-right: 6px;"></i> Mis citas
+                </div>
             <?php endif; ?>
+        </div>
 
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
             <!-- Filtro Estado -->
-            <select name="estado" class="filter-select" onchange="this.form.submit()">
+            <select name="estado" class="filter-select" onchange="this.form.submit()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid #E5E7EB; font-size: 0.78rem; font-weight: 700; background: #FFF; width: 100%; box-sizing: border-box;">
                 <option value="">Todos los estados</option>
                 <option value="confirmada" <?php echo $estado == 'confirmada' ? 'selected' : ''; ?>>Confirmada</option>
                 <option value="completada" <?php echo $estado == 'completada' ? 'selected' : ''; ?>>Completada</option>
-                <option value="no_asistio" <?php echo $estado == 'no_asistio' ? 'selected' : ''; ?>>No Asistió (Inasistencia)</option>
+                <option value="no_asistio" <?php echo $estado == 'no_asistio' ? 'selected' : ''; ?>>No Asistió</option>
                 <option value="cancelada" <?php echo $estado == 'cancelada' ? 'selected' : ''; ?>>Cancelada</option>
             </select>
 
-            <!-- Filtro Fecha -->
-            <input type="date" name="fecha" id="filtroFecha" class="filter-date" value="<?php echo htmlspecialchars($fecha); ?>"
-                onchange="this.form.submit()">
+            <!-- Filtro Fecha (Por defecto HOY) -->
+            <input type="date" name="fecha" id="filtroFecha" class="filter-date" value="<?php echo htmlspecialchars($fecha); ?>" onchange="this.form.submit()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid #E5E7EB; font-size: 0.78rem; font-weight: 700; width: 100%; box-sizing: border-box; background: #FFF;">
+        </div>
 
-            <!-- Botón Rápido: Solo Citas de Hoy -->
-            <button type="button" class="btn <?php echo $es_hoy ? 'btn-today-active' : 'btn-today'; ?>" onclick="toggleFiltroHoy()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <?php echo $es_hoy ? 'Viendo: Hoy' : 'Citas de Hoy'; ?>
+        <!-- Botones Rápidos: Citas de Hoy / Ver Todas / Limpiar -->
+        <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <button type="button" class="btn <?php echo $es_hoy ? 'btn-today-active' : 'btn-today'; ?>" onclick="toggleFiltroHoy()" style="font-size: 0.78rem; padding: 7px 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; cursor: pointer; <?php echo $es_hoy ? 'background: #111 !important; color: #FFF !important; border: 1px solid #111;' : 'background: #FFF !important; color: #111 !important; border: 1.5px solid #E5E7EB;'; ?>">
+                <i class="far fa-calendar"></i>
+                <span><?php echo $es_hoy ? 'Viendo: Hoy' : 'Citas de Hoy'; ?></span>
             </button>
-
-            <?php if (!empty($fecha)): ?>
-                <a href="citas.php?fecha=<?php echo (!empty($sucursal_id) ? '&sucursal_id='.urlencode($sucursal_id) : '') . (!empty($barbero_id) ? '&barbero_id='.urlencode($barbero_id) : '') . (!empty($estado) ? '&estado='.urlencode($estado) : ''); ?>" class="btn btn-secondary" title="Ver citas de todos los días">Ver Todos los Días</a>
-            <?php endif; ?>
-            <?php if ($estado || $sucursal_id || $barbero_id || $fecha !== ''): ?>
-                <a href="citas.php?fecha=" class="btn btn-secondary" style="color: #666;">Limpiar Filtros</a>
-            <?php endif; ?>
-        </form>
-
-        <?php if ($currentUser['rol'] === 'admin'): ?>
-            <button onclick="window.location.href='citas_crear.php'" class="btn btn-primary" style="white-space: nowrap;">+ AÑADIR CITA</button>
-        <?php endif; ?>
-    </div>
-</div>
-
-<!-- Buscador Predictivo de Citas -->
-<div style="position: relative; margin-bottom: 24px; max-width: 540px;">
-    <div style="position: relative; display: flex; align-items: center;">
-        <i class="fas fa-search search-icon" style="position: absolute; left: 14px; color: #9CA3AF; font-size: 14px; pointer-events: none;"></i>
-        <input type="text" 
-               id="predictiveCitaSearch" 
-               placeholder="Buscar cita por cliente, teléfono, servicio, barbero..." 
-               class="search-input"
-               autocomplete="off"
-               style="width: 100%; padding: 11px 16px 11px 40px; background: #FFFFFF; border: 1.5px solid #E5E7EB; border-radius: 10px; font-size: 14px; font-weight: 500; color: #111827; outline: none; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-    </div>
-    <div id="predictiveCitaDropdown" class="predictive-dropdown"></div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <?php if (!empty($fecha)): ?>
+                    <a href="citas.php?fecha=<?php echo (!empty($sucursal_id) ? '&sucursal_id='.urlencode($sucursal_id) : '') . (!empty($barbero_id) ? '&barbero_id='.urlencode($barbero_id) : '') . (!empty($estado) ? '&estado='.urlencode($estado) : ''); ?>" class="btn" style="font-size: 0.75rem; padding: 7px 10px; color: #64748B; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 8px; text-decoration: none; font-weight: 600;">Ver Todas las Fechas</a>
+                <?php endif; ?>
+                <?php if ($estado || $sucursal_id || $barbero_id || $fecha !== ''): ?>
+                    <a href="citas.php?fecha=" class="btn" style="font-size: 0.75rem; padding: 7px 10px; color: #EF4444; background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 8px; text-decoration: none; font-weight: 600;">Limpiar</a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </form>
 </div>
 
 <script src="js/ventas-vendedor.js" defer></script>
@@ -521,49 +521,16 @@ function toggleFiltroHoy() {
         .page-header {
             flex-direction: column !important;
             align-items: stretch !important;
-            gap: 14px !important;
-            margin-bottom: 20px !important;
+            gap: 12px !important;
+            margin-bottom: 16px !important;
         }
-        .page-header > div:last-child {
-            width: 100% !important;
-            flex-direction: column !important;
-            align-items: stretch !important;
-        }
-        #filterForm {
-            width: 100% !important;
-            display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 8px !important;
-        }
-        #filterForm .filter-select,
-        #filterForm .filter-date,
-        #filterForm .btn {
-            width: 100% !important;
-            box-sizing: border-box !important;
-            min-height: 40px !important;
-            height: 40px !important;
-            padding: 8px 10px !important;
+        #filterForm select,
+        #filterForm input {
             font-size: 13px !important;
-        }
-        #filterForm .btn-today,
-        #filterForm .btn-today-active {
-            grid-column: span 2 !important;
-            justify-content: center !important;
-            display: flex !important;
-            align-items: center !important;
-        }
-        .page-header .btn-primary {
-            width: 100% !important;
-            min-height: 42px !important;
-            height: 42px !important;
-            justify-content: center !important;
-            display: flex !important;
-            align-items: center !important;
-            box-sizing: border-box !important;
         }
         #predictiveCitaSearch {
             font-size: 13px !important;
-            padding: 10px 14px 10px 38px !important;
+            padding: 10px 14px 10px 36px !important;
         }
     }
 </style>

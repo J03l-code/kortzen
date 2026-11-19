@@ -453,14 +453,16 @@ small {
         bottom: 0;
         left: 0;
         right: 0;
-        height: 65px;
-        background: #111111;
-        border-top: 1px solid #222222;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-top: 1px solid #E5E7EB;
         justify-content: space-around;
         align-items: center;
         z-index: 99999;
-        padding-bottom: env(safe-area-inset-bottom);
-        box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+        padding: 6px 4px calc(env(safe-area-inset-bottom, 8px) + 2px) 4px;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
+        box-sizing: border-box;
     }
     
     .pwa-bottom-nav__item {
@@ -468,24 +470,28 @@ small {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        color: #777777;
+        color: #64748B;
         text-decoration: none;
-        font-size: 10px;
-        font-family: var(--font-body);
-        font-weight: 500;
-        gap: 5px;
+        font-size: 0.68rem;
+        font-family: inherit;
+        font-weight: 600;
+        gap: 3px;
         flex: 1;
-        height: 100%;
-        transition: color 0.2s ease;
+        padding: 4px 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: color 0.15s ease;
     }
     
     .pwa-bottom-nav__item.active {
-        color: #ffffff;
+        color: #111111;
+        font-weight: 800;
     }
     
     .pwa-bottom-nav__item svg {
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         stroke: currentColor;
         stroke-width: 2;
         fill: none;

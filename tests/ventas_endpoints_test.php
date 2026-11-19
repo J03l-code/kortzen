@@ -51,12 +51,12 @@ function comprobarCobroIntacto(PDO $pdo): void
 }
 
 try {
-    foreach (['citas_action.php', 'inventario_action.php', 'barbero_inventario_action.php', 'horarios_action.php', 'reasignar_cita.php', 'calendario_citas.php', 'reportes_ventas.php'] as $nombre) {
+    foreach (['citas_action.php', 'inventario_action.php', 'barbero_inventario_action.php', 'horarios_action.php', 'reasignar_cita.php', 'calendario_citas.php', 'reportes_ventas.php', 'caja_resumen.php'] as $nombre) {
         $destino = $temporal . '/api/' . $nombre;
         copy($origen . '/api/' . $nombre, $destino);
         $archivos[] = $destino;
     }
-    foreach (['webpush_helper.php', 'webpush_encrypt.php', 'exportar_tablas.php'] as $nombre) {
+    foreach (['webpush_helper.php', 'webpush_encrypt.php', 'exportar_tablas.php', 'finanzas.php'] as $nombre) {
         $destino = $temporal . '/includes/' . $nombre;
         copy($origen . '/includes/' . $nombre, $destino);
         $archivos[] = $destino;
@@ -216,6 +216,12 @@ try {
             }
             comprobarEndpoint((int) $pdo->query('SELECT COUNT(*) FROM ventas_productos WHERE usuario_id = 2 AND registrado_por = 1')->fetchColumn() === 2, 'Ambas ventas deben atribuirse correctamente.');
             comprobarEndpoint((int) $pdo->query('SELECT cantidad FROM inventario WHERE id = 1')->fetchColumn() === 8, 'Debe descontar una unidad por venta.');
+        },
+        'API de cierre de caja valida permisos y calcula totales' => function ($pdo, $db) {
+            $r = ejecutarEndpoint('caja_resumen.php', [], $db, 1, 'admin', ['periodo' => 'diario']);
+            comprobarEndpoint($r['success'] && isset($r['reporte']['totales']), 'La API de caja debe devolver el reporte al administrador.');
+            $r = ejecutarEndpoint('caja_resumen.php', [], $db, 3, 'barbero', ['periodo' => 'diario']);
+            comprobarEndpoint(!$r['success'], 'Un barbero no puede consultar el cierre de caja.');
         }
     ];
     $indice = 0;

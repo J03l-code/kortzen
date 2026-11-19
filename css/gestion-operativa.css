@@ -455,12 +455,25 @@
 
 .kortzen-calendario-meta {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     margin-bottom: 12px;
     font-size: 0.82rem;
     color: var(--kortzen-text-muted);
     font-weight: 600;
+}
+
+.kortzen-cal-nav-btn {
+    transition: all 0.15s ease;
+}
+.kortzen-cal-nav-btn:hover {
+    background: #F1F5F9 !important;
+    border-color: #CBD5E1 !important;
+}
+.kortzen-cal-nav-btn:active {
+    background: #E2E8F0 !important;
 }
 
 .kortzen-cal-scroll-hint {

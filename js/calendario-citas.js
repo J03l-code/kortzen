@@ -87,11 +87,13 @@ document.addEventListener('DOMContentLoaded', () => {
             datos.eventos.forEach(e => { if (!Number(e.reasignacion_pendiente) && !columnas.has(String(e.barbero_id))) columnas.set(String(e.barbero_id),e.barbero_original || 'Barbero anterior'); });
             if (datos.eventos.some(e => Number(e.reasignacion_pendiente))) columnas.set('sin-asignar','Sin barbero asignado');
             const minutos = texto => { const [h,m] = texto.split(':').map(Number); return h * 60 + m; };
-            const inicios = datos.eventos.map(e => minutos(e.fecha_hora.slice(11,16)));
+            const eventosValidos = datos.eventos.filter(e => e.estado !== 'cancelada');
+            const eventosEscala = eventosValidos.length ? eventosValidos : datos.eventos;
+            const iniciosDiurnos = eventosEscala.map(e => minutos(e.fecha_hora.slice(11,16))).filter(m => m >= 7 * 60);
+            const inicio = Math.min(9 * 60, iniciosDiurnos.length ? Math.min(...iniciosDiurnos) : 9 * 60);
             const finales = datos.eventos.map(e => minutos(e.fecha_hora.slice(11,16)) + Number(e.duracion));
-            const inicio = Math.min(8 * 60,...inicios);
-            const fin = Math.max(21 * 60,...finales);
-            const alto = (fin - inicio) * 1.3;
+            const fin = Math.max(21 * 60, ...finales);
+            const alto = Math.max(480, (fin - inicio) * 1.3);
             const reloj = nodo('div',undefined,'kortzen-columna-reloj');
             reloj.append(nodo('div','HORA','kortzen-cal-cabecera'));
             const horas = nodo('div'); horas.style.height = alto + 'px'; horas.style.position = 'relative';
@@ -128,7 +130,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     const minuto = minutos(e.fecha_hora.slice(11,16));
                     const posicion = posiciones.get(e.id);
-                    tarjeta.style.top = ((minuto-inicio)*1.3) + 'px';
+                    const topPx = Math.max(0, (minuto - inicio) * 1.3);
+                    tarjeta.style.top = topPx + 'px';
                     tarjeta.style.height = Math.max(4,Number(e.duracion)*1.3-2) + 'px';
                     tarjeta.style.width = (100/posicion.columnas) + '%';
                     tarjeta.style.left = (posicion.carril*100/posicion.columnas) + '%';
@@ -142,6 +145,19 @@ document.addEventListener('DOMContentLoaded', () => {
             estado.textContent = `${datos.eventos.length} citas en el día · ${datos.pendientes.length} pendientes de reasignación`;
         } catch (e) { if (actual === version) estado.textContent = e.message || 'No se pudo cargar el calendario.'; }
     };
+    const moverDia = offset => {
+        if (!fecha.value) return;
+        const partes = fecha.value.split('-').map(Number);
+        const d = new Date(partes[0], partes[1] - 1, partes[2]);
+        d.setDate(d.getDate() + offset);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const diaStr = String(d.getDate()).padStart(2, '0');
+        fecha.value = `${y}-${m}-${diaStr}`;
+        cargar();
+    };
+    root.querySelector('[data-dia-anterior]')?.addEventListener('click', () => moverDia(-1));
+    root.querySelector('[data-dia-siguiente]')?.addEventListener('click', () => moverDia(1));
     fecha.addEventListener('change', cargar);
     cambiarVista(new URLSearchParams(location.search).get('vista') === 'calendario' ? 'calendario' : 'lista');
     cargar();

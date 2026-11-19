@@ -1,10 +1,13 @@
 <?php
+if (!function_exists('metodosPagoKortzen')) {
 function metodosPagoKortzen(): array
 {
     return ['efectivo' => 'Efectivo', 'transferencia' => 'Transferencia', 'deuna' => 'DeUna',
         'tarjeta_debito' => 'Tarjeta de débito', 'tarjeta_credito' => 'Tarjeta de crédito'];
 }
+}
 
+if (!function_exists('validarMetodoPago')) {
 function validarMetodoPago($metodo): string
 {
     if (!is_string($metodo) || !isset(metodosPagoKortzen()[$metodo])) {
@@ -12,12 +15,16 @@ function validarMetodoPago($metodo): string
     }
     return $metodo;
 }
+}
 
+if (!function_exists('esAdministradorCaja')) {
 function esAdministradorCaja(array $usuario): bool
 {
     return in_array($usuario['rol'] ?? '', ['admin', 'admin_local', 'administrador', 'superadmin'], true);
 }
+}
 
+if (!function_exists('centavosCaja')) {
 /** Importe en centavos: no se aceptan importes negativos, infinitos ni desbordamientos. */
 function centavosCaja($importe): int
 {
@@ -26,7 +33,9 @@ function centavosCaja($importe): int
     }
     return (int) round((float) $importe * 100);
 }
+}
 
+if (!function_exists('registrarCobroCaja')) {
 /** Debe formar parte de la misma transacción que el servicio y el inventario. */
 function registrarCobroCaja(PDO $pdo, array $datos): int
 {
@@ -43,7 +52,9 @@ function registrarCobroCaja(PDO $pdo, array $datos): int
         $servicios / 100.0, $productos / 100.0, $propina / 100.0, $total / 100.0]);
     return (int) $pdo->lastInsertId();
 }
+}
 
+if (!function_exists('rangoReporte')) {
 function rangoReporte(array $entrada): array
 {
     $periodo = $entrada['periodo'] ?? 'diario';
@@ -66,7 +77,9 @@ function rangoReporte(array $entrada): array
     }
     return [$inicio->format('Y-m-d H:i:s'), $fin->modify('+1 day')->format('Y-m-d H:i:s')];
 }
+}
 
+if (!function_exists('alcanceReporte')) {
 /** El alcance se calcula en el servidor, nunca a partir de IDs autorizados por el navegador. */
 function alcanceReporte(array $usuario, string $alias, array &$params, $sucursal = null): string
 {
@@ -83,7 +96,9 @@ function alcanceReporte(array $usuario, string $alias, array &$params, $sucursal
     }
     return $filtro;
 }
+}
 
+if (!function_exists('vendedoresHistorial')) {
 function vendedoresHistorial(PDO $pdo, array $usuario): array
 {
     if (!esAdministradorCaja($usuario)) {
@@ -103,7 +118,9 @@ function vendedoresHistorial(PDO $pdo, array $usuario): array
     usort($equipo, fn ($a, $b) => strcasecmp($a['nombre'], $b['nombre']));
     return $equipo;
 }
+}
 
+if (!function_exists('historialVentas')) {
 function historialVentas(PDO $pdo, array $usuario, array $filtros, bool $exportar = false): array
 {
     [$desde, $hasta] = rangoReporte($filtros);
@@ -146,7 +163,9 @@ function historialVentas(PDO $pdo, array $usuario, array $filtros, bool $exporta
     return ['filas' => $filas, 'total' => (float) $resumen['total'], 'registros' => (int) $resumen['filas'],
         'pagina' => $pagina, 'paginas' => $paginas, 'desde' => substr($desde, 0, 10), 'hasta' => date('Y-m-d', strtotime($hasta . ' -1 day'))];
 }
+}
 
+if (!function_exists('resumenCaja')) {
 function resumenCaja(PDO $pdo, array $usuario, array $filtros): array
 {
     if (!esAdministradorCaja($usuario)) throw new InvalidArgumentException('Acceso reservado a administración.');
@@ -176,4 +195,5 @@ function resumenCaja(PDO $pdo, array $usuario, array $filtros): array
     }
     unset($fila);
     return ['metodos' => $filas, 'totales' => $totales, 'desde' => substr($desde,0,10), 'hasta' => date('Y-m-d', strtotime($hasta . ' -1 day'))];
+}
 }

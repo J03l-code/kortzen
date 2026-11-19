@@ -2126,7 +2126,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
     <!-- VIEW 3: CITAS (GESTIÓN COMPLETA IGUAL A LA WEB CON ESTILO PWA) -->
     <!-- ========================================================================= -->
     <section id="viewCitas" class="pwa-view-panel <?php echo $activeTab === 'citas' ? 'active' : ''; ?>">
-        <div class="kortzen-aviso"><a href="citas.php?vista=calendario">Abrir calendario y gestionar citas sin barbero asignado</a> · <a href="caja.php">Cierre de Caja y Contabilidad</a></div>
+        <div class="kortzen-aviso"><a href="javascript:void(0)" onclick="cambiarSubvistaCitasPwa('calendario')">Ver Calendario y Citas sin asignar</a> · <a href="javascript:void(0)" onclick="cambiarVistaPwa('caja')">Cierre de Caja y Contabilidad</a></div>
         <!-- Header con Título y Botón + Cita -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
             <div>
@@ -2138,65 +2138,212 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
             </button>
         </div>
 
-        <!-- Filtros Idénticos a la Versión Web -->
-        <div class="pwa-item-card" style="margin-bottom: 14px; padding: 14px; background: #FFFFFF; border: 1px solid var(--border-pwa);">
-            <!-- Buscador en tiempo real predictivo -->
-            <div style="position: relative; margin-bottom: 10px;">
-                <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: #9CA3AF; font-size: 0.85rem; pointer-events: none;"></i>
-                <input type="text" id="pwaFiltroCitasBuscar" oninput="filtrarCitasPwa()" placeholder="Buscar cliente, teléfono o servicio..." autocomplete="off" style="width: 100%; padding: 10px 10px 10px 34px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.85rem; font-weight: 600;">
-                <div id="pwaFiltroCitasDropdown" class="pwa-predictive-dropdown"></div>
+        <!-- Selector de Subvista: Lista vs Calendario -->
+        <div class="kortzen-view-switcher" role="tablist" style="margin-bottom: 12px; display: flex; gap: 6px;">
+            <button type="button" id="btnPwaCitasLista" onclick="cambiarSubvistaCitasPwa('lista')" class="kortzen-view-btn" aria-pressed="true" style="flex: 1;">
+                <i class="fas fa-list"></i>
+                <span>Vista Lista</span>
+            </button>
+            <button type="button" id="btnPwaCitasCalendario" onclick="cambiarSubvistaCitasPwa('calendario')" class="kortzen-view-btn" aria-pressed="false" style="flex: 1;">
+                <i class="far fa-calendar-alt"></i>
+                <span>Vista Calendario</span>
+            </button>
+        </div>
+
+        <!-- Subvista 1: Filtros y Listado de Citas -->
+        <div id="pwaCitasListaWrap">
+            <!-- Filtros Idénticos a la Versión Web -->
+            <div class="pwa-item-card" style="margin-bottom: 14px; padding: 14px; background: #FFFFFF; border: 1px solid var(--border-pwa);">
+                <!-- Buscador en tiempo real predictivo -->
+                <div style="position: relative; margin-bottom: 10px;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: #9CA3AF; font-size: 0.85rem; pointer-events: none;"></i>
+                    <input type="text" id="pwaFiltroCitasBuscar" oninput="filtrarCitasPwa()" placeholder="Buscar cliente, teléfono o servicio..." autocomplete="off" style="width: 100%; padding: 10px 10px 10px 34px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.85rem; font-weight: 600;">
+                    <div id="pwaFiltroCitasDropdown" class="pwa-predictive-dropdown"></div>
+                </div>
+
+                <!-- Selectores de Filtro -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                    <!-- Filtro Sucursal -->
+                    <select id="pwaFiltroCitasSucursal" onchange="filtrarCitasPwa()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
+                        <option value="">Todas las sucursales</option>
+                        <?php foreach ($sucursalesList as $suc): ?>
+                            <option value="<?php echo $suc['id']; ?>" <?php echo ($filterSucursalId == $suc['id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($suc['nombre']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <!-- Filtro Barbero -->
+                    <select id="pwaFiltroCitasBarbero" onchange="filtrarCitasPwa()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
+                        <option value="">Todos los barberos</option>
+                        <?php foreach ($barberosList as $barb): ?>
+                            <option value="<?php echo $barb['id']; ?>">
+                                <?php echo htmlspecialchars($barb['nombre']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <!-- Filtro Estado -->
+                    <select id="pwaFiltroCitasEstado" onchange="filtrarCitasPwa()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
+                        <option value="">Todos los estados</option>
+                        <option value="confirmada">Confirmada</option>
+                        <option value="completada">Completada</option>
+                        <option value="cancelada">Cancelada</option>
+                    </select>
+
+                    <!-- Filtro Fecha (Por defecto HOY) -->
+                    <input type="date" id="pwaFiltroCitasFecha" value="<?php echo date('Y-m-d'); ?>" onchange="actualizarEstadoBotonHoyPwa(); filtrarCitasPwa();" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700;">
+                </div>
+
+                <!-- Botones Rápidos: Citas de Hoy / Limpiar -->
+                <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
+                    <button type="button" id="btnToggleHoyCitas" onclick="toggleFiltroHoyCitasPwa()" class="pwa-btn-secondary" style="font-size: 0.78rem; padding: 7px 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; border-radius: 8px; background: #111; color: #FFF;">
+                        <i class="far fa-calendar"></i> <span id="txtBtnHoyCitas">Viendo: Hoy</span>
+                    </button>
+                    <button type="button" onclick="limpiarFiltrosCitasPwa()" class="pwa-btn-secondary" style="font-size: 0.75rem; padding: 7px 10px; color: #666;">
+                        Ver Todas las Fechas
+                    </button>
+                </div>
             </div>
 
-            <!-- Selectores de Filtro -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                <!-- Filtro Sucursal -->
-                <select id="pwaFiltroCitasSucursal" onchange="filtrarCitasPwa()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
-                    <option value="">Todas las sucursales</option>
-                    <?php foreach ($sucursalesList as $suc): ?>
-                        <option value="<?php echo $suc['id']; ?>" <?php echo ($filterSucursalId == $suc['id']) ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($suc['nombre']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <!-- Filtro Barbero -->
-                <select id="pwaFiltroCitasBarbero" onchange="filtrarCitasPwa()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
-                    <option value="">Todos los barberos</option>
-                    <?php foreach ($barberosList as $barb): ?>
-                        <option value="<?php echo $barb['id']; ?>">
-                            <?php echo htmlspecialchars($barb['nombre']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                <!-- Filtro Estado -->
-                <select id="pwaFiltroCitasEstado" onchange="filtrarCitasPwa()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
-                    <option value="">Todos los estados</option>
-                    <option value="confirmada">Confirmada</option>
-                    <option value="completada">Completada</option>
-                    <option value="cancelada">Cancelada</option>
-                </select>
-
-                <!-- Filtro Fecha (Por defecto HOY) -->
-                <input type="date" id="pwaFiltroCitasFecha" value="<?php echo date('Y-m-d'); ?>" onchange="actualizarEstadoBotonHoyPwa(); filtrarCitasPwa();" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700;">
-            </div>
-
-            <!-- Botones Rápidos: Citas de Hoy / Limpiar -->
-            <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
-                <button type="button" id="btnToggleHoyCitas" onclick="toggleFiltroHoyCitasPwa()" class="pwa-btn-secondary" style="font-size: 0.78rem; padding: 7px 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; border-radius: 8px; background: #111; color: #FFF;">
-                    <i class="far fa-calendar"></i> <span id="txtBtnHoyCitas">Viendo: Hoy</span>
-                </button>
-                <button type="button" onclick="limpiarFiltrosCitasPwa()" class="pwa-btn-secondary" style="font-size: 0.75rem; padding: 7px 10px; color: #666;">
-                    Ver Todas las Fechas
-                </button>
+            <!-- Contenedor del Listado de Citas -->
+            <div id="pwaCitasListContainer">
+                <div style="text-align: center; padding: 30px; color: var(--text-gray);">Cargando citas...</div>
             </div>
         </div>
 
-        <!-- Contenedor del Listado de Citas -->
-        <div id="pwaCitasListContainer">
-            <div style="text-align: center; padding: 30px; color: var(--text-gray);">Cargando citas...</div>
+        <!-- Subvista 2: Vista Calendario en la PWA -->
+        <div id="pwaCitasCalendarioContainer" style="display: none;">
+            <div class="pwa-item-card" style="margin-bottom: 14px; padding: 12px 14px; background: #FFFFFF; border: 1px solid var(--border-pwa); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" onclick="moverDiaCalendarioPwa(-1)" class="pwa-btn-secondary" style="height: 36px; width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; border: 1.5px solid var(--border-pwa); background: #FFF; cursor: pointer;">
+                        <i class="fas fa-chevron-left" style="font-size: 0.8rem;"></i>
+                    </button>
+                    <input type="date" id="pwaCalFechaInput" value="<?php echo date('Y-m-d'); ?>" onchange="cargarCalendarioPwa()" style="height: 36px; border: 1.5px solid var(--border-pwa); border-radius: 8px; padding: 0 8px; font-weight: 700; font-size: 0.8rem; background: #FFF; cursor: pointer;">
+                    <button type="button" onclick="moverDiaCalendarioPwa(1)" class="pwa-btn-secondary" style="height: 36px; width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; border: 1.5px solid var(--border-pwa); background: #FFF; cursor: pointer;">
+                        <i class="fas fa-chevron-right" style="font-size: 0.8rem;"></i>
+                    </button>
+                </div>
+                <button type="button" onclick="document.getElementById('pwaCalFechaInput').value='<?php echo date('Y-m-d'); ?>'; cargarCalendarioPwa();" class="pwa-btn-secondary" style="font-size: 0.75rem; padding: 7px 12px; font-weight: 800; border-radius: 8px; background: #111; color: #FFF; border: none; cursor: pointer;">
+                    Hoy
+                </button>
+            </div>
+            <div id="pwaCalPendientesAlert" class="kortzen-aviso" style="margin-bottom: 12px;" hidden>
+                <strong style="color: #92400E; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-exclamation-triangle"></i> Citas sin barbero asignado
+                </strong>
+                <p style="margin: 4px 0 8px; font-size: 0.82rem; color: #78350F;">Asigna un barbero disponible para completar el agendamiento.</p>
+                <div id="pwaCalPendientesList" style="margin-top: 6px;"></div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 0.78rem; font-weight: 700; color: #475569; flex-wrap: wrap; gap: 6px;">
+                <span id="pwaCalMetaTexto">Cargando calendario...</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: #854D0E; background: #FEF9C3; padding: 3px 10px; border-radius: 12px; border: 1px solid #FEF08A;">
+                    <i class="fas fa-arrows-alt-h"></i> Desliza para ver más barberos
+                </span>
+            </div>
+            <div id="pwaCalCuadricula" class="kortzen-calendario" style="margin-bottom: 24px;"></div>
+        </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW: CIERRE DE CAJA Y CONTABILIDAD (PWA NATIVE) -->
+    <!-- ========================================================================= -->
+    <section id="viewCaja" class="pwa-view-panel <?php echo $activeTab === 'caja' ? 'active' : ''; ?>">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+                <h2 style="font-size: 1.3rem; font-weight: 900; color: var(--text-dark);">Cierre de Caja</h2>
+                <p style="font-size: 0.8rem; color: var(--text-gray);">Finanzas de citas, productos y cobros</p>
+            </div>
+            <button type="button" onclick="cargarDatosCajaPwa()" class="pwa-btn-secondary" style="background: #111; color: #fff; font-weight: 800; font-size: 0.78rem; padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </div>
+
+        <!-- Filtros de Caja -->
+        <div class="pwa-item-card" style="margin-bottom: 14px; padding: 14px; background: #FFFFFF; border: 1px solid var(--border-pwa);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <div>
+                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-light); text-transform: uppercase;">Periodo</label>
+                    <select id="pwaCajaPeriodo" onchange="cambiarPeriodoCajaPwa(this.value)" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
+                        <option value="diario">Diario</option>
+                        <option value="semanal">Semanal</option>
+                        <option value="mensual">Mensual</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-light); text-transform: uppercase;">Sucursal</label>
+                    <select id="pwaCajaSucursal" onchange="cargarDatosCajaPwa()" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
+                        <option value="0">Todas las permitidas</option>
+                        <?php foreach ($sucursalesList as $s): ?>
+                            <option value="<?php echo $s['id']; ?>"><?php echo htmlspecialchars($s['nombre']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-light); text-transform: uppercase;">Desde</label>
+                    <input type="date" id="pwaCajaDesde" value="<?php echo date('Y-m-d'); ?>" onchange="cargarDatosCajaPwa()" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-light); text-transform: uppercase;">Hasta</label>
+                    <input type="date" id="pwaCajaHasta" value="<?php echo date('Y-m-d'); ?>" onchange="cargarDatosCajaPwa()" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; box-sizing: border-box;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas Financieras (Hero Card + 2x2 Grid) -->
+        <div class="kortzen-metricas" style="margin-bottom: 16px;">
+            <div class="kortzen-metrica kortzen-metrica-hero" data-metrica="total">
+                <span class="kortzen-metrica-label">Total Cobrado (Ingreso Neto)</span>
+                <strong id="pwaCajaTotalCobrado">$0.00</strong>
+            </div>
+            <div class="kortzen-metrica" data-metrica="cortes">
+                <span class="kortzen-metrica-label">Cortes completados</span>
+                <strong id="pwaCajaTotalCortes">0</strong>
+            </div>
+            <div class="kortzen-metrica" data-metrica="servicios">
+                <span class="kortzen-metrica-label">Servicios cobrados</span>
+                <strong id="pwaCajaTotalServicios">$0.00</strong>
+            </div>
+            <div class="kortzen-metrica" data-metrica="productos">
+                <span class="kortzen-metrica-label">Ventas productos</span>
+                <strong id="pwaCajaTotalProductos">$0.00</strong>
+            </div>
+            <div class="kortzen-metrica" data-metrica="propinas">
+                <span class="kortzen-metrica-label">Propinas</span>
+                <strong id="pwaCajaTotalPropinas">$0.00</strong>
+            </div>
+        </div>
+
+        <!-- Desglose por método de pago -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin: 0;">Desglose por método de pago</h3>
+            <span id="pwaCajaMetodosBadge" class="kortzen-badge-count">0 métodos</span>
+        </div>
+        <div class="kortzen-tabla-scroll" style="margin-bottom: 14px;">
+            <table class="kortzen-tabla">
+                <thead>
+                    <tr>
+                        <th>Método</th>
+                        <th>Cortes</th>
+                        <th>Servicios</th>
+                        <th>Productos</th>
+                        <th>Propinas</th>
+                        <th>Total recibido</th>
+                    </tr>
+                </thead>
+                <tbody id="pwaCajaMetodosTbody">
+                    <tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-gray);">Cargando reporte de caja...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="kortzen-nota">
+            <i class="fas fa-info-circle" style="color: #64748B; margin-top: 2px;"></i>
+            <div>Los importes corresponden a cobros registrados en caja. Los cobros anteriores sin método registrado aparecen como «Sin especificar».</div>
         </div>
     </section>
 
@@ -3170,6 +3317,10 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
     <div class="pwa-drawer-item" onclick="cambiarVistaPwa('citas'); cerrarDrawer();">
         <i class="fas fa-calendar-check" style="width: 20px;"></i>
         <span>Citas</span>
+    </div>
+    <div class="pwa-drawer-item" onclick="cambiarVistaPwa('caja'); cerrarDrawer();">
+        <i class="fas fa-cash-register" style="width: 20px;"></i>
+        <span>Caja y Contabilidad</span>
     </div>
     <div class="pwa-drawer-item" onclick="cambiarVistaPwa('horarios_config'); cerrarDrawer();">
         <i class="fas fa-clock" style="width: 20px;"></i>
@@ -4593,6 +4744,10 @@ function cambiarVistaPwa(vistaName) {
         }
     } else if (vistaName === 'citas') {
         renderizarCitasTab();
+    } else if (vistaName === 'caja') {
+        if (typeof cargarDatosCajaPwa === 'function') {
+            cargarDatosCajaPwa();
+        }
     }
 }
 
@@ -5235,6 +5390,365 @@ function guardarEstadoCitaDirectoPwa(citaId) {
         })
         .catch(err => {
             alert('Error de conexión al actualizar estado.');
+        });
+}
+
+function cambiarSubvistaCitasPwa(modo) {
+    const wrapLista = document.getElementById('pwaCitasListaWrap');
+    const wrapCal = document.getElementById('pwaCitasCalendarioContainer');
+    const btnLista = document.getElementById('btnPwaCitasLista');
+    const btnCal = document.getElementById('btnPwaCitasCalendario');
+
+    if (modo === 'calendario') {
+        if (wrapLista) wrapLista.style.display = 'none';
+        if (wrapCal) wrapCal.style.display = 'block';
+        if (btnLista) {
+            btnLista.setAttribute('aria-pressed', 'false');
+            btnLista.style.background = 'transparent';
+            btnLista.style.color = '#64748B';
+        }
+        if (btnCal) {
+            btnCal.setAttribute('aria-pressed', 'true');
+            btnCal.style.background = '#111';
+            btnCal.style.color = '#FFF';
+        }
+        cargarCalendarioPwa();
+    } else {
+        if (wrapLista) wrapLista.style.display = 'block';
+        if (wrapCal) wrapCal.style.display = 'none';
+        if (btnLista) {
+            btnLista.setAttribute('aria-pressed', 'true');
+            btnLista.style.background = '#111';
+            btnLista.style.color = '#FFF';
+        }
+        if (btnCal) {
+            btnCal.setAttribute('aria-pressed', 'false');
+            btnCal.style.background = 'transparent';
+            btnCal.style.color = '#64748B';
+        }
+        renderizarCitasTab();
+    }
+}
+
+function moverDiaCalendarioPwa(offset) {
+    const inp = document.getElementById('pwaCalFechaInput');
+    if (!inp || !inp.value) return;
+    const partes = inp.value.split('-').map(Number);
+    const d = new Date(partes[0], partes[1] - 1, partes[2]);
+    d.setDate(d.getDate() + offset);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    inp.value = `${y}-${m}-${dia}`;
+    cargarCalendarioPwa();
+}
+
+function cargarCalendarioPwa() {
+    const cuadricula = document.getElementById('pwaCalCuadricula');
+    const metaTexto = document.getElementById('pwaCalMetaTexto');
+    const fechaInp = document.getElementById('pwaCalFechaInput');
+    const fecha = fechaInp ? fechaInp.value : '<?php echo date('Y-m-d'); ?>';
+    const sucursalId = document.getElementById('pwaFiltroCitasSucursal')?.value || '<?php echo $filterSucursalId; ?>';
+
+    if (metaTexto) metaTexto.textContent = 'Cargando calendario...';
+    if (cuadricula) cuadricula.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-gray);"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Cargando citas del día...</p></div>';
+
+    fetch(`api/calendario_citas.php?fecha=${encodeURIComponent(fecha)}&sucursal_id=${encodeURIComponent(sucursalId)}`)
+        .then(res => res.json())
+        .then(datos => {
+            if (!datos.success) throw new Error(datos.message || 'Error al cargar citas.');
+            renderizarCuadriculaPwa(datos);
+        })
+        .catch(err => {
+            if (metaTexto) metaTexto.textContent = 'Error al cargar.';
+            if (cuadricula) cuadricula.innerHTML = `<div style="text-align: center; padding: 30px; color: #EF4444;"><p>${err.message}</p></div>`;
+        });
+}
+
+function distribuirCitasCalendarioPwa(eventos) {
+    const minuto = e => Number(e.fecha_hora.slice(11,13)) * 60 + Number(e.fecha_hora.slice(14,16));
+    const ordenados = [...eventos].sort((a,b) => minuto(a)-minuto(b) || Number(a.id)-Number(b.id));
+    const posiciones = new Map();
+    let grupo = [];
+    let finGrupo = -1;
+    const cerrarGrupo = () => {
+        const finales = [];
+        const asignaciones = grupo.map(e => {
+            const inicio = minuto(e);
+            let carril = finales.findIndex(fin => fin <= inicio);
+            if (carril < 0) carril = finales.length;
+            finales[carril] = inicio + Number(e.duracion);
+            return {id: e.id, carril};
+        });
+        asignaciones.forEach(e => posiciones.set(e.id,{carril:e.carril,columnas:finales.length}));
+    };
+    ordenados.forEach(e => {
+        const inicio = minuto(e);
+        if (grupo.length && inicio >= finGrupo) { cerrarGrupo(); grupo = []; finGrupo = -1; }
+        grupo.push(e);
+        finGrupo = Math.max(finGrupo,inicio + Number(e.duracion));
+    });
+    cerrarGrupo();
+    return posiciones;
+}
+
+function renderizarCuadriculaPwa(datos) {
+    const cuadricula = document.getElementById('pwaCalCuadricula');
+    const metaTexto = document.getElementById('pwaCalMetaTexto');
+    const pendientesAlert = document.getElementById('pwaCalPendientesAlert');
+    const pendientesList = document.getElementById('pwaCalPendientesList');
+
+    if (!cuadricula) return;
+    cuadricula.replaceChildren();
+
+    if (metaTexto) {
+        metaTexto.textContent = `${(datos.eventos || []).length} citas en el día · ${(datos.pendientes || []).length} sin asignar`;
+    }
+
+    if (pendientesAlert && pendientesList) {
+        pendientesList.replaceChildren();
+        if (datos.pendientes && datos.pendientes.length > 0) {
+            pendientesAlert.hidden = false;
+            datos.pendientes.forEach(cita => {
+                const item = document.createElement('div');
+                item.className = 'kortzen-reasignar';
+                item.style.marginBottom = '6px';
+                item.innerHTML = `
+                    <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">#${cita.id} · ${cita.fecha_hora.slice(11, 16)} · ${cita.cliente} (${cita.servicio})</div>
+                    <div style="display: flex; gap: 6px;">
+                        <select id="pwaReasigSelect_${cita.id}" style="flex: 1; padding: 6px 8px; border-radius: 6px; border: 1.5px solid var(--border-pwa); font-size: 0.78rem; font-weight: 700; background: #FFF;">
+                            <option value="">Seleccionar barbero...</option>
+                            ${(datos.barberos || []).map(b => `<option value="${b.id}">${b.nombre}</option>`).join('')}
+                        </select>
+                        <button type="button" onclick="ejecutarReasignacionPwa(${cita.id})" class="pwa-btn-secondary" style="background: #111; color: #FFF; font-weight: 800; font-size: 0.75rem; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer;">
+                            Reasignar
+                        </button>
+                    </div>
+                `;
+                pendientesList.append(item);
+            });
+        } else {
+            pendientesAlert.hidden = true;
+        }
+    }
+
+    const columnas = new Map((datos.barberos || []).map(b => [String(b.id), b.nombre]));
+    (datos.eventos || []).forEach(e => {
+        if (!Number(e.reasignacion_pendiente) && !columnas.has(String(e.barbero_id))) {
+            columnas.set(String(e.barbero_id), e.barbero_original || 'Barbero anterior');
+        }
+    });
+    if ((datos.eventos || []).some(e => Number(e.reasignacion_pendiente))) {
+        columnas.set('sin-asignar', 'Sin barbero asignado');
+    }
+
+    const minutos = texto => { const [h, m] = texto.split(':').map(Number); return h * 60 + m; };
+    const eventosValidos = (datos.eventos || []).filter(e => e.estado !== 'cancelada');
+    const eventosEscala = eventosValidos.length ? eventosValidos : (datos.eventos || []);
+    const iniciosDiurnos = eventosEscala.map(e => minutos(e.fecha_hora.slice(11, 16))).filter(m => m >= 7 * 60);
+    const inicio = Math.min(9 * 60, iniciosDiurnos.length ? Math.min(...iniciosDiurnos) : 9 * 60);
+    const finales = (datos.eventos || []).map(e => minutos(e.fecha_hora.slice(11, 16)) + Number(e.duracion));
+    const fin = Math.max(21 * 60, ...finales);
+    const alto = Math.max(480, (fin - inicio) * 1.3);
+
+    // Columna del Reloj
+    const reloj = document.createElement('div');
+    reloj.className = 'kortzen-columna-reloj';
+    const cabReloj = document.createElement('div');
+    cabReloj.className = 'kortzen-cal-cabecera';
+    cabReloj.textContent = 'HORA';
+    reloj.append(cabReloj);
+
+    const horas = document.createElement('div');
+    horas.style.height = alto + 'px';
+    horas.style.position = 'relative';
+    for (let m = Math.ceil(inicio / 60) * 60; m < fin; m += 60) {
+        const marca = document.createElement('span');
+        marca.textContent = String(Math.floor(m / 60)).padStart(2, '0') + ':00';
+        marca.style.cssText = `position:absolute;top:${(m - inicio) * 1.3}px;font-size:11px;left:8px;font-weight:700;color:#64748B;`;
+        horas.append(marca);
+    }
+    reloj.append(horas);
+    cuadricula.append(reloj);
+
+    // Columnas de Barberos
+    columnas.forEach((nombre, id) => {
+        const columna = document.createElement('div');
+        columna.className = 'kortzen-columna-barbero';
+
+        const cabecera = document.createElement('div');
+        cabecera.className = 'kortzen-cal-cabecera';
+        const iniciales = (nombre.split(' ').filter(Boolean).map(p => p[0]).join('').slice(0, 2) || 'KB').toUpperCase();
+        cabecera.innerHTML = `
+            <div class="kortzen-cal-avatar">${iniciales}</div>
+            <div class="kortzen-cal-barbero-info">
+                <div class="kortzen-cal-barbero-nombre">${nombre}</div>
+            </div>
+        `;
+        columna.append(cabecera);
+
+        const cuerpo = document.createElement('div');
+        cuerpo.className = 'kortzen-cal-dia';
+        cuerpo.style.height = alto + 'px';
+
+        const eventosCol = (datos.eventos || []).filter(e => (Number(e.reasignacion_pendiente) ? 'sin-asignar' : String(e.barbero_id)) === id);
+        const posiciones = distribuirCitasCalendarioPwa(eventosCol);
+
+        eventosCol.forEach(e => {
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'kortzen-cal-cita';
+            tarjeta.dataset.estado = Number(e.reasignacion_pendiente) ? 'sin_asignar' : e.estado;
+            const minuto = minutos(e.fecha_hora.slice(11, 16));
+            const posicion = posiciones.get(e.id) || { carril: 0, columnas: 1 };
+            const topPx = Math.max(0, (minuto - inicio) * 1.3);
+            tarjeta.style.top = topPx + 'px';
+            tarjeta.style.height = Math.max(28, Number(e.duracion) * 1.3 - 2) + 'px';
+            tarjeta.style.width = (100 / posicion.columnas) + '%';
+            tarjeta.style.left = (posicion.carril * 100 / posicion.columnas) + '%';
+            tarjeta.style.cursor = 'pointer';
+
+            tarjeta.innerHTML = `
+                <strong style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.fecha_hora.slice(11, 16)} · ${e.cliente}</strong>
+                <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.75rem;">${e.servicio}</span>
+                <small style="display:block;font-size:0.68rem;opacity:0.9;">${Number(e.reasignacion_pendiente) ? 'Sin asignar' : (e.estado || '').replace('_', ' ')}</small>
+            `;
+
+            tarjeta.addEventListener('click', () => {
+                const found = (rawCitasList || []).find(rc => Number(rc.id) === Number(e.id));
+                if (found) {
+                    abrirModalDetalleCitaPwa(found);
+                } else {
+                    abrirModalDetalleCitaPwa({
+                        id: e.id,
+                        cliente_nombre: e.cliente,
+                        servicio_nombre: e.servicio,
+                        barbero_nombre: nombre,
+                        fecha_hora: e.fecha_hora,
+                        estado: e.estado,
+                        precio_servicio: 0
+                    });
+                }
+            });
+
+            cuerpo.append(tarjeta);
+        });
+
+        columna.append(cuerpo);
+        cuadricula.append(columna);
+    });
+}
+
+function ejecutarReasignacionPwa(citaId) {
+    const sel = document.getElementById(`pwaReasigSelect_${citaId}`);
+    if (!sel || !sel.value) {
+        alert('Por favor selecciona un barbero.');
+        return;
+    }
+    const fd = new FormData();
+    fd.append('cita_id', citaId);
+    fd.append('barbero_id', sel.value);
+    fd.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+
+    fetch('api/reasignar_cita.php', { method: 'POST', body: fd })
+        .then(res => res.json())
+        .then(r => {
+            if (r.success) {
+                cargarCalendarioPwa();
+            } else {
+                alert(r.message || 'Error al reasignar.');
+            }
+        })
+        .catch(err => alert(err.message || 'Error de conexión.'));
+}
+
+function cambiarPeriodoCajaPwa(periodo) {
+    const hoy = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fStr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const inpDesde = document.getElementById('pwaCajaDesde');
+    const inpHasta = document.getElementById('pwaCajaHasta');
+
+    if (periodo === 'diario') {
+        if (inpDesde) inpDesde.value = fStr(hoy);
+        if (inpHasta) inpHasta.value = fStr(hoy);
+    } else if (periodo === 'semanal') {
+        const dSem = new Date(hoy);
+        dSem.setDate(hoy.getDate() - 7);
+        if (inpDesde) inpDesde.value = fStr(dSem);
+        if (inpHasta) inpHasta.value = fStr(hoy);
+    } else if (periodo === 'mensual') {
+        const dMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        if (inpDesde) inpDesde.value = fStr(dMes);
+        if (inpHasta) inpHasta.value = fStr(hoy);
+    }
+    cargarDatosCajaPwa();
+}
+
+function cargarDatosCajaPwa() {
+    const periodo = document.getElementById('pwaCajaPeriodo')?.value || 'diario';
+    const desde = document.getElementById('pwaCajaDesde')?.value || '<?php echo date('Y-m-d'); ?>';
+    const hasta = document.getElementById('pwaCajaHasta')?.value || '<?php echo date('Y-m-d'); ?>';
+    const sucursalId = document.getElementById('pwaCajaSucursal')?.value || '0';
+
+    const tbody = document.getElementById('pwaCajaMetodosTbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-gray);"><i class="fas fa-spinner fa-spin"></i> Cargando cierre de caja...</td></tr>';
+
+    fetch(`api/caja_resumen.php?periodo=${encodeURIComponent(periodo)}&desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}&sucursal_id=${encodeURIComponent(sucursalId)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.message || 'Error al obtener reporte.');
+            const rep = data.reporte;
+            const tot = rep.totales || { total: 0, cortes: 0, servicios: 0, productos: 0, propinas: 0 };
+
+            const fmt = n => '$' + parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const elTotal = document.getElementById('pwaCajaTotalCobrado');
+            const elCortes = document.getElementById('pwaCajaTotalCortes');
+            const elServ = document.getElementById('pwaCajaTotalServicios');
+            const elProd = document.getElementById('pwaCajaTotalProductos');
+            const elProp = document.getElementById('pwaCajaTotalPropinas');
+
+            if (elTotal) elTotal.textContent = fmt(tot.total);
+            if (elCortes) elCortes.textContent = tot.cortes || 0;
+            if (elServ) elServ.textContent = fmt(tot.servicios);
+            if (elProd) elProd.textContent = fmt(tot.productos);
+            if (elProp) elProp.textContent = fmt(tot.propinas);
+
+            const badge = document.getElementById('pwaCajaMetodosBadge');
+            if (badge) badge.textContent = `${(rep.metodos || []).length} métodos`;
+
+            if (tbody) {
+                if (!rep.metodos || rep.metodos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 25px; color: var(--text-gray);">No hay cobros en el periodo seleccionado.</td></tr>';
+                    return;
+                }
+                const iconos = {
+                    efectivo: '<i class="fas fa-money-bill-wave" style="color: #10B981; margin-right: 6px;"></i>',
+                    transferencia: '<i class="fas fa-university" style="color: #3B82F6; margin-right: 6px;"></i>',
+                    deuna: '<i class="fas fa-mobile-alt" style="color: #8B5CF6; margin-right: 6px;"></i>',
+                    tarjeta_debito: '<i class="far fa-credit-card" style="color: #F59E0B; margin-right: 6px;"></i>',
+                    tarjeta_credito: '<i class="fas fa-credit-card" style="color: #EC4899; margin-right: 6px;"></i>'
+                };
+                let filasHtml = '';
+                rep.metodos.forEach(m => {
+                    const ic = iconos[m.metodo_pago] || '<i class="fas fa-question-circle" style="color: #9CA3AF; margin-right: 6px;"></i>';
+                    filasHtml += `
+                        <tr>
+                            <td style="font-weight: 700; color: #111; white-space: nowrap;">${ic}${m.nombre}</td>
+                            <td>${m.cortes}</td>
+                            <td>${fmt(m.servicios)}</td>
+                            <td>${fmt(m.productos)}</td>
+                            <td>${fmt(m.propinas)}</td>
+                            <td style="font-weight: 800; color: #111;">${fmt(m.total)}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = filasHtml;
+            }
+        })
+        .catch(err => {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #EF4444;">${err.message}</td></tr>`;
         });
 }
 
