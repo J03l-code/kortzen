@@ -12,7 +12,7 @@
     </form>
     <p data-estado-ventas role="status" aria-live="polite">Cargando historial…</p>
     <div class="kortzen-tabla-scroll"><table class="kortzen-tabla">
-        <thead><tr><th>Fecha / Hora</th><th>Producto</th><th>Cantidad</th><th>Total cobrado</th><th>Vendedor</th><th>Sucursal</th><th>Método de pago</th></tr></thead>
+        <thead><tr><th>Fecha / Hora</th><th>Producto</th><th>Cantidad</th><th>Precio Unit.</th><th>Total cobrado</th><th>Vendedor</th><th>Sucursal</th><th>Método de pago</th></tr></thead>
         <tbody data-filas-ventas></tbody>
     </table></div>
     <div class="kortzen-filtros" style="margin-top: 14px;">

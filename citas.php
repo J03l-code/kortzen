@@ -1070,6 +1070,11 @@ function toggleFiltroHoy() {
         const pInput = document.getElementById('inputPropinaTerminar');
         if (pInput) pInput.value = '0.00';
 
+        const vSelect = document.getElementById('vendedorCobroWeb');
+        if (vSelect) {
+            vSelect.value = (cita && cita.barbero_id) ? String(cita.barbero_id) : '';
+        }
+
         const sSelect = document.getElementById('selectServicioAdicional');
         if (sSelect) sSelect.value = '';
 

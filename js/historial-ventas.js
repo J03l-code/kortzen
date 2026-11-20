@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cuerpo.replaceChildren();
                 r.filas.forEach(fila => {
                     const tr = document.createElement('tr');
-                    [fila.fecha, fila.producto, fila.cantidad, '$' + Number(fila.total).toFixed(2), fila.vendedor, fila.sucursal, fila.metodo_pago_label].forEach(valor => {
+                    [fila.fecha, fila.producto, fila.cantidad, '$' + Number(fila.precio_unitario).toFixed(2), '$' + Number(fila.total).toFixed(2), fila.vendedor, fila.sucursal, fila.metodo_pago_label].forEach(valor => {
                         const td = document.createElement('td');
                         td.textContent = valor;
                         tr.append(td);

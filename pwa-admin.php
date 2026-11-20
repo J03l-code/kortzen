@@ -5993,6 +5993,11 @@ function abrirModalTerminarCitaPwa(citaOrId, clienteNombre) {
     const pInput = document.getElementById('pwaTerminarPropina');
     if (pInput) pInput.value = '0.00';
 
+    const vSelect = document.getElementById('vendedorCobroPwa');
+    if (vSelect) {
+        vSelect.value = (cita && cita.barbero_id) ? String(cita.barbero_id) : '';
+    }
+
     const mSelect = document.getElementById('pwaTerminarMaterialSelect');
     if (mSelect) {
         mSelect.value = '';

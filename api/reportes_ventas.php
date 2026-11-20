@@ -19,10 +19,16 @@ try {
         exit;
     }
     if (!in_array($formato, ['xlsx','pdf'], true)) throw new InvalidArgumentException('Formato no válido.');
-    $columnas = ['Fecha / Hora', 'Producto', 'Cantidad', 'Total cobrado', 'Vendedor', 'Sucursal', 'Método de pago'];
-    $filas = array_map(fn ($r) => [$r['fecha'], $r['producto'], (int) $r['cantidad'], (float) $r['total'], $r['vendedor'], $r['sucursal'], $r['metodo_pago_label']], $reporte['filas']);
-    $filas[] = ['TOTAL', '', '', $reporte['total'], '', '', ''];
-    if ($formato === 'pdf') { foreach ($filas as &$filaPdf) $filaPdf[3] = '$' . number_format((float) $filaPdf[3],2); unset($filaPdf); }
+    $columnas = ['Fecha / Hora', 'Producto', 'Cantidad', 'Precio Unitario', 'Total cobrado', 'Vendedor', 'Sucursal', 'Método de pago'];
+    $filas = array_map(fn ($r) => [$r['fecha'], $r['producto'], (int) $r['cantidad'], (float) $r['precio_unitario'], (float) $r['total'], $r['vendedor'], $r['sucursal'], $r['metodo_pago_label']], $reporte['filas']);
+    $filas[] = ['TOTAL', '', '', '', $reporte['total'], '', '', ''];
+    if ($formato === 'pdf') {
+        foreach ($filas as &$filaPdf) {
+            if ($filaPdf[3] !== '') $filaPdf[3] = '$' . number_format((float) $filaPdf[3], 2);
+            if ($filaPdf[4] !== '') $filaPdf[4] = '$' . number_format((float) $filaPdf[4], 2);
+        }
+        unset($filaPdf);
+    }
     $bytes = $formato === 'xlsx' ? tablaXlsx($columnas, $filas) : tablaPdf('Ventas ' . $reporte['desde'] . ' al ' . $reporte['hasta'], $columnas, $filas);
     header('Content-Type: ' . ($formato === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf'));
     header('Content-Disposition: attachment; filename="kortzen-ventas-' . $reporte['desde'] . '.' . $formato . '"');
