@@ -512,9 +512,19 @@ function toggleFiltroHoy() {
 
     .material-row {
         display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
+        gap: 8px;
+        margin-bottom: 8px;
         align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .material-row select {
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+        width: 0 !important;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
     }
 
     @media (max-width: 768px) {
@@ -750,7 +760,7 @@ function toggleFiltroHoy() {
 
 <!-- Modal Terminar Cita -->
 <div id="modalTerminar" class="modal-overlay" style="display: none; z-index: 10000; align-items: center; justify-content: center;">
-    <div class="modal-content" style="max-width: 540px; width: 95%; max-height: 90vh; overflow-y: auto; border-radius: 16px; padding: 26px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+    <div class="modal-content" style="max-width: 540px; width: 95%; max-height: 90vh; overflow-y: auto; overflow-x: hidden; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
             <div>
                 <h2 style="margin: 0; color: #111827; font-weight: 900; font-size: 1.3rem;">Finalizar Corte y Cobro</h2>
@@ -852,15 +862,16 @@ function toggleFiltroHoy() {
                 <span style="font-size: 0.72rem; color: #B45309; margin-top: 4px; display: block;">100% de la propina se transfiere al barbero en un rubro independiente.</span>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <p style="margin: 0; color: #4B5563; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">
-                    <i class="fas fa-boxes" style="color: #6B7280;"></i> Productos / Materiales consumidos (opcional):
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: nowrap;">
+                <p style="margin: 0; color: #4B5563; font-weight: 700; font-size: 0.76rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
+                    <i class="fas fa-boxes" style="color: #6B7280;"></i>
+                    <span>Productos consumidos (opcional):</span>
                 </p>
-                <span style="font-size: 0.7rem; color: #10B981; font-weight: 700;">Precio editable si aplicas descuento</span>
+                <span style="font-size: 0.68rem; color: #10B981; font-weight: 700; white-space: nowrap; flex-shrink: 0;">Precio editable con descuento</span>
             </div>
-            <div id="materialesList">
-                <div class="material-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-                    <select name="materiales[]" class="filter-select" style="flex: 2;" onchange="actualizarPrecioMaterialFila(this)">
+            <div id="materialesList" style="width: 100%;">
+                <div class="material-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; width: 100%; box-sizing: border-box;">
+                    <select name="materiales[]" class="filter-select" style="flex: 1 1 0%; min-width: 0; width: 0; text-overflow: ellipsis; padding: 9px 8px; font-size: 0.82rem;" onchange="actualizarPrecioMaterialFila(this)">
                         <option value="">Seleccionar producto / material...</option>
                         <?php foreach ($inventario as $item): ?>
                             <option value="<?php echo $item['id']; ?>" data-precio="<?php echo $item['precio']; ?>">
@@ -868,10 +879,10 @@ function toggleFiltroHoy() {
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 65px;" min="1" step="1" oninput="recalcularTotalesTerminar()">
-                    <div style="position: relative; width: 110px;">
-                        <span style="position: absolute; left: 8px; top: 8px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
-                        <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; padding-left: 20px; font-weight: 800; color: #10B981;" title="Precio unitario cobrado (editable si aplicas descuento)" oninput="recalcularTotalesTerminar()">
+                    <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 58px; min-width: 48px; flex: 0 0 58px; text-align: center; padding: 9px 4px; font-size: 0.82rem;" min="1" step="1" oninput="recalcularTotalesTerminar()">
+                    <div style="position: relative; width: 92px; min-width: 82px; flex: 0 0 92px;">
+                        <span style="position: absolute; left: 8px; top: 9px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
+                        <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; box-sizing: border-box; padding: 9px 6px 9px 18px; font-weight: 800; font-size: 0.82rem; color: #10B981; text-align: right;" title="Precio unitario cobrado (editable si aplicas descuento)" oninput="recalcularTotalesTerminar()">
                     </div>
                 </div>
             </div>
@@ -1439,9 +1450,9 @@ function toggleFiltroHoy() {
     function agregarFilaMaterial() {
         const div = document.createElement('div');
         div.className = 'material-row';
-        div.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px;';
+        div.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px; width: 100%; box-sizing: border-box;';
         div.innerHTML = `
-            <select name="materiales[]" class="filter-select" style="flex: 2;" onchange="actualizarPrecioMaterialFila(this)">
+            <select name="materiales[]" class="filter-select" style="flex: 1 1 0%; min-width: 0; width: 0; text-overflow: ellipsis; padding: 9px 8px; font-size: 0.82rem;" onchange="actualizarPrecioMaterialFila(this)">
                 <option value="">Seleccionar producto / material...</option>
                 <?php foreach ($inventario as $item): ?>
                     <option value="<?php echo $item['id']; ?>" data-precio="<?php echo $item['precio']; ?>">
@@ -1449,12 +1460,12 @@ function toggleFiltroHoy() {
                     </option>
                 <?php endforeach; ?>
             </select>
-            <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 65px;" min="1" step="1" oninput="recalcularTotalesTerminar()">
-            <div style="position: relative; width: 110px;">
-                <span style="position: absolute; left: 8px; top: 8px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
-                <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; padding-left: 20px; font-weight: 800; color: #10B981;" title="Precio unitario cobrado (editable si aplicas descuento)" oninput="recalcularTotalesTerminar()">
+            <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 58px; min-width: 48px; flex: 0 0 58px; text-align: center; padding: 9px 4px; font-size: 0.82rem;" min="1" step="1" oninput="recalcularTotalesTerminar()">
+            <div style="position: relative; width: 92px; min-width: 82px; flex: 0 0 92px;">
+                <span style="position: absolute; left: 8px; top: 9px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
+                <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; box-sizing: border-box; padding: 9px 6px 9px 18px; font-weight: 800; font-size: 0.82rem; color: #10B981; text-align: right;" title="Precio unitario cobrado (editable si aplicas descuento)" oninput="recalcularTotalesTerminar()">
             </div>
-            <button type="button" onclick="this.parentElement.remove(); recalcularTotalesTerminar(); actualizarVendedorCobro(document.getElementById('formTerminar'));" style="background: #FEE2E2; color: #DC2626; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+            <button type="button" onclick="this.parentElement.remove(); recalcularTotalesTerminar(); actualizarVendedorCobro(document.getElementById('formTerminar'));" style="background: #FEE2E2; color: #DC2626; border: none; width: 26px; height: 26px; min-width: 26px; flex: 0 0 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
         `;
         document.getElementById('materialesList').appendChild(div);
     }
