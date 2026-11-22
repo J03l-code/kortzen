@@ -11,7 +11,7 @@ try {
     $categoriasList = getCategoriasServicios($pdo, false);
 
     // Listado de todos los barberos activos para conteos
-    $totalActiveBarbers = $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo = 1 AND (rol = 'barbero' OR rol = 'admin_local' OR rol = 'admin')")->fetchColumn();
+    $totalActiveBarbers = $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo = 1 AND rol = 'barbero'")->fetchColumn();
 
     $sql = "SELECT s.*, cs.orden as cat_orden, u.nombre as barbero_asignado_nombre 
             FROM servicios s 
@@ -27,7 +27,7 @@ try {
             SELECT sb.servicio_id, sb.barbero_id, u.nombre as barbero_nombre 
             FROM servicios_barberos sb 
             JOIN usuarios u ON sb.barbero_id = u.id 
-            WHERE u.activo = 1 
+            WHERE u.activo = 1 AND u.rol = 'barbero'
             ORDER BY u.nombre ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($sbRows as $r) {

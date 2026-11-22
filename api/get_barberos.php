@@ -8,12 +8,12 @@ try {
 
     $sucursal_id = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
 
-    // Base query: Active users with role 'barbero' or 'admin_local'
+    // Base query: Active users strictly with role 'barbero'
     // If sucursal_id is provided, filter by it.
     // If not, we might return empty or all. Let's return empty if no branch ID to be safe, or allow 0 for all.
 
     $params = [];
-    $whereAuto = "activo = 1 AND (rol = 'barbero' OR rol = 'admin_local')";
+    $whereAuto = "activo = 1 AND rol = 'barbero'";
 
     if ($sucursal_id > 0) {
         $sql = "SELECT * FROM usuarios WHERE $whereAuto AND (sucursal_id = ? OR sucursal_id IS NULL OR sucursal_id = 0) ORDER BY id ASC";
@@ -33,7 +33,7 @@ try {
         $nameKey = strtolower(trim($barbero['nombre']));
         if (!isset($seen[$nameKey])) {
             $seen[$nameKey] = true;
-            $barbero['cargo'] = ($barbero['rol'] === 'admin_local') ? 'Gerente / Master Barber' : 'Barbero Profesional';
+            $barbero['cargo'] = 'Barbero Profesional';
             
             $foto = !empty($barbero['foto_url']) ? $barbero['foto_url'] : (!empty($barbero['foto']) ? $barbero['foto'] : '');
             

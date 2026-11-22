@@ -422,48 +422,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Continuar con Google
             </a>
 
-            <div class="divider"><span>o</span></div>
-
-            <p style="font-size: 0.85rem; color: #374151; margin-bottom: 1.1rem; line-height: 1.45; text-align: left; font-weight: 600;">
-                Si no tienes cuenta de Google, inicia sesión con tu perfil creado por administrador:
-            </p>
-
-            <form method="POST" action="cliente-login.php">
-                <input type="hidden" name="action" value="login">
-
-                <div class="form-group">
-                    <label class="form-label" for="identificador">WhatsApp / Teléfono o Correo</label>
-                    <input type="text" id="identificador" name="identificador" class="form-control" placeholder="Ej: 0991234567 o correo@ejemplo.com" required autocomplete="username" value="<?php echo htmlspecialchars($_POST['identificador'] ?? ''); ?>">
-                </div>
-
-                <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                        <label class="form-label" for="password" style="margin: 0;">Contraseña</label>
-                        <span style="font-size: 0.72rem; color: #6B7280;">(Si es 1ra vez, déjalo vacío)</span>
-                    </div>
-                    <input type="password" id="password" name="password" class="form-control" placeholder="Tu contraseña" autocomplete="current-password">
-                </div>
-
-                <button type="submit" class="btn-submit">
-                    Iniciar Sesión
-                </button>
-            </form>
-
-            <!-- Opción para clientes sin cuenta creada aún -->
-            <div style="margin: 1.5rem 0 1rem 0; padding: 1.15rem 1.1rem; background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; text-align: center;">
-                <div style="font-size: 0.92rem; font-weight: 800; color: #111827; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <span>💬</span> ¿No tienes perfil creado aún?
-                </div>
-                <p style="font-size: 0.83rem; color: #374151; margin-bottom: 12px; line-height: 1.4;">
-                    Solicita tu registro por WhatsApp para que el administrador cree tu cuenta.
-                </p>
-                <a href="solicitar-registro.php" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 14px; background: #16A34A; color: #FFFFFF; font-weight: 800; font-size: 0.85rem; border-radius: 8px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); transition: all 0.2s ease;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.075-1.847-.426-1.547-.64-2.527-2.222-2.604-2.325-.077-.103-.623-.829-.623-1.581 0-.752.393-1.122.533-1.272.14-.15.305-.188.407-.188.102 0 .204.002.294.006.096.004.225-.036.35.267.13.313.442 1.079.48 1.157.039.078.065.17.013.273-.051.103-.077.167-.154.256-.077.09-.161.2-.23.269-.077.077-.157.161-.067.316.09.154.401.662.861 1.072.593.528 1.093.692 1.248.769.155.077.246.064.337-.039.091-.103.391-.455.495-.61.104-.155.207-.129.349-.077.142.052.898.423 1.053.5.155.078.258.117.297.181.039.065.039.378-.105.783z"/></svg>
-                    Solicitar Perfil por WhatsApp
-                </a>
-            </div>
-
-            <a href="/" style="display: block; margin-top: 1.25rem; color: #6B7280; font-size: 0.85rem; text-decoration: none;" onmouseover="this.style.color='#111111'" onmouseout="this.style.color='#6B7280'">← Volver al inicio</a>
+            <a href="/" style="display: block; margin-top: 1.5rem; color: #6B7280; font-size: 0.85rem; text-decoration: none;" onmouseover="this.style.color='#111111'" onmouseout="this.style.color='#6B7280'">← Volver al inicio</a>
         <?php endif; ?>
     </div>
 </body>

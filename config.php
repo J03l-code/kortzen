@@ -1507,20 +1507,27 @@ function asegurarIntegridadServiciosSucursalesBarberos($pdo) {
             SELECT s.id, u.id 
             FROM servicios s 
             CROSS JOIN usuarios u 
-            WHERE u.activo = 1 AND (u.rol = 'barbero' OR u.rol = 'admin_local' OR u.rol = 'admin')
+            WHERE u.activo = 1 AND u.rol = 'barbero'
             AND LOWER(s.nombre) NOT LIKE '%mateo%'
             AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
         ");
 
-        // Si el corte especifica 'Mateo', vincularlo con Mateo
+        // Si el corte especifica 'Mateo', vincularlo con Mateo (solo perfil barbero)
         $pdo->exec("
             INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id)
             SELECT s.id, u.id 
             FROM servicios s 
             CROSS JOIN usuarios u 
-            WHERE u.activo = 1 AND (LOWER(u.nombre) LIKE '%mateo%' OR LOWER(u.email) LIKE '%mateo%')
+            WHERE u.activo = 1 AND u.rol = 'barbero' AND (LOWER(u.nombre) LIKE '%mateo%' OR LOWER(u.email) LIKE '%mateo%')
             AND LOWER(s.nombre) LIKE '%mateo%'
             AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
+        ");
+
+        // Limpiar asignaciones en servicios_barberos que pertenezcan a perfiles que no son barberos
+        $pdo->exec("
+            DELETE sb FROM servicios_barberos sb
+            JOIN usuarios u ON sb.barbero_id = u.id
+            WHERE u.rol != 'barbero'
         ");
 
         // 3. Asegurar que los servicios tengan activo = 1 por defecto si estuvieran en null

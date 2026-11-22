@@ -11,7 +11,7 @@ require_once 'config.php';
 $barberos = [];
 try {
     $pdo = getConnection();
-    $stmt = $pdo->query("SELECT * FROM usuarios WHERE activo = 1 AND (rol = 'barbero' OR rol = 'admin_local') ORDER BY id ASC");
+    $stmt = $pdo->query("SELECT * FROM usuarios WHERE activo = 1 AND rol = 'barbero' ORDER BY id ASC");
     $raw_barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $seen = [];
     foreach ($raw_barberos as $b) {

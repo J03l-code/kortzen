@@ -125,9 +125,9 @@ try {
     $slotStartTs = strtotime($fechaHora);
     $slotEndTs = $slotStartTs + ($duracionServicio * 60);
 
-    // 2. Si es "Cualquier barbero disponible" (barberoId === 0), asignar el barbero libre
+    // 2. Si es "Cualquier barbero disponible" (barberoId === 0), asignar el barbero libre (exclusivo rol = 'barbero')
     if ($barberoId === 0) {
-        $stmtAllBarbers = $pdo->prepare("SELECT id, nombre, sucursal_id, almuerzo_inicio, almuerzo_fin, almuerzo_activo FROM usuarios WHERE activo = 1 AND (rol = 'barbero' OR rol = 'admin_local') AND (sucursal_id = ? OR sucursal_id IS NULL OR sucursal_id = 0) ORDER BY id ASC");
+        $stmtAllBarbers = $pdo->prepare("SELECT id, nombre, sucursal_id, almuerzo_inicio, almuerzo_fin, almuerzo_activo FROM usuarios WHERE activo = 1 AND rol = 'barbero' AND (sucursal_id = ? OR sucursal_id IS NULL OR sucursal_id = 0) ORDER BY id ASC");
         $stmtAllBarbers->execute([$sucursalId]);
         $candidatos = $stmtAllBarbers->fetchAll(PDO::FETCH_ASSOC);
 
@@ -215,12 +215,12 @@ try {
         $barberoId = $selectedBarber['id'];
         $nombreBarbero = $selectedBarber['nombre'];
     } else {
-        // Validar disponibilidad del barbero seleccionado
-        $stmtBarbero = $pdo->prepare("SELECT id, nombre, sucursal_id, almuerzo_inicio, almuerzo_fin, almuerzo_activo FROM usuarios WHERE id = ?");
+        // Validar disponibilidad del barbero seleccionado (debe ser rol 'barbero' activo)
+        $stmtBarbero = $pdo->prepare("SELECT id, nombre, sucursal_id, almuerzo_inicio, almuerzo_fin, almuerzo_activo FROM usuarios WHERE id = ? AND activo = 1 AND rol = 'barbero'");
         $stmtBarbero->execute([$barberoId]);
         $barberoData = $stmtBarbero->fetch(PDO::FETCH_ASSOC);
         if (!$barberoData) {
-            throw new Exception('El barbero seleccionado no existe.');
+            throw new Exception('El barbero seleccionado no existe o no está habilitado para reservas.');
         }
         $nombreBarbero = $barberoData['nombre'];
 

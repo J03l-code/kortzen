@@ -390,8 +390,8 @@ try {
                             $insertStmt->execute([$id, intval($bId)]);
                         }
                     } else {
-                        // Si desmarcó todo, asignar a todos los barberos
-                        $pdo->exec("INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id) SELECT $id, id FROM usuarios WHERE activo = 1 AND (rol = 'barbero' OR rol = 'admin_local' OR rol = 'admin')");
+                        // Si desmarcó todo, asignar a todos los barberos (estrictamente rol = 'barbero')
+                        $pdo->exec("INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id) SELECT $id, id FROM usuarios WHERE activo = 1 AND rol = 'barbero'");
                     }
                 } catch (Exception $e_relb) {
                     error_log("Error actualizando barberos de servicio: " . $e_relb->getMessage());
@@ -401,7 +401,7 @@ try {
                 $checkExistBarb = $pdo->prepare("SELECT COUNT(*) FROM servicios_barberos WHERE servicio_id = ?");
                 $checkExistBarb->execute([$id]);
                 if (intval($checkExistBarb->fetchColumn()) === 0) {
-                    $pdo->exec("INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id) SELECT $id, id FROM usuarios WHERE activo = 1 AND (rol = 'barbero' OR rol = 'admin_local' OR rol = 'admin')");
+                    $pdo->exec("INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id) SELECT $id, id FROM usuarios WHERE activo = 1 AND rol = 'barbero'");
                 }
             }
 

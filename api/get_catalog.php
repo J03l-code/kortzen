@@ -11,11 +11,11 @@ try {
     if ($type === 'barbers') {
         $sucursalId = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
 
-        // Return user photo if available
+        // Return user photo if available (solo perfiles con rol 'barbero')
         $sql = "SELECT u.*, s.nombre as sucursal_nombre
                 FROM usuarios u 
                 LEFT JOIN sucursales s ON u.sucursal_id = s.id 
-                WHERE (u.rol = 'barbero' OR u.rol = 'admin_local') AND u.activo = 1";
+                WHERE u.rol = 'barbero' AND u.activo = 1";
 
         if ($sucursalId > 0) {
             $sql .= " AND (u.sucursal_id = $sucursalId OR u.sucursal_id IS NULL OR u.sucursal_id = 0)";
@@ -59,7 +59,7 @@ try {
         $allBarbersMap = [];
         $mateoBarber = null;
         try {
-            $bList = $pdo->query("SELECT id, nombre FROM usuarios WHERE activo = 1 AND (rol = 'barbero' OR rol = 'admin_local' OR rol = 'admin')")->fetchAll(PDO::FETCH_ASSOC);
+            $bList = $pdo->query("SELECT id, nombre FROM usuarios WHERE activo = 1 AND rol = 'barbero'")->fetchAll(PDO::FETCH_ASSOC);
             foreach ($bList as $ub) {
                 $allBarbersMap[$ub['id']] = $ub['nombre'];
                 if (!$mateoBarber && (stripos($ub['nombre'], 'mateo') !== false || stripos($ub['nombre'], 'alvaro') !== false)) {

@@ -262,7 +262,7 @@ include 'includes/header.php';
             
             <div style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; padding: 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; background: #FAFAFA;">
                 <?php
-                $barberosList = query("SELECT u.id, u.nombre, u.rol, s.nombre as sucursal_nombre FROM usuarios u LEFT JOIN sucursales s ON u.sucursal_id = s.id WHERE u.activo = 1 AND (u.rol = 'barbero' OR u.rol = 'admin_local' OR u.rol = 'admin') ORDER BY u.nombre ASC");
+                $barberosList = query("SELECT u.id, u.nombre, u.rol, s.nombre as sucursal_nombre FROM usuarios u LEFT JOIN sucursales s ON u.sucursal_id = s.id WHERE u.activo = 1 AND u.rol = 'barbero' ORDER BY u.nombre ASC");
                 foreach ($barberosList as $b):
                 ?>
                     <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 13.5px; padding: 4px 6px; border-radius: 4px; transition: background 0.15s ease;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
