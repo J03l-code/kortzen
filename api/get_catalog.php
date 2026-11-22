@@ -43,9 +43,14 @@ try {
         $sql = "SELECT s.*, cs.orden as cat_orden FROM servicios s LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre";
 
         if ($sucursalId > 0) {
-            $sql .= " LEFT JOIN servicios_sucursales ss ON s.id = ss.servicio_id 
-                      WHERE s.activo = 1 
-                      AND (ss.sucursal_id = $sucursalId OR ss.sucursal_id IS NULL OR s.sucursal_id = $sucursalId OR s.sucursal_id IS NULL OR s.sucursal_id = 0)
+            $sql .= " WHERE s.activo = 1 
+                      AND (
+                          EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id AND ss.sucursal_id = $sucursalId)
+                          OR (
+                              NOT EXISTS (SELECT 1 FROM servicios_sucursales ss_check WHERE ss_check.servicio_id = s.id)
+                              AND (s.sucursal_id = $sucursalId OR s.sucursal_id IS NULL OR s.sucursal_id = 0)
+                          )
+                      )
                       GROUP BY s.id";
         } else {
             $sql .= " WHERE s.activo = 1 GROUP BY s.id";

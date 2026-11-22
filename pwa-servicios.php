@@ -12,10 +12,28 @@ $servicios_por_cat = [];
 try {
     $pdo = getConnection();
     asegurarTablaCategorias($pdo);
-    $stmt = $pdo->query("SELECT s.* FROM servicios s 
-                         LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
-                         WHERE s.activo = 1 
-                         ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC");
+    
+    $sucursalId = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : (isset($_COOKIE['kortzen_selected_branch']) ? intval($_COOKIE['kortzen_selected_branch']) : 0);
+
+    if ($sucursalId > 0) {
+        $stmt = $pdo->prepare("SELECT s.* FROM servicios s 
+                             LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
+                             WHERE s.activo = 1 
+                             AND (
+                                 EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id AND ss.sucursal_id = ?)
+                                 OR (
+                                     NOT EXISTS (SELECT 1 FROM servicios_sucursales ss_check WHERE ss_check.servicio_id = s.id)
+                                     AND (s.sucursal_id = ? OR s.sucursal_id IS NULL OR s.sucursal_id = 0)
+                                 )
+                             )
+                             ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC");
+        $stmt->execute([$sucursalId, $sucursalId]);
+    } else {
+        $stmt = $pdo->query("SELECT s.* FROM servicios s 
+                             LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
+                             WHERE s.activo = 1 
+                             ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC");
+    }
     $todos_servicios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($todos_servicios)) {

@@ -52,5 +52,49 @@ assert(!in_array('Administrador locales', $names, true), "No debe figurar 'Admin
 assert(in_array('Jeffrey Herrera', $names, true), "'Jeffrey Herrera' (barbero) debe estar en el catálogo.");
 echo "OK: get_catalog retorna únicamente usuarios con rol 'barbero'.\n";
 
+// --- Test 3: Filtrado estricto de servicios por sucursal ---
+// Crear servicios_sucursales en el fixture si no existe
+$pdo->exec("CREATE TABLE IF NOT EXISTS servicios_sucursales (servicio_id INTEGER, sucursal_id INTEGER, PRIMARY KEY (servicio_id, sucursal_id))");
+try { $pdo->exec("ALTER TABLE servicios ADD COLUMN activo INTEGER DEFAULT 1"); } catch (Throwable $t) {}
+try { $pdo->exec("ALTER TABLE servicios ADD COLUMN sucursal_id INTEGER DEFAULT 0"); } catch (Throwable $t) {}
+$pdo->exec("INSERT INTO servicios (id, nombre, activo) VALUES (2, 'Servicio Exclusivo Laureles', 1)");
+$pdo->exec("UPDATE servicios SET activo = 1 WHERE id = 1");
+
+// Asignar Servicio 1 a Llano Chico (sucursal 1) y Servicio 2 a Laureles (sucursal 2)
+$pdo->exec("DELETE FROM servicios_sucursales");
+$pdo->exec("INSERT INTO servicios_sucursales (servicio_id, sucursal_id) VALUES (1, 1)");
+$pdo->exec("INSERT INTO servicios_sucursales (servicio_id, sucursal_id) VALUES (2, 2)");
+
+// Consulta para Laureles (sucursal 2)
+$sqlLaureles = "SELECT s.id, s.nombre FROM servicios s 
+    WHERE s.activo = 1 
+    AND (
+        EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id AND ss.sucursal_id = 2)
+        OR (
+            NOT EXISTS (SELECT 1 FROM servicios_sucursales ss_check WHERE ss_check.servicio_id = s.id)
+            AND (s.sucursal_id = 2 OR s.sucursal_id IS NULL OR s.sucursal_id = 0)
+        )
+    )";
+$srvsLaureles = $pdo->query($sqlLaureles)->fetchAll(PDO::FETCH_ASSOC);
+$idsLaureles = array_map('intval', array_column($srvsLaureles, 'id'));
+assert(in_array(2, $idsLaureles, true), "Laureles debe incluir el servicio 2 asignado a Laureles.");
+assert(!in_array(1, $idsLaureles, true), "Laureles NO debe incluir el servicio 1 asignado exclusivamente a Llano Chico.");
+
+// Consulta para Llano Chico (sucursal 1)
+$sqlLlano = "SELECT s.id, s.nombre FROM servicios s 
+    WHERE s.activo = 1 
+    AND (
+        EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id AND ss.sucursal_id = 1)
+        OR (
+            NOT EXISTS (SELECT 1 FROM servicios_sucursales ss_check WHERE ss_check.servicio_id = s.id)
+            AND (s.sucursal_id = 1 OR s.sucursal_id IS NULL OR s.sucursal_id = 0)
+        )
+    )";
+$srvsLlano = $pdo->query($sqlLlano)->fetchAll(PDO::FETCH_ASSOC);
+$idsLlano = array_map('intval', array_column($srvsLlano, 'id'));
+assert(in_array(1, $idsLlano, true), "Llano Chico debe incluir el servicio 1.");
+assert(!in_array(2, $idsLlano, true), "Llano Chico NO debe incluir el servicio 2 asignado a Laureles.");
+echo "OK: Filtrado estricto de servicios por sucursal separa correctamente Laureles y Llano Chico.\n";
+
 unlink($rutaDb);
 echo "Todas las pruebas de clientes y barberos completadas con éxito.\n";

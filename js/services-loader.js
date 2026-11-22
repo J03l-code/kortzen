@@ -8,9 +8,33 @@ const ServicesLoader = {
         document.addEventListener('DOMContentLoaded', () => {
             this.loadServices();
         });
+
+        // Escuchar cambios de sucursal para actualizar servicios en tiempo real
+        window.addEventListener('kortzen:branchChanged', (e) => {
+            const branch = e.detail;
+            const branchId = (branch && (branch.id || branch.branchId)) ? (branch.id || branch.branchId) : null;
+            if (branchId) {
+                this.loadServices(branchId);
+            }
+        });
     },
 
-    loadServices: async function () {
+    loadServices: async function (branchId = null) {
+        // Resolver sucursal activa si no viene especificada
+        if (!branchId) {
+            try {
+                if (window.KortzenBranches && typeof window.KortzenBranches.getSelected === 'function') {
+                    const b = window.KortzenBranches.getSelected();
+                    if (b && b.id) branchId = b.id;
+                }
+                if (!branchId) {
+                    branchId = localStorage.getItem('kortzen_selected_branch') || 1;
+                }
+            } catch (err) {
+                branchId = 1;
+            }
+        }
+
         // 1. Contenedor de servicios destacados (página de Inicio)
         const indexContainer = document.querySelector('.services-wrapper') || document.getElementById('highlighted-services');
 
@@ -27,7 +51,8 @@ const ServicesLoader = {
         };
 
         try {
-            const response = await fetch('/api/get_servicios_public.php');
+            const url = '/api/get_servicios_public.php' + (branchId ? `?sucursal_id=${encodeURIComponent(branchId)}` : '');
+            const response = await fetch(url);
             const result = await response.json();
 
             if (result.success) {

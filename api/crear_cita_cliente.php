@@ -109,6 +109,24 @@ try {
         $barberoId = $exclusiveBarberId;
     }
 
+    // Validar asignación del servicio a la sucursal seleccionada en servicios_sucursales
+    try {
+        $stmtCheckSuc = $pdo->prepare("SELECT COUNT(*) FROM servicios_sucursales WHERE servicio_id = ?");
+        $stmtCheckSuc->execute([$servicioId]);
+        $hasBranchesAssigned = intval($stmtCheckSuc->fetchColumn()) > 0;
+        if ($hasBranchesAssigned && $sucursalId > 0) {
+            $stmtValSuc = $pdo->prepare("SELECT COUNT(*) FROM servicios_sucursales WHERE servicio_id = ? AND sucursal_id = ?");
+            $stmtValSuc->execute([$servicioId, $sucursalId]);
+            if (intval($stmtValSuc->fetchColumn()) === 0) {
+                throw new Exception('El servicio seleccionado no está disponible en la sucursal elegida.');
+            }
+        }
+    } catch (Exception $eSuc) {
+        if ($eSuc->getMessage() === 'El servicio seleccionado no está disponible en la sucursal elegida.') {
+            throw $eSuc;
+        }
+    }
+
     // Validar asignación de barberos al servicio en servicios_barberos
     $allowedBarberIds = [];
     try {

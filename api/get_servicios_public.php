@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 try {
     $pdo = getConnection();
 
-    $sucursal_id = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 0;
+    $sucursal_id = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : (isset($_COOKIE['kortzen_selected_branch']) ? intval($_COOKIE['kortzen_selected_branch']) : 0);
 
     $categoriesList = getCategoriasServicios($pdo, true);
 
@@ -17,18 +17,23 @@ try {
     $params = [];
 
     if ($sucursal_id > 0) {
-        // Buscar servicios asignados a esta sucursal O servicios globales sin sucursales fijadas
+        // Filtrar estrictamente servicios asignados a esta sucursal (o globales sin asignación previa)
         $sql = "SELECT s.*, cs.orden as cat_orden, cs.descripcion as cat_descripcion 
                 FROM servicios s 
-                LEFT JOIN servicios_sucursales ss ON s.id = ss.servicio_id 
                 LEFT JOIN categorias_servicios cs ON s.categoria = cs.nombre 
                 WHERE s.activo = 1 
-                AND (ss.sucursal_id = ? OR ss.sucursal_id IS NULL OR s.sucursal_id = ? OR s.sucursal_id IS NULL OR s.sucursal_id = 0) 
+                AND (
+                    EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id AND ss.sucursal_id = ?)
+                    OR (
+                        NOT EXISTS (SELECT 1 FROM servicios_sucursales ss_check WHERE ss_check.servicio_id = s.id)
+                        AND (s.sucursal_id = ? OR s.sucursal_id IS NULL OR s.sucursal_id = 0)
+                    )
+                ) 
                 GROUP BY s.id
                 ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC";
         $params = [$sucursal_id, $sucursal_id];
     } else {
-        $sql .= " ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC";
+        $sql .= " GROUP BY s.id ORDER BY COALESCE(cs.orden, 999) ASC, s.categoria ASC, COALESCE(s.orden, 999) ASC, s.id ASC";
     }
 
     $stmt = $pdo->prepare($sql);

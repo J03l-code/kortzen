@@ -102,6 +102,7 @@ function setSelectedBranch(branchId) {
 
     currentSelectedBranch = branch;
     localStorage.setItem(BRANCH_STORAGE_KEY, branch.id);
+    document.cookie = "kortzen_selected_branch=" + encodeURIComponent(branch.id) + "; path=/; max-age=31536000; SameSite=Lax";
     updateBranchInfoBar();
     updateGlobalFooter(branch);
 
