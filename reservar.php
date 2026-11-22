@@ -1677,12 +1677,29 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
         });
 
         // --- Barbers Loading ---
+        function getEligibleBarbersForService(serviceId, barberosIds = []) {
+            let assignedIds = [];
+            if (Array.isArray(barberosIds) && barberosIds.length > 0) {
+                assignedIds = barberosIds.map(Number);
+            } else if (allServicesList && allServicesList.length > 0) {
+                const foundS = allServicesList.find(s => s.id == serviceId);
+                if (foundS && Array.isArray(foundS.barberos_ids) && foundS.barberos_ids.length > 0) {
+                    assignedIds = foundS.barberos_ids.map(Number);
+                }
+            }
+            if (assignedIds.length > 0) {
+                return allBarbersList.filter(b => assignedIds.includes(Number(b.id)));
+            }
+            return allBarbersList;
+        }
+
         async function loadBarbers(branchId = 1) {
             try {
                 const response = await fetch(`api/get_catalog.php?type=barbers&sucursal_id=${branchId}`);
                 const data = await response.json();
                 allBarbersList = (data && data.barberos) ? data.barberos : [];
-                renderBarbersList(allBarbersList, false);
+                const toRender = bookingData.serviceId ? getEligibleBarbersForService(bookingData.serviceId) : allBarbersList;
+                renderBarbersList(toRender, false);
             } catch (e) {
                 console.error(e);
             }
@@ -1693,7 +1710,7 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             const anyBarberEl = document.getElementById('anyBarberOption');
             grid.innerHTML = '';
 
-            if (isExclusive) {
+            if (isExclusive || (barbersToRender && barbersToRender.length <= 1)) {
                 if (anyBarberEl) anyBarberEl.style.display = 'none';
             } else {
                 if (anyBarberEl) anyBarberEl.style.display = 'flex';
@@ -1727,7 +1744,7 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             } else {
                 grid.innerHTML = `
                     <div style="grid-column: 1/-1; text-align: center; color: #111111; padding: 2rem 1rem; background: #FFFFFF; border: 1px dashed #D1D5DB; border-radius: 16px;">
-                        <p style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.3rem;">No hay barberos asignados a esta sucursal</p>
+                        <p style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.3rem;">No hay barberos asignados a este servicio en esta sucursal</p>
                     </div>
                 `;
             }
@@ -1743,15 +1760,21 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             document.querySelectorAll('#servicesGrid [data-service-id]').forEach(c => c.classList.remove('selected'));
             if (el) el.classList.add('selected');
 
+            // Obtener exclusivamente los barberos asignados a este servicio
+            const eligibleBarbers = getEligibleBarbersForService(id, barberosIds);
+
             // Determinar si hay barbero exclusivo
             const isMateoService = name.toLowerCase().includes('mateo');
             let targetBarber = null;
 
             if (barberoId) {
-                targetBarber = allBarbersList.find(b => b.id == barberoId);
+                targetBarber = eligibleBarbers.find(b => b.id == barberoId);
             }
             if (!targetBarber && isMateoService) {
-                targetBarber = allBarbersList.find(b => b.nombre.toLowerCase().includes('mateo'));
+                targetBarber = eligibleBarbers.find(b => b.nombre.toLowerCase().includes('mateo'));
+            }
+            if (!targetBarber && eligibleBarbers.length === 1) {
+                targetBarber = eligibleBarbers[0];
             }
 
             if (targetBarber) {
@@ -1769,9 +1792,11 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
                     showStep(currentStep);
                 }, 300);
             } else {
-                bookingData.barberId = null;
-                bookingData.barberName = null;
-                renderBarbersList(allBarbersList, false);
+                if (bookingData.barberId && !eligibleBarbers.some(b => Number(b.id) === Number(bookingData.barberId))) {
+                    bookingData.barberId = null;
+                    bookingData.barberName = null;
+                }
+                renderBarbersList(eligibleBarbers, false);
 
                 updateNavButtons();
 

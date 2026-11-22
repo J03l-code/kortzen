@@ -109,6 +109,18 @@ try {
         $barberoId = $exclusiveBarberId;
     }
 
+    // Validar asignación de barberos al servicio en servicios_barberos
+    $allowedBarberIds = [];
+    try {
+        $stmtSB = $pdo->prepare("SELECT barbero_id FROM servicios_barberos WHERE servicio_id = ?");
+        $stmtSB->execute([$servicioId]);
+        $allowedBarberIds = array_map('intval', $stmtSB->fetchAll(PDO::FETCH_COLUMN));
+    } catch (Throwable $eSB) {}
+
+    if (!empty($allowedBarberIds) && $barberoId > 0 && !in_array($barberoId, $allowedBarberIds, true)) {
+        throw new Exception('El barbero seleccionado no realiza este servicio. Por favor selecciona otro barbero.');
+    }
+
     $fechaHora = "$fecha $hora:00";
     $slotStartTs = strtotime($fechaHora);
     $slotEndTs = $slotStartTs + ($duracionServicio * 60);
@@ -118,6 +130,12 @@ try {
         $stmtAllBarbers = $pdo->prepare("SELECT id, nombre, sucursal_id, almuerzo_inicio, almuerzo_fin, almuerzo_activo FROM usuarios WHERE activo = 1 AND (rol = 'barbero' OR rol = 'admin_local') AND (sucursal_id = ? OR sucursal_id IS NULL OR sucursal_id = 0) ORDER BY id ASC");
         $stmtAllBarbers->execute([$sucursalId]);
         $candidatos = $stmtAllBarbers->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($allowedBarberIds)) {
+            $candidatos = array_values(array_filter($candidatos, function($cand) use ($allowedBarberIds) {
+                return in_array((int)$cand['id'], $allowedBarberIds, true);
+            }));
+        }
 
         $selectedBarber = null;
 

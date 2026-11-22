@@ -44,6 +44,28 @@ try {
         $barberos = $stmtBarbers->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Filtrar estrictamente por barberos asignados a este servicio en servicios_barberos
+    if ($servicioId > 0) {
+        $allowedBarberIds = [];
+        try {
+            $stmtSB = $pdo->prepare("SELECT barbero_id FROM servicios_barberos WHERE servicio_id = ?");
+            $stmtSB->execute([$servicioId]);
+            $allowedBarberIds = array_map('intval', $stmtSB->fetchAll(PDO::FETCH_COLUMN));
+        } catch (Throwable $eSB) {}
+
+        if (!empty($allowedBarberIds)) {
+            if ($barberoId > 0) {
+                if (!in_array($barberoId, $allowedBarberIds, true)) {
+                    $barberos = [];
+                }
+            } else {
+                $barberos = array_values(array_filter($barberos, function($b) use ($allowedBarberIds) {
+                    return in_array((int)$b['id'], $allowedBarberIds, true);
+                }));
+            }
+        }
+    }
+
     if (empty($barberos)) {
         echo json_encode([
             'success' => true,
