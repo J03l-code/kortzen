@@ -69,10 +69,14 @@ function getSelectedBranch() {
             const found = cachedBranches.find(b => b.id == savedId && !b.isProximamente && b.estado === 'activo');
             if (found) {
                 currentSelectedBranch = found;
+                if (!localStorage.getItem('kortzen_selected_branch_name')) {
+                    localStorage.setItem('kortzen_selected_branch_name', found.name || found.nombre || '');
+                }
                 return currentSelectedBranch;
             }
         } else {
-            return currentSelectedBranch || { id: parseInt(savedId) };
+            const fallbackName = localStorage.getItem('kortzen_selected_branch_name') || (savedId == 2 ? 'KORTZEN Laureles' : 'KORTZEN Llano Chico');
+            return currentSelectedBranch || { id: parseInt(savedId), name: fallbackName, nombre: fallbackName };
         }
     }
 
@@ -101,13 +105,15 @@ function setSelectedBranch(branchId) {
     if (!branch || branch.isProximamente || branch.estado === 'inactivo') return false;
 
     currentSelectedBranch = branch;
+    const branchName = branch.name || branch.nombre || (branch.id == 2 ? 'KORTZEN Laureles' : 'KORTZEN Llano Chico');
     localStorage.setItem(BRANCH_STORAGE_KEY, branch.id);
+    localStorage.setItem('kortzen_selected_branch_name', branchName);
     document.cookie = "kortzen_selected_branch=" + encodeURIComponent(branch.id) + "; path=/; max-age=31536000; SameSite=Lax";
     updateBranchInfoBar();
     updateGlobalFooter(branch);
 
     // Emitir evento personalizado para recalcular barberos y servicios en reservar.php / nosotros.html
-    window.dispatchEvent(new CustomEvent('kortzen:branchChanged', { detail: { ...branch, id: branch.id, branchId: branch.id } }));
+    window.dispatchEvent(new CustomEvent('kortzen:branchChanged', { detail: { ...branch, id: branch.id, branchId: branch.id, name: branchName, nombre: branchName } }));
     return true;
 }
 
@@ -524,11 +530,17 @@ window.KortzenBranches = {
         createBranchSelectorModal();
     },
     getSelected: getSelectedBranch,
+    getSelectedBranch: getSelectedBranch,
+    getSelectedBranchId: function() {
+        const b = getSelectedBranch();
+        return b ? b.id : (parseInt(localStorage.getItem(BRANCH_STORAGE_KEY)) || 1);
+    },
     setSelected: setSelectedBranch,
     loadAll: function() { return cachedBranches; },
     updateInfoBar: updateBranchInfoBar,
     updateFooter: updateGlobalFooter
 };
+window.getSelectedBranch = getSelectedBranch;
 
 // Iniciar al cargar el DOM
 document.addEventListener('DOMContentLoaded', () => {

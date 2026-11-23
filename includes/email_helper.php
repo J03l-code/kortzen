@@ -169,6 +169,7 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
     $fecha = htmlspecialchars($datosCita['fecha'] ?? '');
     $hora = htmlspecialchars($datosCita['hora'] ?? '');
     $precio = htmlspecialchars($datosCita['precio'] ?? '0.00');
+    $sucursal = htmlspecialchars($datosCita['sucursal'] ?? 'KORTZEN Llano Chico');
     $nombreCliente = htmlspecialchars($clienteNombre ?? 'Cliente');
 
     $message = "
@@ -205,6 +206,7 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
                 <p class='subtitle'>Hola <strong>$nombreCliente</strong>, tu reserva ha sido registrada correctamente.</p>
                 
                 <div class='details-box'>
+                    <div class='detail-row'><span class='detail-label'>Sucursal</span><span class='detail-value'>$sucursal</span></div>
                     <div class='detail-row'><span class='detail-label'>Servicio</span><span class='detail-value'>$servicio</span></div>
                     <div class='detail-row'><span class='detail-label'>Barbero</span><span class='detail-value'>$barbero</span></div>
                     <div class='detail-row'><span class='detail-label'>Fecha</span><span class='detail-value'>$fecha</span></div>
@@ -213,7 +215,7 @@ function enviarCorreoReserva($toEmail, $clienteNombre, $datosCita)
                 </div>
                 
                 <div class='location-note'>
-                    Ubicación: <strong>KORTZEN Llano Chico</strong><br>Por favor llega 5 minutos antes de la hora agendada.
+                    Ubicación: <strong>$sucursal</strong><br>Por favor llega 5 minutos antes de la hora agendada.
                 </div>
                 
                 <a href='https://kortzen.com/mis-citas.php' class='btn'>Ver mis Citas</a>
@@ -277,6 +279,7 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
     $servicio = htmlspecialchars($datosCita['servicio'] ?? 'Corte / Servicio');
     $barbero = htmlspecialchars($datosCita['barbero'] ?? 'Barbero Profesional');
     $hora = htmlspecialchars($datosCita['hora'] ?? '');
+    $sucursal = htmlspecialchars($datosCita['sucursal'] ?? 'KORTZEN Llano Chico');
     $nombreCliente = htmlspecialchars($clienteNombre ?? 'Cliente');
 
     $message = "
@@ -316,7 +319,7 @@ function enviarCorreoRecordatorio($toEmail, $clienteNombre, $datosCita)
                     <div class='detail-row'><span class='detail-label'>Hora de atención</span><span class='detail-value'>$hora</span></div>
                     <div class='detail-row'><span class='detail-label'>Servicio</span><span class='detail-value'>$servicio</span></div>
                     <div class='detail-row'><span class='detail-label'>Barbero</span><span class='detail-value'>$barbero</span></div>
-                    <div class='detail-row'><span class='detail-label'>Sucursal</span><span class='detail-value'>KORTZEN Llano Chico</span></div>
+                    <div class='detail-row'><span class='detail-label'>Sucursal</span><span class='detail-value'>$sucursal</span></div>
                 </div>
                 
                 <div class='location-note'>

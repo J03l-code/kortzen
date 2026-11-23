@@ -390,6 +390,17 @@ try {
     $mesStr = $mesesNombres[intval(date('n', $tsFecha))];
     $fechaLegible = "$diaSemanaStr $diaMesStr de $mesStr";
 
+    // Obtener nombre real de la sucursal
+    $nombreSucursal = ($sucursalId == 2) ? 'KORTZEN Laureles' : 'KORTZEN Llano Chico';
+    try {
+        $stmtSuc = $pdo->prepare("SELECT nombre FROM sucursales WHERE id = ?");
+        $stmtSuc->execute([$sucursalId]);
+        $dbSucNombre = $stmtSuc->fetchColumn();
+        if (!empty($dbSucNombre)) {
+            $nombreSucursal = $dbSucNombre;
+        }
+    } catch (Throwable $tSuc) {}
+
     // 7. Notificaciones (Email y WebPush)
     try {
         if (!empty($emailCliente)) {
@@ -399,7 +410,8 @@ try {
                 'barbero' => $nombreBarbero,
                 'fecha' => date('d/m/Y', $tsFecha),
                 'hora' => $hora,
-                'precio' => number_format($precioFinal, 2)
+                'precio' => number_format($precioFinal, 2),
+                'sucursal' => $nombreSucursal
             ]);
         }
     } catch (Throwable $eMail) {}
@@ -411,7 +423,7 @@ try {
             'servicio' => $nombreServicio,
             'fecha' => date('d/m/Y', $tsFecha),
             'hora' => $hora,
-            'sucursal' => 'KORTZEN Llano Chico'
+            'sucursal' => $nombreSucursal
         ]);
     } catch (Throwable $ePush) {}
 
@@ -421,6 +433,8 @@ try {
     echo json_encode([
         'success' => true,
         'cita_id' => $citaId,
+        'sucursal_id' => $sucursalId,
+        'sucursal_nombre' => $nombreSucursal,
         'servicio_nombre' => $nombreServicio,
         'barbero_nombre' => $nombreBarbero,
         'fecha' => $fecha,

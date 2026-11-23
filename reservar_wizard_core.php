@@ -695,6 +695,8 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
     <script>
         // State
         const bookingData = {
+            branchId: null,
+            branchName: null,
             serviceId: null,
             serviceName: null,
             servicePrice: null,
@@ -705,6 +707,35 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
             phone: null
         };
 
+        function getActiveBranchInfo() {
+            let branch = null;
+            try {
+                if (window.KortzenBranches) {
+                    if (typeof window.KortzenBranches.getSelectedBranch === 'function') {
+                        branch = window.KortzenBranches.getSelectedBranch();
+                    } else if (typeof window.KortzenBranches.getSelected === 'function') {
+                        branch = window.KortzenBranches.getSelected();
+                    }
+                }
+                if (!branch && typeof window.getSelectedBranch === 'function') {
+                    branch = window.getSelectedBranch();
+                }
+            } catch (e) {}
+
+            const rawId = branch?.id || localStorage.getItem('kortzen_selected_branch') || 1;
+            const branchId = parseInt(rawId) || 1;
+
+            let branchName = branch?.name || branch?.nombre || localStorage.getItem('kortzen_selected_branch_name');
+            if (!branchName) {
+                branchName = (branchId === 2) ? 'KORTZEN Laureles' : 'KORTZEN Llano Chico';
+            }
+
+            return {
+                id: branchId,
+                name: branchName
+            };
+        }
+
         let currentStep = 1;
         let hasExistingPhone = false; // Track if client already has phone
         let allServicesList = [];
@@ -712,8 +743,10 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
 
         // Load Data
         document.addEventListener('DOMContentLoaded', async () => {
-            // Get selected branch from localStorage
-            const branchId = localStorage.getItem('kortzen_selected_branch') || 1;
+            const branchInfo = getActiveBranchInfo();
+            bookingData.branchId = branchInfo.id;
+            bookingData.branchName = branchInfo.name;
+            const branchId = branchInfo.id;
 
             await loadBarbers(branchId);
             await loadServices(branchId);
@@ -737,11 +770,19 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
         window.addEventListener('kortzen:branchChanged', async (e) => {
             const newBranch = e.detail;
             if (newBranch && newBranch.id) {
+                const bId = parseInt(newBranch.id) || 1;
+                const bName = newBranch.name || newBranch.nombre || (bId === 2 ? 'KORTZEN Laureles' : 'KORTZEN Llano Chico');
+                bookingData.branchId = bId;
+                bookingData.branchName = bName;
+                localStorage.setItem('kortzen_selected_branch', bId);
+                localStorage.setItem('kortzen_selected_branch_name', bName);
+
                 bookingData.serviceId = null;
                 bookingData.barberId = null;
-                await loadBarbers(newBranch.id);
-                await loadServices(newBranch.id);
+                await loadBarbers(bId);
+                await loadServices(bId);
                 updateNavButtons();
+                updateSummary();
             }
         });
 
@@ -1258,7 +1299,8 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
 
             try {
                 const formData = new FormData();
-                const selectedBranchId = (window.KortzenBranches && window.KortzenBranches.getSelectedBranchId) ? window.KortzenBranches.getSelectedBranchId() : (localStorage.getItem('kortzen_selected_branch') || 1);
+                const branchInfo = getActiveBranchInfo();
+                const selectedBranchId = bookingData.branchId || branchInfo.id;
                 formData.append('sucursal_id', selectedBranchId);
                 formData.append('servicio_id', bookingData.serviceId);
                 formData.append('barbero_id', bookingData.barberId);
@@ -1303,8 +1345,8 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
 
                 if (res.success) {
                     // Success UI
-                    const branch = (window.KortzenBranches && window.KortzenBranches.getSelectedBranch) ? window.KortzenBranches.getSelectedBranch() : null;
-                    const branchName = branch ? branch.name : (localStorage.getItem('kortzen_selected_branch_name') || 'KORTZEN Llano Chico');
+                    const branchInfo = getActiveBranchInfo();
+                    const branchName = res.sucursal_nombre || bookingData.branchName || branchInfo.name;
                     const gCalTitle = encodeURIComponent(`Cita en ${branchName} - ${bookingData.serviceName}`);
                     const gCalLoc = encodeURIComponent(`${branchName}, Quito`);
                     const gCalDetails = encodeURIComponent(`Cita con ${bookingData.barberName} el ${bookingData.date} a las ${bookingData.time}`);
@@ -1479,8 +1521,8 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
         }
 
         function updateSummary() {
-            const branch = (window.KortzenBranches && window.KortzenBranches.getSelectedBranch) ? window.KortzenBranches.getSelectedBranch() : null;
-            const branchName = branch ? branch.name : (localStorage.getItem('kortzen_selected_branch_name') || 'KORTZEN Llano Chico');
+            const branchInfo = getActiveBranchInfo();
+            const branchName = bookingData.branchName || branchInfo.name;
             const confBranchEl = document.getElementById('confirmBranch');
             if (confBranchEl) confBranchEl.textContent = branchName;
 

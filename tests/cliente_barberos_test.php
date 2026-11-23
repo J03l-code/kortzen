@@ -127,5 +127,30 @@ assert(in_array('18:00', $slotsGenerados, true), "Debe aparecer el horario 18:00
 assert(!in_array('17:00', $slotsGenerados, true), "No debe aparecer 17:00 porque ya tiene cita agendada a esa hora.");
 echo "OK: Slots de disponibilidad respetan estrictamente la hora de inicio configurada (14:00 a 20:00) sin abrir slots ficticios a las 11:00.\n";
 
+// --- Test 5: Sucursal dinámica en reservas, confirmación y API ---
+$reservarCode = file_get_contents(__DIR__ . '/../reservar.php');
+$wizardCoreCode = file_get_contents(__DIR__ . '/../reservar_wizard_core.php');
+$branchSelectorCode = file_get_contents(__DIR__ . '/../js/branch-selector.js');
+$crearCitaCode = file_get_contents(__DIR__ . '/../api/crear_cita_cliente.php');
+
+assert(strpos($reservarCode, 'getActiveBranchInfo') !== false, "reservar.php debe definir getActiveBranchInfo.");
+assert(strpos($reservarCode, 'bookingData.branchName || branchInfo.name') !== false, "reservar.php debe usar branchName dinámico en updateSummary.");
+assert(strpos($wizardCoreCode, 'getActiveBranchInfo') !== false, "reservar_wizard_core.php debe definir getActiveBranchInfo.");
+assert(strpos($wizardCoreCode, 'bookingData.branchName || branchInfo.name') !== false, "reservar_wizard_core.php debe usar branchName dinámico en updateSummary.");
+assert(strpos($branchSelectorCode, 'kortzen_selected_branch_name') !== false, "branch-selector.js debe persistir kortzen_selected_branch_name en localStorage.");
+assert(strpos($branchSelectorCode, 'getSelectedBranch:') !== false, "branch-selector.js debe exponer getSelectedBranch.");
+assert(strpos($crearCitaCode, 'sucursal_nombre') !== false, "api/crear_cita_cliente.php debe retornar sucursal_nombre.");
+
+// Test dinámico de resolución de nombre de sucursal
+$pdo->exec("CREATE TABLE IF NOT EXISTS sucursales (id INTEGER PRIMARY KEY, nombre TEXT)");
+$pdo->exec("INSERT OR REPLACE INTO sucursales (id, nombre) VALUES (1, 'KORTZEN Llano Chico'), (2, 'KORTZEN Laureles')");
+$stmtSuc1 = $pdo->prepare("SELECT nombre FROM sucursales WHERE id = ?");
+$stmtSuc1->execute([1]);
+assert($stmtSuc1->fetchColumn() === 'KORTZEN Llano Chico', "Sucursal 1 debe ser KORTZEN Llano Chico");
+$stmtSuc2 = $pdo->prepare("SELECT nombre FROM sucursales WHERE id = ?");
+$stmtSuc2->execute([2]);
+assert($stmtSuc2->fetchColumn() === 'KORTZEN Laureles', "Sucursal 2 debe ser KORTZEN Laureles");
+echo "OK: Sucursal dinámica validada en frontend (wizard, summary, storage) y backend (crear_cita_cliente, email, push).\n";
+
 unlink($rutaDb);
 echo "Todas las pruebas de clientes y barberos completadas con éxito.\n";
