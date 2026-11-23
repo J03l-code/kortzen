@@ -162,10 +162,23 @@ try {
 
             // Verificar si trabaja ese día de semana
             $diaSem = date('w', $slotStartTs);
-            $stmtH = $pdo->prepare("SELECT * FROM horarios_barberos WHERE barbero_id = ? AND dia_semana = ? AND activo = 1");
+            $stmtH = $pdo->prepare("SELECT * FROM horarios_barberos WHERE barbero_id = ? AND dia_semana = ?");
             $stmtH->execute([$candId, $diaSem]);
-            $hBase = $stmtH->fetch(PDO::FETCH_ASSOC);
-            if (!$hBase) {
+            $hRow = $stmtH->fetch(PDO::FETCH_ASSOC);
+            if ($hRow && intval($hRow['activo']) === 0) {
+                // El barbero no trabaja este día
+                continue;
+            }
+            if ($hRow && intval($hRow['activo']) === 1) {
+                $hBase = $hRow;
+                if (empty($hBase['hora_inicio']) || $hBase['hora_inicio'] === '00:00:00') {
+                    $hBase['hora_inicio'] = '10:00:00';
+                }
+                if (empty($hBase['hora_fin']) || $hBase['hora_fin'] === '00:00:00') {
+                    $hBase['hora_fin'] = ($diaSem == 0) ? '17:00:00' : '20:00:00';
+                }
+            } else {
+                // Sin horario configurado, usar horario predeterminado KORTZEN
                 $hBase = [
                     'hora_inicio' => '10:00:00',
                     'hora_fin' => ($diaSem == 0) ? '17:00:00' : '20:00:00',
@@ -247,13 +260,13 @@ try {
         $stmtCitasCount->execute([$barberoId, $fecha]);
         $hasCitasOnDate = intval($stmtCitasCount->fetchColumn() ?? 0) > 0;
 
-        // 1. Verificar horario base del barbero
+        // 1. Verificar horario base del barbero (respetando estrictamente la jornada configurada)
         $diaSem = date('w', $slotStartTs);
         $stmtH = $pdo->prepare("SELECT * FROM horarios_barberos WHERE barbero_id = ? AND dia_semana = ?");
         $stmtH->execute([$barberoId, $diaSem]);
         $hBase = $stmtH->fetch(PDO::FETCH_ASSOC);
 
-        if ($hBase && intval($hBase['activo']) === 0 && !$hasCitasOnDate) {
+        if ($hBase && intval($hBase['activo']) === 0) {
             throw new Exception('El barbero no atiende en el día seleccionado.');
         }
 
@@ -263,9 +276,6 @@ try {
             }
             if (empty($hBase['hora_fin']) || $hBase['hora_fin'] === '00:00:00') {
                 $hBase['hora_fin'] = ($diaSem == 0) ? '17:00:00' : '20:00:00';
-            }
-            if ($hasCitasOnDate && strtotime("$fecha " . $hBase['hora_inicio']) > strtotime("$fecha 11:00:00")) {
-                $hBase['hora_inicio'] = '11:00:00';
             }
         } else {
             $hBase = [

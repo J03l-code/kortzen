@@ -96,30 +96,25 @@ try {
         $ts = strtotime($fDate);
         $diaSem = date('w', $ts);
 
-        // 1. Verificar si el barbero ya tiene citas agendadas en esta fecha (si tiene citas, claramente labora ese día)
-        $stmtCitasCount = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE barbero_id = ? AND reasignacion_pendiente = 0 AND DATE(fecha_hora) = ? AND estado NOT IN ('cancelada', 'no_asistio')");
-        $stmtCitasCount->execute([$bId, $fDate]);
-        $hasCitasOnDate = intval($stmtCitasCount->fetchColumn() ?? 0) > 0;
-
-        // 2. Horario base semanal
+        // 1. Horario base semanal
         $stmtHCheck = $pdo->prepare("SELECT * FROM horarios_barberos WHERE barbero_id = ? AND dia_semana = ?");
         $stmtHCheck->execute([$bId, $diaSem]);
         $hCheck = $stmtHCheck->fetch(PDO::FETCH_ASSOC);
 
-        // Si el día está desactivado en la agenda semanal Y NO tiene citas confirmadas para hoy -> día libre
-        if ($hCheck && intval($hCheck['activo']) === 0 && !$hasCitasOnDate) {
+        // Si el día está desactivado en la agenda semanal -> día libre, sin disponibilidad
+        if ($hCheck && intval($hCheck['activo']) === 0) {
             return [];
         }
 
-        // 3. Día bloqueado completo (solo si no tiene citas confirmadas agendadas)
+        // 2. Día bloqueado completo -> sin disponibilidad
         $stmtB = $pdo->prepare("SELECT * FROM dias_bloqueados WHERE barbero_id = ? AND fecha = ?");
         $stmtB->execute([$bId, $fDate]);
         $bloq = $stmtB->fetch(PDO::FETCH_ASSOC);
-        if ($bloq && !empty($bloq['todo_el_dia']) && !$hasCitasOnDate) {
+        if ($bloq && !empty($bloq['todo_el_dia'])) {
             return [];
         }
 
-        // 4. Definir horario base (respetando la jornada configurada por el administrador)
+        // 3. Definir horario base (respetando estrictamente la jornada configurada por el administrador)
         if ($hCheck && intval($hCheck['activo']) === 1) {
             $hBase = $hCheck;
             if (empty($hBase['hora_inicio']) || $hBase['hora_inicio'] === '00:00:00') {
@@ -127,10 +122,6 @@ try {
             }
             if (empty($hBase['hora_fin']) || $hBase['hora_fin'] === '00:00:00') {
                 $hBase['hora_fin'] = ($diaSem == 0) ? '17:00:00' : '20:00:00';
-            }
-            // Asegurar que comience a las 11:00 o antes si hay citas
-            if ($hasCitasOnDate && strtotime("$fDate " . $hBase['hora_inicio']) > strtotime("$fDate 11:00:00")) {
-                $hBase['hora_inicio'] = '11:00:00';
             }
         } else {
             // Horario predeterminado KORTZEN (10:00 a 20:00 Lun-Sáb, 10:00 a 17:00 Dom)
