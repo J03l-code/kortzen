@@ -3396,9 +3396,14 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Cliente *</label>
-                    <button type="button" onclick="abrirModalNuevoClienteRapidoPwa()" style="background: none; border: none; color: #059669; font-weight: 800; font-size: 0.74rem; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0; text-transform: uppercase;">
-                        <i class="fas fa-user-plus"></i> + Nuevo Cliente
-                    </button>
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" onclick="seleccionarClienteAlPasoPwa()" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-weight: 800; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; text-transform: uppercase;">
+                            <i class="fas fa-walking"></i> Al Paso
+                        </button>
+                        <button type="button" onclick="abrirModalNuevoClienteRapidoPwa()" style="background: none; border: none; color: #059669; font-weight: 800; font-size: 0.74rem; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0; text-transform: uppercase;">
+                            <i class="fas fa-user-plus"></i> + Nuevo
+                        </button>
+                    </div>
                 </div>
 
                 <input type="hidden" name="cliente_id" id="pwaCitaModalClienteId" required>
@@ -3481,11 +3486,17 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
-                    <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Fecha *</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Fecha *</label>
+                        <button type="button" onclick="document.getElementById('pwaCitaModalFecha').value = new Date().toISOString().split('T')[0]" style="background: #F3F4F6; border: 1px solid #D1D5DB; color: #374151; font-size: 0.68rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; cursor: pointer;">Hoy</button>
+                    </div>
                     <input type="date" name="fecha" id="pwaCitaModalFecha" value="<?php echo date('Y-m-d'); ?>" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px;">
                 </div>
                 <div>
-                    <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Hora *</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Hora *</label>
+                        <button type="button" onclick="setearHoraActualPwa()" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-size: 0.68rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; cursor: pointer;">⚡ Ahora</button>
+                    </div>
                     <input type="time" name="hora" id="pwaCitaModalHora" value="10:00" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px;">
                 </div>
             </div>
@@ -3510,7 +3521,10 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 <textarea name="notas" id="pwaCitaModalNotas" rows="2" placeholder="Observaciones especiales..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 600; margin-top: 4px; font-family: inherit;"></textarea>
             </div>
 
-            <button type="submit" id="btnSubmitPwaCitaModal" class="pwa-btn-main" style="margin-top: 8px;">Agendar Cita</button>
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button type="submit" onclick="window.pwaIrACobro=false" id="btnSubmitPwaCitaModal" class="pwa-btn-secondary" style="flex: 1; padding: 12px; font-weight: 800; border-radius: 8px; font-size: 0.8rem;">Agendar Cita</button>
+                <button type="submit" onclick="window.pwaIrACobro=true" id="btnSubmitPwaCitaCobrarModal" class="pwa-btn-main" style="flex: 1; background: #059669; padding: 12px; font-weight: 800; border-radius: 8px; font-size: 0.8rem;">💰 Guardar y Cobrar</button>
+            </div>
         </form>
     </div>
 </div>
@@ -3534,8 +3548,8 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
             </div>
 
             <div>
-                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Teléfono / WhatsApp *</label>
-                <input type="tel" name="telefono" id="pwaQuickCliTelefono" required placeholder="Ej: 0991234567" style="width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Teléfono / WhatsApp (Opcional)</label>
+                <input type="tel" name="telefono" id="pwaQuickCliTelefono" placeholder="Ej: 0991234567" style="width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; margin-top: 4px;">
             </div>
 
             <div>
@@ -5838,6 +5852,50 @@ function abrirModalEditarCitaPwa(c) {
     document.getElementById('pwaCitaModalSheet').style.display = 'flex';
 }
 
+function setearHoraActualPwa() {
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const horaInp = document.getElementById('pwaCitaModalHora');
+    if (horaInp) {
+        horaInp.value = `${hh}:${mm}`;
+    }
+}
+
+async function seleccionarClienteAlPasoPwa() {
+    let found = allClientsPwa.find(c => c.nombre && (c.nombre.toLowerCase().includes('cliente al paso') || c.nombre.toLowerCase().includes('mostrador')));
+    if (found) {
+        selectClientPwa(found);
+        mostrarToastPwa('Cliente al Paso seleccionado.');
+        return;
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'create');
+        formData.append('ajax', '1');
+        formData.append('nombre', 'Cliente al Paso');
+        formData.append('telefono', '0000000000');
+        formData.append('notas', 'Cliente al paso / sin registro');
+
+        const resp = await fetch('api/clientes_action.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await resp.json();
+        if (data.success && data.cliente) {
+            allClientsPwa.unshift(data.cliente);
+            selectClientPwa(data.cliente);
+            mostrarToastPwa('Cliente al Paso seleccionado.');
+        } else {
+            alert(data.error || 'No se pudo seleccionar Cliente al Paso.');
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 function cerrarModalCitaModalPwa() {
     document.getElementById('pwaCitaModalSheet').style.display = 'none';
 }
@@ -5858,6 +5916,11 @@ function guardarCitaModalPwa(e) {
 
     const fd = new FormData(document.getElementById('formPwaCitaModal'));
     const isCreate = (document.getElementById('pwaCitaModalAction').value === 'create');
+    const irACobro = Boolean(window.pwaIrACobro);
+    if (irACobro) {
+        fd.append('ir_a_cobro', '1');
+    }
+    fd.append('is_walkin', '1');
 
     fetch('api/citas_action.php', {
         method: 'POST',
@@ -5910,7 +5973,13 @@ function guardarCitaModalPwa(e) {
                     notas: notas
                 };
                 rawCitasList.unshift(nuevaCitaObj);
-                mostrarToastPwa('Cita agendada exitosamente.');
+                mostrarToastPwa('Cita registrada exitosamente.');
+                if (irACobro) {
+                    window.pwaIrACobro = false;
+                    setTimeout(() => {
+                        abrirModalTerminarCitaPwa(cId, nuevaCitaObj.cliente_nombre);
+                    }, 350);
+                }
             } else {
                 const target = rawCitasList.find(c => c.id == cId);
                 if (target) {
@@ -5929,6 +5998,12 @@ function guardarCitaModalPwa(e) {
                     target.notas = notas;
                 }
                 mostrarToastPwa('Cita actualizada correctamente.');
+                if (irACobro) {
+                    window.pwaIrACobro = false;
+                    setTimeout(() => {
+                        abrirModalTerminarCitaPwa(cId, (target && target.cliente_nombre) || 'Cliente');
+                    }, 350);
+                }
             }
 
             renderizarCitasTab();

@@ -190,25 +190,39 @@ try {
             $stmtCitasCount->execute([$barbero_id, $fecha]);
             $hasCitasOnDate = intval($stmtCitasCount->fetchColumn() ?? 0) > 0;
 
-            // Validar que el barbero no tenga el día desactivado en sus horarios (a menos que tenga citas)
+            // Validar que el barbero no tenga el día desactivado en sus horarios (a menos que tenga citas o sea walk-in)
+            $isWalkin = !empty($_POST['is_walkin']) || !empty($_POST['walkin']) || !empty($_POST['allow_past']);
             $stmtHorDia = $pdo->prepare("SELECT activo FROM horarios_barberos WHERE barbero_id = ? AND dia_semana = ?");
             $stmtHorDia->execute([$barbero_id, $diaSemCita]);
             $horDia = $stmtHorDia->fetch(PDO::FETCH_ASSOC);
-            if ($horDia && intval($horDia['activo']) === 0 && !$hasCitasOnDate) {
+            if ($horDia && intval($horDia['activo']) === 0 && !$hasCitasOnDate && !$isWalkin) {
                 throw new Exception('El barbero no trabaja este día. Selecciona otro día u otro barbero.');
             }
 
             // Validar que el día no esté bloqueado completo
             $stmtBloqDia = $pdo->prepare("SELECT id FROM dias_bloqueados WHERE barbero_id = ? AND fecha = ? AND todo_el_dia = 1");
             $stmtBloqDia->execute([$barbero_id, $fecha]);
-            if ($stmtBloqDia->fetch() && !$hasCitasOnDate) {
+            if ($stmtBloqDia->fetch() && !$hasCitasOnDate && !$isWalkin) {
                 throw new Exception('El barbero tiene este día bloqueado. Selecciona otro día u otro barbero.');
             }
 
-            $sql = "INSERT INTO citas (cliente_id, servicio_id, barbero_id, sucursal_id, fecha_hora, estado, notas) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$cliente_id, $servicio_id, $barbero_id, $sucursal_id, $fecha_hora, $estado, $notas]);
+            // Obtener precio y duración del servicio
+            $stmtSrv = $pdo->prepare("SELECT nombre, precio, COALESCE(duracion_minutos, 45) as duracion_minutos FROM servicios WHERE id = ?");
+            $stmtSrv->execute([$servicio_id]);
+            $srvData = $stmtSrv->fetch(PDO::FETCH_ASSOC);
+            $precioServicio = floatval($srvData['precio'] ?? 0.00);
+
+            try {
+                $sql = "INSERT INTO citas (cliente_id, servicio_id, barbero_id, sucursal_id, fecha_hora, estado, precio_final, notas) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$cliente_id, $servicio_id, $barbero_id, $sucursal_id, $fecha_hora, $estado, $precioServicio, $notas]);
+            } catch (PDOException $eIns) {
+                $sql = "INSERT INTO citas (cliente_id, servicio_id, barbero_id, sucursal_id, fecha_hora, estado, notas) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$cliente_id, $servicio_id, $barbero_id, $sucursal_id, $fecha_hora, $estado, $notas]);
+            }
 
             $newCitaId = $pdo->lastInsertId();
 
@@ -249,7 +263,38 @@ try {
                 }
             } catch (Throwable $eMail) {}
 
-            responderAccionCita($isAjax, $redirect_url, 'Cita creada exitosamente', ['cita_id' => $newCitaId]);
+            $irACobro = !empty($_POST['ir_a_cobro']) && $_POST['ir_a_cobro'] == '1';
+            if ($irACobro) {
+                $redirect_url = '../citas.php?abrir_cobro_id=' . $newCitaId;
+            }
+
+            responderAccionCita($isAjax, $redirect_url, 'Cita creada exitosamente' . ($irACobro ? '. Procede con el cobro y productos.' : ''), [
+                'cita_id' => $newCitaId,
+                'ir_a_cobro' => $irACobro
+            ]);
+
+        case 'get_cita':
+            $id = intval($_GET['id'] ?? ($_POST['id'] ?? 0));
+            if ($id <= 0) throw new Exception('ID inválido');
+            $stmtC = $pdo->prepare("
+                SELECT c.*, cl.nombre as cliente_nombre, cl.telefono as cliente_telefono,
+                       s.nombre as servicio_nombre, COALESCE(s.precio, 0.00) as servicio_precio,
+                       u.nombre as barbero_nombre, COALESCE(u.comision_porcentaje, 50.0) as barbero_comision,
+                       COALESCE(u.comision_fin_semana, 50.0) as barbero_comision_finde,
+                       su.nombre as sucursal_nombre
+                FROM citas c
+                LEFT JOIN clientes cl ON c.cliente_id = cl.id
+                LEFT JOIN servicios s ON c.servicio_id = s.id
+                LEFT JOIN usuarios u ON c.barbero_id = u.id
+                LEFT JOIN sucursales su ON c.sucursal_id = su.id
+                WHERE c.id = ?
+            ");
+            $stmtC->execute([$id]);
+            $citaRow = $stmtC->fetch(PDO::FETCH_ASSOC);
+            if (!$citaRow) throw new Exception('Cita no encontrada');
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'cita' => $citaRow]);
+            exit;
 
         case 'update':
             $id = intval($_POST['id'] ?? 0);

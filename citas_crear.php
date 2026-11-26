@@ -597,14 +597,34 @@ include 'includes/header.php';
             <input type="hidden" name="id" value="<?php echo $cita['id']; ?>">
         <?php endif; ?>
         
+        <!-- BANNER ATENCIÓN INMEDIATA / WALK-IN -->
+        <div id="walkinBanner" style="background: #F0FDF4; border: 1.5px dashed #86EFAC; border-radius: 12px; padding: 12px 16px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="background: #059669; color: #FFF; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">⚡</span>
+                <div>
+                    <strong style="color: #065F46; font-size: 0.92rem;">Cliente al Paso / Atención Inmediata (Walk-in)</strong>
+                    <p style="margin: 2px 0 0; font-size: 0.78rem; color: #047857;">¿El cliente llegó sin cita o ya fue atendido? Ajusta fecha/hora actual y cobra directamente.</p>
+                </div>
+            </div>
+            <button type="button" id="btnActivarWalkin" onclick="activarModoWalkin()" style="background: #059669; color: #FFF; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(5,150,105,0.2);">
+                ⚡ Activar Atención Inmediata
+            </button>
+        </div>
+
         <!-- SELECTOR INTELIGENTE DE CLIENTE -->
         <div class="form-group">
             <div class="form-label">
                 <span>Cliente *</span>
-                <button type="button" onclick="abrirModalNuevoCliente()" style="background: none; border: none; color: #059669; font-weight: 800; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0; text-transform: uppercase;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    Nuevo Cliente
-                </button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" onclick="seleccionarClienteAlPaso()" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-weight: 800; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; text-transform: uppercase;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        Cliente al Paso
+                    </button>
+                    <button type="button" onclick="abrirModalNuevoCliente()" style="background: none; border: none; color: #059669; font-weight: 800; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0; text-transform: uppercase;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Nuevo Cliente
+                    </button>
+                </div>
             </div>
 
             <input type="hidden" name="cliente_id" id="cliente_id" value="<?php echo $selectedClient ? $selectedClient['id'] : ''; ?>" required>
@@ -721,29 +741,45 @@ include 'includes/header.php';
         
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label"><span>Fecha *</span></label>
+                <div class="form-label">
+                    <span>Fecha *</span>
+                    <div style="display:inline-flex; gap:4px;">
+                        <button type="button" onclick="setFechaRapida('hoy')" style="background:#F3F4F6; border:1px solid #E5E7EB; color:#374151; font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px; cursor:pointer; text-transform:uppercase;">Hoy</button>
+                        <button type="button" onclick="setFechaRapida('ayer')" style="background:#F3F4F6; border:1px solid #E5E7EB; color:#374151; font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px; cursor:pointer; text-transform:uppercase;">Ayer</button>
+                    </div>
+                </div>
                 <input 
                     type="date" 
                     name="fecha" 
                     id="fechaInput"
                     class="form-input"
                     value="<?php echo $isEdit ? date('Y-m-d', strtotime($cita['fecha_hora'])) : date('Y-m-d'); ?>"
-                    min="<?php echo date('Y-m-d'); ?>"
                     required
                     onchange="actualizarHorariosDisponibles()"
                 >
             </div>
             
             <div class="form-group">
-                <label class="form-label">
-                    <span>Hora Disponible *</span>
-                    <span id="slotsCountBadge" style="font-size: 10.5px; font-weight: 800; color: #047857; background: #ECFDF5; padding: 1px 7px; border-radius: 4px; display: none;">0 disponibles</span>
-                </label>
-                <select name="hora" id="horaSelect" class="form-select" required onchange="onHoraSelectChange(this.value)">
-                    <option value="<?php echo $isEdit ? date('H:i', strtotime($cita['fecha_hora'])) : ''; ?>">
-                        <?php echo $isEdit ? date('H:i', strtotime($cita['fecha_hora'])) : 'Selecciona fecha, servicio y barbero primero'; ?>
-                    </option>
-                </select>
+                <div class="form-label">
+                    <span>Hora de Atención *</span>
+                    <div style="display:inline-flex; gap:4px; align-items:center;">
+                        <span id="slotsCountBadge" style="font-size: 10px; font-weight: 800; color: #047857; background: #ECFDF5; padding: 1px 6px; border-radius: 4px; display: none;">0 libres</span>
+                        <button type="button" onclick="setearHoraActual()" style="background:#ECFDF5; border:1px solid #A7F3D0; color:#047857; font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px; cursor:pointer; text-transform:uppercase;">
+                            ⚡ Hora Actual
+                        </button>
+                    </div>
+                </div>
+                <input 
+                    type="time" 
+                    name="hora" 
+                    id="horaInput" 
+                    class="form-input" 
+                    value="<?php echo $isEdit ? date('H:i', strtotime($cita['fecha_hora'])) : date('H:i'); ?>"
+                    required 
+                    onchange="onHoraInputChange(this.value)"
+                    style="font-weight: 700; font-size: 1.05rem;"
+                >
+                <input type="hidden" name="is_walkin" id="isWalkinInput" value="<?php echo (!empty($_GET['walkin'])) ? '1' : '0'; ?>">
             </div>
         </div>
 
@@ -758,9 +794,9 @@ include 'includes/header.php';
         
         <div class="form-group">
             <label class="form-label">Estado</label>
-            <select name="estado" class="form-select" required>
-                <option value="confirmada" selected>Confirmada</option>
-                <option value="completada">Completada</option>
+            <select name="estado" id="estadoSelect" class="form-select" required>
+                <option value="confirmada" selected>Confirmada (Agendada / En atención)</option>
+                <option value="completada">Completada (Servicio finalizado)</option>
                 <option value="cancelada">Cancelada</option>
             </select>
         </div>
@@ -774,9 +810,15 @@ include 'includes/header.php';
             ><?php echo $isEdit ? htmlspecialchars($cita['notas']) : ''; ?></textarea>
         </div>
         
-        <div class="form-actions">
+        <div class="form-actions" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <a href="citas.php" class="btn-cancel">Cancelar</a>
-            <button type="submit" class="btn-confirm">Confirmar</button>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="submit" name="ir_a_cobro" value="0" class="btn-confirm" style="background:#1F2937;">Agendar Cita</button>
+                <button type="submit" name="ir_a_cobro" value="1" id="btnGuardarCobrar" class="btn-confirm" style="background:#059669; font-weight:800; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(5,150,105,0.25);">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    💰 Guardar y Cobrar Ahora
+                </button>
+            </div>
         </div>
     </form>
 </div>
@@ -797,8 +839,8 @@ include 'includes/header.php';
                 <input type="text" id="nuevoClienteNombre" class="form-input" placeholder="Ej: Carlos Mendoza" required>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
-                <label class="form-label" style="margin-bottom:6px;">Teléfono / WhatsApp *</label>
-                <input type="tel" id="nuevoClienteTelefono" class="form-input" placeholder="Ej: 0991234567" required>
+                <label class="form-label" style="margin-bottom:6px;">Teléfono / WhatsApp (Opcional)</label>
+                <input type="tel" id="nuevoClienteTelefono" class="form-input" placeholder="Ej: 0991234567">
             </div>
             <div class="form-group" style="margin-bottom:14px;">
                 <label class="form-label" style="margin-bottom:6px;">Email (Opcional)</label>
@@ -1130,20 +1172,112 @@ async function guardarNuevoClienteAjax(e) {
 }
 
 /* =========================================================================
-   SISTEMA DE GESTIÓN DE HORARIOS EN TIEMPO REAL (DISPONIBILIDAD EXACTA)
+   SISTEMA DE GESTIÓN DE HORARIOS EN TIEMPO REAL (DISPONIBILIDAD EXACTA Y WALKIN)
    ========================================================================= */
 const citaIdActual = <?php echo $isEdit ? intval($cita['id']) : 0; ?>;
 let initialHoraValue = '<?php echo $isEdit ? date('H:i', strtotime($cita['fecha_hora'])) : ''; ?>';
 
-function onHoraSelectChange(val) {
+function onHoraInputChange(val) {
     const pills = document.querySelectorAll('.slot-pill-btn');
     pills.forEach(p => {
-        if (p.dataset.time === val) {
+        if (p.dataset.time === val || p.dataset.time === (val ? val.substring(0, 5) : '')) {
             p.classList.add('active');
         } else {
             p.classList.remove('active');
         }
     });
+}
+
+function setFechaRapida(tipo) {
+    const d = new Date();
+    if (tipo === 'ayer') {
+        d.setDate(d.getDate() - 1);
+    }
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    const fechaStr = `${y}-${m}-${dia}`;
+    const inp = document.getElementById('fechaInput');
+    if (inp) {
+        inp.value = fechaStr;
+        actualizarHorariosDisponibles();
+    }
+}
+
+function setearHoraActual() {
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const horaActual = `${hh}:${mm}`;
+    const horaInp = document.getElementById('horaInput');
+    if (horaInp) {
+        horaInp.value = horaActual;
+        onHoraInputChange(horaActual);
+        mostrarToast(`Hora de atención fijada a ${horaActual}`);
+    }
+}
+
+async function seleccionarClienteAlPaso() {
+    // 1. Buscar si ya existe "Cliente al Paso" en allClients
+    let found = allClients.find(c => c.nombre && (c.nombre.toLowerCase().includes('cliente al paso') || c.nombre.toLowerCase().includes('mostrador')));
+    if (found) {
+        selectClient(found);
+        mostrarToast('Cliente al Paso seleccionado.');
+        return;
+    }
+
+    // 2. Si no existe, crearlo rápidamente
+    try {
+        const formData = new FormData();
+        formData.append('action', 'create');
+        formData.append('ajax', '1');
+        formData.append('nombre', 'Cliente al Paso');
+        formData.append('telefono', '0000000000');
+        formData.append('notas', 'Cliente al paso / mostrador sin registro');
+
+        const resp = await fetch('api/clientes_action.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await resp.json();
+        if (data.success && data.cliente) {
+            allClients.unshift(data.cliente);
+            selectClient(data.cliente);
+            mostrarToast('Cliente al Paso creado y seleccionado.');
+        } else {
+            alert(data.error || 'No se pudo seleccionar Cliente al Paso.');
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function activarModoWalkin() {
+    setFechaRapida('hoy');
+    setearHoraActual();
+    const estSelect = document.getElementById('estadoSelect');
+    if (estSelect) estSelect.value = 'confirmada';
+
+    const isWalkinInp = document.getElementById('isWalkinInput');
+    if (isWalkinInp) isWalkinInp.value = '1';
+
+    // Si aún no hay cliente seleccionado, autoseleccionar Cliente al Paso
+    if (!selectedClient) {
+        seleccionarClienteAlPaso();
+    }
+
+    const banner = document.getElementById('walkinBanner');
+    if (banner) {
+        banner.style.background = '#ECFDF5';
+        banner.style.borderColor = '#10B981';
+    }
+
+    const btnCobrar = document.getElementById('btnGuardarCobrar');
+    if (btnCobrar) {
+        btnCobrar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    mostrarToast('⚡ Modo Atención Inmediata activado: listo para guardar y cobrar.');
 }
 
 function sincronizarSucursalConBarbero() {
@@ -1180,12 +1314,12 @@ async function actualizarHorariosDisponibles() {
     const barberoSelect = document.getElementById('barberoSelect');
     const sucursalSelect = document.getElementById('sucursalSelect');
     const fechaInput = document.getElementById('fechaInput');
-    const horaSelect = document.getElementById('horaSelect');
+    const horaInput = document.getElementById('horaInput');
     const statusBanner = document.getElementById('slotsStatusBanner');
     const pillsGrid = document.getElementById('slotsPillsGrid');
     const countBadge = document.getElementById('slotsCountBadge');
 
-    if (!servicioSelect || !barberoSelect || !fechaInput || !horaSelect || !statusBanner || !pillsGrid) return;
+    if (!servicioSelect || !barberoSelect || !fechaInput || !horaInput || !statusBanner || !pillsGrid) return;
 
     const servicioId = servicioSelect.value;
     const barberoId = barberoSelect.value;
@@ -1193,8 +1327,6 @@ async function actualizarHorariosDisponibles() {
     const sucursalId = sucursalSelect ? sucursalSelect.value : '';
 
     if (!servicioId || !barberoId || !fecha) {
-        horaSelect.innerHTML = '<option value="">Selecciona fecha, servicio y barbero primero</option>';
-        horaSelect.disabled = true;
         if (countBadge) countBadge.style.display = 'none';
         pillsGrid.style.display = 'none';
         pillsGrid.innerHTML = '';
@@ -1212,19 +1344,17 @@ async function actualizarHorariosDisponibles() {
     }
     slotFetchController = new AbortController();
 
-    horaSelect.disabled = true;
-    horaSelect.innerHTML = '<option value="">Consultando disponibilidad en tiempo real...</option>';
     if (countBadge) countBadge.style.display = 'none';
     statusBanner.className = 'slots-status-banner loading';
     statusBanner.style.display = 'flex';
     statusBanner.innerHTML = `
         <svg class="icon-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-        <span>Verificando agenda y turnos libres en tiempo real...</span>
+        <span>Verificando agenda y turnos en tiempo real...</span>
     `;
     pillsGrid.style.display = 'none';
 
     try {
-        let url = `api/get_disponibilidad.php?fecha=${encodeURIComponent(fecha)}&barbero_id=${encodeURIComponent(barberoId)}&servicio_id=${encodeURIComponent(servicioId)}`;
+        let url = `api/get_disponibilidad.php?fecha=${encodeURIComponent(fecha)}&barbero_id=${encodeURIComponent(barberoId)}&servicio_id=${encodeURIComponent(servicioId)}&allow_past=1`;
         if (citaIdActual > 0) {
             url += `&exclude_cita_id=${citaIdActual}`;
         }
@@ -1236,92 +1366,64 @@ async function actualizarHorariosDisponibles() {
         const data = await resp.json();
 
         const slots = Array.isArray(data) ? data : (data.slots || []);
-
-        horaSelect.innerHTML = '';
         pillsGrid.innerHTML = '';
 
         if (!slots || slots.length === 0) {
-            horaSelect.disabled = true;
-            horaSelect.innerHTML = '<option value="">Sin turnos disponibles para esta fecha</option>';
             if (countBadge) countBadge.style.display = 'none';
             pillsGrid.style.display = 'none';
 
-            let sugerenciaHtml = '';
-            if (data.sugerencia_proxima_fecha && data.sugerencia_legible) {
-                sugerenciaHtml = `
-                    <div style="margin-top: 6px;">
-                        <span>Próxima fecha disponible: <strong>${escapeHtml(data.sugerencia_legible)}</strong></span>
-                        <button type="button" onclick="document.getElementById('fechaInput').value='${data.sugerencia_proxima_fecha}'; actualizarHorariosDisponibles();" class="btn-cancel" style="padding: 3px 10px; font-size: 11px; margin-left: 8px; background: #FFFFFF; border-color: #FECACA; color: #991B1B;">
-                            Cambiar a ${escapeHtml(data.sugerencia_legible)}
-                        </button>
-                    </div>
-                `;
-            }
-
-            statusBanner.className = 'slots-status-banner empty';
+            statusBanner.className = 'slots-status-banner info';
             statusBanner.innerHTML = `
                 <div style="width: 100%;">
                     <div style="display: flex; align-items: center; gap: 6px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                        <span>${escapeHtml(data.mensaje || 'No hay horarios disponibles para esta fecha y barbero.')}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>No hay turnos libres regulares. Puedes ingresar la <strong>hora manual</strong> o hacer clic en <strong>⚡ Hora Actual</strong> para registrar la atención y proceder a cobrar.</span>
                     </div>
-                    ${sugerenciaHtml}
                 </div>
             `;
             return;
         }
 
-        horaSelect.disabled = false;
-        horaSelect.innerHTML = '<option value="">-- Seleccionar Hora Disponible --</option>';
-
         let targetHora = initialHoraValue;
         initialHoraValue = ''; // consume once
 
-        let matchedHora = false;
-
         slots.forEach(slot => {
-            const opt = document.createElement('option');
-            opt.value = slot;
-            opt.textContent = slot + ' hrs';
-            if (targetHora && targetHora.substring(0, 5) === slot) {
-                opt.selected = true;
-                matchedHora = true;
+            const isMatch = (horaInput.value === slot || (targetHora && targetHora.substring(0, 5) === slot));
+            if (isMatch && !horaInput.value) {
+                horaInput.value = slot;
             }
-            horaSelect.appendChild(opt);
 
             const pill = document.createElement('button');
             pill.type = 'button';
-            pill.className = 'slot-pill-btn' + (matchedHora && targetHora.substring(0, 5) === slot ? ' active' : '');
+            pill.className = 'slot-pill-btn' + (isMatch ? ' active' : '');
             pill.dataset.time = slot;
             pill.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ${slot}`;
             pill.onclick = () => {
-                horaSelect.value = slot;
-                onHoraSelectChange(slot);
+                horaInput.value = slot;
+                onHoraInputChange(slot);
             };
             pillsGrid.appendChild(pill);
         });
 
         if (countBadge) {
-            countBadge.textContent = `${slots.length} turnos disponibles`;
+            countBadge.textContent = `${slots.length} turnos sugeridos`;
             countBadge.style.display = 'inline-block';
         }
 
         statusBanner.className = 'slots-status-banner success';
         statusBanner.innerHTML = `
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span><strong>${slots.length} turnos disponibles</strong> en tiempo real. Selecciona una hora en el desplegable o haz clic en los turnos:</span>
+            <span><strong>${slots.length} turnos sugeridos</strong>. Puedes hacer clic en un turno o escribir cualquier hora exacta arriba:</span>
         `;
         pillsGrid.style.display = 'flex';
 
     } catch (err) {
         if (err.name === 'AbortError') return;
         console.error('Error cargando disponibilidad:', err);
-        horaSelect.disabled = true;
-        horaSelect.innerHTML = '<option value="">Error al consultar horarios</option>';
         statusBanner.className = 'slots-status-banner warning';
         statusBanner.innerHTML = `
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <span>No se pudo conectar para verificar la disponibilidad. Intenta nuevamente.</span>
+            <span>No se pudo conectar para verificar turnos sugeridos. Puedes ingresar la hora manual arriba.</span>
         `;
     }
 }
@@ -1331,6 +1433,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const servicioSelect = document.getElementById('servicioSelect');
     const barberoSelect = document.getElementById('barberoSelect');
     const fechaInput = document.getElementById('fechaInput');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('walkin') === '1') {
+        activarModoWalkin();
+    }
 
     if (servicioSelect && barberoSelect && fechaInput) {
         if (servicioSelect.value && barberoSelect.value && fechaInput.value) {

@@ -8,6 +8,7 @@ $barberoId = isset($_GET['barbero_id']) ? intval($_GET['barbero_id']) : 0;
 $servicioId = isset($_GET['servicio_id']) ? intval($_GET['servicio_id']) : 0;
 $sucursalId = isset($_GET['sucursal_id']) ? intval($_GET['sucursal_id']) : 1;
 $excludeCitaId = isset($_GET['exclude_cita_id']) ? intval($_GET['exclude_cita_id']) : 0;
+$allowPast = !empty($_GET['allow_past']) || !empty($_GET['is_admin']) || !empty($_GET['admin']);
 
 try {
     $pdo = getConnection();
@@ -92,7 +93,7 @@ try {
 
     // Función auxiliar para obtener slots de un barbero en una fecha dada
     // Forzando siempre horas enteras (:00) y medias horas (:30) consecutivas tras citas de 30 min
-    function getBarberSlotsForDate($pdo, $bId, $fDate, $srvDuration, $excludeId = 0) {
+    function getBarberSlotsForDate($pdo, $bId, $fDate, $srvDuration, $excludeId = 0, $allowPast = false) {
         $ts = strtotime($fDate);
         $diaSem = date('w', $ts);
 
@@ -234,8 +235,8 @@ try {
         $candidatos = array_unique($candidatos);
         sort($candidatos);
 
-        // Margen de anticipación mínima para hoy (+15 min)
-        $nowMargin = ($fDate === date('Y-m-d')) ? time() + (15 * 60) : 0;
+        // Margen de anticipación mínima para hoy (+15 min) salvo solicitud administrativa/walk-in
+        $nowMargin = ($fDate === date('Y-m-d') && !$allowPast) ? time() + (15 * 60) : 0;
         $slots = [];
 
         foreach ($candidatos as $cur) {
@@ -245,8 +246,8 @@ try {
                 continue;
             }
 
-            // Si es hoy, descartar turnos pasados o con menos de 15 minutos de anticipación
-            if ($fDate === date('Y-m-d') && $cur < $nowMargin) {
+            // Si es hoy y no se permite pasado, descartar turnos pasados o con menos de 15 minutos de anticipación
+            if (!$allowPast && $fDate === date('Y-m-d') && $cur < $nowMargin) {
                 continue;
             }
 
@@ -278,7 +279,7 @@ try {
     $slotBarberMap = []; // slot => [barberId1, barberId2...]
 
     foreach ($barberos as $b) {
-        $bSlots = getBarberSlotsForDate($pdo, $b['id'], $fecha, $duracion, $excludeCitaId);
+        $bSlots = getBarberSlotsForDate($pdo, $b['id'], $fecha, $duracion, $excludeCitaId, $allowPast);
         foreach ($bSlots as $s) {
             if (!in_array($s, $mergedSlots)) {
                 $mergedSlots[] = $s;

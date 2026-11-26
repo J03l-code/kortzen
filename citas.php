@@ -160,10 +160,15 @@ include 'includes/header.php';
         </h2>
         <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0;">Historial, cobros, estados y propinas</p>
     </div>
-    <?php if ($currentUser['rol'] === 'admin'): ?>
-        <a href="citas_crear.php" class="btn" style="background: #111; color: #fff; font-weight: 800; font-size: 0.78rem; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
-            <i class="fas fa-plus"></i> + AÑADIR CITA
-        </a>
+    <?php if ($currentUser['rol'] === 'admin' || $currentUser['rol'] === 'admin_local'): ?>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="citas_crear.php?walkin=1" class="btn" style="background: #059669; color: #fff; font-weight: 800; font-size: 0.78rem; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(5,150,105,0.25);">
+                <i class="fas fa-bolt"></i> + CLIENTE AL PASO (WALK-IN)
+            </a>
+            <a href="citas_crear.php" class="btn" style="background: #111; color: #fff; font-weight: 800; font-size: 0.78rem; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
+                <i class="fas fa-plus"></i> + AÑADIR CITA
+            </a>
+        </div>
     <?php endif; ?>
 </div>
 
@@ -714,8 +719,8 @@ function toggleFiltroHoy() {
                                             <i class="fab fa-whatsapp"></i> WHATSAPP CLIENTE
                                         </a>
                                     <?php endif; ?>
-                                    <?php if ($cita['estado'] !== 'completada' && $cita['estado'] !== 'cancelada'): ?>
-                                        <button onclick="abrirModalTerminar(<?php echo htmlspecialchars(json_encode([
+                                    <?php if ($cita['estado'] !== 'completada' && $cita['estado'] !== 'cancelada'): 
+                                        $cJsonData = json_encode([
                                             'id' => $cita['id'],
                                             'cliente_nombre' => $cita['cliente_nombre'],
                                             'cliente_telefono' => $cita['cliente_telefono'] ?? '',
@@ -723,10 +728,15 @@ function toggleFiltroHoy() {
                                             'servicio_precio' => floatval($cita['servicio_precio'] ?? 0),
                                             'precio_final' => floatval($cita['precio_final'] ?? 0),
                                             'barbero_nombre' => $cita['barbero_nombre'],
+                                            'barbero_id' => $cita['barbero_id'] ?? 0,
                                             'barbero_comision' => floatval($cita['barbero_comision'] ?? 50.0),
                                             'barbero_comision_finde' => floatval($cita['barbero_comision_finde'] ?? 50.0),
                                             'fecha_hora' => $cita['fecha_hora']
-                                        ]), ENT_QUOTES, 'UTF-8'); ?>)"
+                                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+                                    ?>
+                                        <button data-cita-id="<?php echo $cita['id']; ?>"
+                                            data-cita-data="<?php echo htmlspecialchars($cJsonData, ENT_QUOTES, 'UTF-8'); ?>"
+                                            onclick="abrirModalTerminar(<?php echo htmlspecialchars($cJsonData, ENT_QUOTES, 'UTF-8'); ?>)"
                                             class="btn-action btn-complete" style="background: #10B981; color: #FFFFFF; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
                                             <i class="fas fa-check-double"></i> FINALIZAR Y PROPINA
                                         </button>
@@ -1043,25 +1053,41 @@ function toggleFiltroHoy() {
             .replace(/'/g, '&#039;');
     }
 
-    function abrirModalTerminar(citaDataOrId) {
+    async function abrirModalTerminar(citaDataOrId) {
         document.getElementById('formTerminar').reset();
         let cita = null;
         if (typeof citaDataOrId === 'object' && citaDataOrId !== null) {
             cita = citaDataOrId;
         } else {
             const id = parseInt(citaDataOrId);
-            cita = {
-                id: id,
-                cliente_nombre: 'Cliente',
-                cliente_telefono: '',
-                servicio_nombre: 'Servicio',
-                servicio_precio: 0,
-                precio_final: 0,
-                barbero_nombre: 'Barbero',
-                barbero_comision: 50,
-                barbero_comision_finde: 50,
-                fecha_hora: ''
-            };
+            // Buscar datos completos en tarjetas existentes
+            const btnCobro = document.querySelector(`button[data-cita-id="${id}"]`);
+            if (btnCobro && btnCobro.dataset.citaData) {
+                try { cita = JSON.parse(btnCobro.dataset.citaData); } catch (e) {}
+            }
+            if (!cita) {
+                try {
+                    const resp = await fetch('api/citas_action.php?action=get_cita&id=' + id);
+                    const resJson = await resp.json();
+                    if (resJson.success && resJson.cita) {
+                        cita = resJson.cita;
+                    }
+                } catch (eApi) {}
+            }
+            if (!cita) {
+                cita = {
+                    id: id,
+                    cliente_nombre: 'Cliente',
+                    cliente_telefono: '',
+                    servicio_nombre: 'Servicio',
+                    servicio_precio: 0,
+                    precio_final: 0,
+                    barbero_nombre: 'Barbero',
+                    barbero_comision: 50,
+                    barbero_comision_finde: 50,
+                    fecha_hora: ''
+                };
+            }
         }
 
         citaActualTerminar = cita;
@@ -1728,6 +1754,19 @@ function toggleFiltroHoy() {
             }, 2500);
         }
     }
+
+    // Auto-abrir modal de cobro si se solicitó tras crear cita inmediata / walk-in
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const abrirCobroId = urlParams.get('abrir_cobro_id');
+        if (abrirCobroId) {
+            setTimeout(() => {
+                abrirModalTerminar(parseInt(abrirCobroId));
+                const cleanUrl = window.location.pathname + window.location.search.replace(/[\?&]abrir_cobro_id=[^&]+/, '').replace(/^&/, '?');
+                window.history.replaceState({}, document.title, cleanUrl || window.location.pathname);
+            }, 200);
+        }
+    });
 </script>
 
 <?php include 'includes/footer.php'; ?>
