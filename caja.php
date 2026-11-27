@@ -1,10 +1,16 @@
 <?php
 require_once 'config.php';
+require_once 'includes/insumos_barberos.php';
 requireLogin();
 $currentUser = getCurrentUser();
 if (!$currentUser || empty($currentUser['activo']) || !esAdministradorCaja($currentUser)) { http_response_code(403); exit('Acceso reservado a administración.'); }
 $errorCaja = '';
-try { $reporteCaja = resumenCaja(getConnection(), $currentUser, $_GET); }
+$comprasBarberosCaja = ['resumen_barberos' => [], 'total_pendiente' => 0, 'total_descontado' => 0];
+try {
+    $pdoCaja = getConnection();
+    $reporteCaja = resumenCaja($pdoCaja, $currentUser, $_GET);
+    $comprasBarberosCaja = obtenerComprasBarberos($pdoCaja, $currentUser, $_GET);
+}
 catch (Throwable $e) { $errorCaja = $e instanceof InvalidArgumentException ? $e->getMessage() : 'No se pudo cargar el cierre de caja.'; error_log($e->getMessage()); }
 $sucursalesCaja = getUsuarioSucursales($currentUser['id']);
 $pageTitle = 'Cierre de Caja y Contabilidad';
@@ -127,6 +133,36 @@ include 'includes/header.php';
                 </tbody>
             </table>
         </div>
+        <?php if (!empty($comprasBarberosCaja['resumen_barberos'])): ?>
+            <div class="kortzen-seccion-header" style="margin-top: 22px;">
+                <h2 style="margin: 0;">Compras de Barberos (Descuento en Rol)</h2>
+                <a href="inventario.php" style="font-size: 0.78rem; font-weight: 700; color: #111;">Gestionar en Inventario →</a>
+            </div>
+            <div class="kortzen-tabla-scroll">
+                <table class="kortzen-tabla">
+                    <thead>
+                        <tr>
+                            <th>Barbero / Personal</th>
+                            <th>Compras</th>
+                            <th>Pendiente de Descontar</th>
+                            <th>Ya Descontado en Rol</th>
+                            <th>Total Período</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($comprasBarberosCaja['resumen_barberos'] as $rb): ?>
+                            <tr>
+                                <td style="font-weight: 700;"><?php echo htmlspecialchars($rb['barbero']); ?></td>
+                                <td><?php echo (int) $rb['compras']; ?></td>
+                                <td style="font-weight: 800; color: #B45309;">$<?php echo number_format((float) $rb['pendiente'], 2); ?></td>
+                                <td style="color: #047857;">$<?php echo number_format((float) $rb['descontado'], 2); ?></td>
+                                <td style="font-weight: 800;">$<?php echo number_format((float) $rb['total'], 2); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
         <div class="kortzen-nota">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
             <div>

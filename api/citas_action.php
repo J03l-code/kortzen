@@ -1,6 +1,7 @@
 <?php
 require_once '../config.php';
 require_once __DIR__ . '/../includes/webpush_helper.php';
+require_once __DIR__ . '/../includes/insumos_barberos.php';
 
 $action = $_POST['action'] ?? '';
 
@@ -439,6 +440,29 @@ try {
                         'precio_unitario' => $preciosMateriales[$indice] ?? null];
                 }
             }
+
+            // Insumos internos (gasto operativo sin cobro al cliente)
+            $insumosIds = $_POST['insumos'] ?? [];
+            $cantidadesInsumos = $_POST['cantidades_insumos'] ?? [];
+            if (!is_array($insumosIds) || !is_array($cantidadesInsumos)) {
+                throw new Exception('La lista de insumos internos no es válida.');
+            }
+            $insumosInternosLista = [];
+            foreach ($insumosIds as $idxIns => $insumoProdId) {
+                if ($insumoProdId !== '') {
+                    $insumosInternosLista[] = [
+                        'producto_id' => $insumoProdId,
+                        'cantidad' => $cantidadesInsumos[$idxIns] ?? 1
+                    ];
+                }
+            }
+
+            // Compra opcional para el barbero a precio especial (descontable en rol)
+            $compraBarberoProdId = $_POST['compra_barbero_producto_id'] ?? '';
+            $compraBarberoCant = $_POST['compra_barbero_cantidad'] ?? 1;
+            $compraBarberoPrecio = $_POST['compra_barbero_precio'] ?? null;
+
+            asegurarTablasInsumosYComprasBarberos($pdo);
             $pdo->beginTransaction();
             $stmtCitaVenta = $pdo->prepare('SELECT sucursal_id, estado, reasignacion_pendiente FROM citas WHERE id = ? FOR UPDATE');
             $stmtCitaVenta->execute([$id]);
@@ -591,9 +615,46 @@ try {
                 $stmtCobro = $pdo->prepare('UPDATE ventas_productos SET cobro_id = ? WHERE id IN (' . implode(',', array_fill(0, count($idsVenta), '?')) . ')');
                 $stmtCobro->execute(array_merge([$cobroId], $idsVenta));
             }
+
+            // Registrar insumos internos (sin cargo al cliente)
+            $insumosResult = ['items' => [], 'alertas_stock' => []];
+            if (!empty($insumosInternosLista)) {
+                $insumosResult = registrarInsumosInternos(
+                    $pdo,
+                    $insumosInternosLista,
+                    (int) $citaVenta['sucursal_id'],
+                    !empty($citaBase['barbero_id']) ? (int) $citaBase['barbero_id'] : null,
+                    (int) $_SESSION['user_id'],
+                    $id
+                );
+            }
+
+            // Registrar compra opcional del barbero para descontar de su rol
+            $compraBarberoResult = null;
+            if ($compraBarberoProdId !== '' && intval($compraBarberoProdId) > 0) {
+                $targetBarberoId = !empty($_POST['compra_barbero_id']) ? $_POST['compra_barbero_id'] : ($citaBase['barbero_id'] ?? null);
+                $compraBarberoResult = registrarCompraBarbero(
+                    $pdo,
+                    $compraBarberoProdId,
+                    $targetBarberoId,
+                    $compraBarberoCant,
+                    $compraBarberoPrecio,
+                    (int) $_SESSION['user_id'],
+                    $id,
+                    (int) $citaVenta['sucursal_id'],
+                    'Retiro en cita #' . $id
+                );
+            }
+
             $pdo->commit();
             if ($ventaProductos !== null) {
                 notificarStockVentas($pdo, $ventaProductos, (int) $citaBase['barbero_id']);
+            }
+            if (!empty($insumosResult['alertas_stock'])) {
+                notificarStockVentas($pdo, $insumosResult, (int) $citaBase['barbero_id']);
+            }
+            if ($compraBarberoResult !== null && !empty($compraBarberoResult['alertas_stock'])) {
+                notificarStockVentas($pdo, $compraBarberoResult, (int) $compraBarberoResult['barbero_id']);
             }
 
             $cNombre = $cD ? $cD['cliente_nombre'] : "Cita #$id";
@@ -651,6 +712,8 @@ try {
                 'total_servicios' => $nuevoPrecioFinal,
                 'productos' => $itemsProductos,
                 'total_productos' => $totalProductos,
+                'insumos_internos' => $insumosResult['items'] ?? [],
+                'compra_barbero' => $compraBarberoResult,
                 'propina' => $propina,
                 'total_a_cobrar' => $totalCobrarFinal,
                 'total_pagado' => $totalCobrarFinal,

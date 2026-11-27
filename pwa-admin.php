@@ -2512,14 +2512,18 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
         <div class="kortzen-filtros" role="tablist" aria-label="Inventario">
             <button type="button" class="pwa-btn-secondary" data-inventario-tab="stock" aria-selected="true">Productos y stock</button>
             <button type="button" class="pwa-btn-secondary" data-inventario-tab="historial" aria-selected="false">Historial de Ventas de Productos</button>
+            <button type="button" class="pwa-btn-secondary" data-inventario-tab="compras_barberos" aria-selected="false">Compras de Barberos</button>
         </div>
         <div data-inventario-panel="stock">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 6px; flex-wrap: wrap;">
             <div>
                 <h2 style="font-size: 1.3rem; font-weight: 900; color: var(--text-dark);">Inventario</h2>
                 <p style="font-size: 0.8rem; color: var(--text-gray);">Stock de productos y suministros</p>
             </div>
-            <button type="button" onclick="abrirModalInventarioPwa()" class="pwa-btn-secondary" style="background: #111; color: #fff; font-weight: 800;">+ PRODUCTO</button>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" data-abrir-venta-barbero class="pwa-btn-secondary" style="background: #1E293B; color: #fff; font-weight: 800; border: none; font-size: 0.72rem;">Venta Barbero</button>
+                <button type="button" onclick="abrirModalInventarioPwa()" class="pwa-btn-secondary" style="background: #111; color: #fff; font-weight: 800;">+ PRODUCTO</button>
+            </div>
         </div>
 
         <!-- Buscador Predictivo de Inventario PWA -->
@@ -2561,6 +2565,7 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
         <?php include 'includes/ventas_resumen.php'; ?>
         </div>
         <div data-inventario-panel="historial" hidden><?php include 'includes/historial_ventas.php'; ?></div>
+        <div data-inventario-panel="compras_barberos" hidden><?php include 'includes/compras_barberos.php'; ?></div>
         </div>
     </section>
 
@@ -3676,20 +3681,21 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                 </div>
             </div>
 
-            <div>
-                <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase;">Material consumido / Producto vendido (opcional)</label>
+            <!-- Casilla 1: Producto Vendido al Cliente -->
+            <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 10px; padding: 10px;">
+                <label style="font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase;">1. Producto Vendido al Cliente (Suma cobro)</label>
                 <div style="display: flex; gap: 6px; margin-top: 4px;">
-                    <select name="materiales[]" id="pwaTerminarMaterialSelect" onchange="pwaActualizarMaterialPrecio(this)" style="flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem;">
-                        <option value="" data-precio="0.00">Ninguno / Sin insumos</option>
+                    <select name="materiales[]" id="pwaTerminarMaterialSelect" onchange="pwaActualizarMaterialPrecio(this)" style="flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem; background: #FFF;">
+                        <option value="" data-precio="0.00">Ninguno / Sin venta</option>
                         <?php foreach ($inventarioList as $item): ?>
                             <option value="<?php echo $item['id']; ?>" data-precio="<?php echo number_format($item['precio'], 2, '.', ''); ?>">
                                 <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>) - $<?php echo number_format($item['precio'], 2); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <input type="number" name="cantidades[]" id="pwaTerminarMaterialCant" min="1" value="1" placeholder="Cant." oninput="recalcularTotalesTerminarPwa()" style="width: 65px; padding: 8px 6px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem; text-align: center;">
+                    <input type="number" name="cantidades[]" id="pwaTerminarMaterialCant" min="1" value="1" placeholder="Cant." oninput="recalcularTotalesTerminarPwa()" style="width: 65px; padding: 8px 6px; border-radius: 8px; border: 1.5px solid var(--border-pwa); font-weight: 700; font-size: 0.8rem; text-align: center; background: #FFF;">
                 </div>
-                <div id="pwaPrecioCobradoMaterialWrapper" style="display: none; margin-top: 6px; background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 8px; padding: 8px 10px;">
+                <div id="pwaPrecioCobradoMaterialWrapper" style="display: none; margin-top: 6px; background: #FFFFFF; border: 1.5px solid #BBF7D0; border-radius: 8px; padding: 8px 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase;">Precio Cobrado ($)</span>
                         <span style="font-size: 0.68rem; color: #15803D; font-weight: 600;">(Editable si aplica descuento)</span>
@@ -3697,6 +3703,43 @@ $nombreAdmin = $currentUser['nombre'] ?? 'Admin';
                     <div style="position: relative;">
                         <span style="position: absolute; left: 10px; top: 6px; font-weight: 900; color: #166534;">$</span>
                         <input type="number" step="0.01" min="0" name="precios_materiales[]" id="pwaTerminarMaterialPrecio" value="0.00" oninput="recalcularTotalesTerminarPwa()" style="width: 100%; padding: 6px 10px 6px 24px; border-radius: 6px; border: 1.5px solid #86EFAC; font-weight: 800; font-size: 0.95rem; color: #166534;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Casilla 2: Insumo / Gasto Interno del Barbero -->
+            <div style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 10px;">
+                <label style="font-size: 0.72rem; font-weight: 800; color: #334155; text-transform: uppercase;">2. Insumo / Gasto Interno (Sin cobro al cliente)</label>
+                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                    <select name="insumos[]" style="flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; font-size: 0.8rem; background: #FFF;">
+                        <option value="">Ningún insumo (cuchilla, toalla...)</option>
+                        <?php foreach ($inventarioList as $item): ?>
+                            <option value="<?php echo $item['id']; ?>">
+                                <?php echo htmlspecialchars($item['producto']); ?> (Stock: <?php echo $item['cantidad']; ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="number" name="cantidades_insumos[]" min="1" value="1" placeholder="Cant." style="width: 65px; padding: 8px 6px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; font-size: 0.8rem; text-align: center; background: #FFF;">
+                </div>
+            </div>
+
+            <!-- Casilla 3: Descontar producto al barbero (a su rol) -->
+            <div>
+                <button type="button" onclick="const b=document.getElementById('pwaCompraBarberoCitaBox'); b.style.display=b.style.display==='none'?'block':'none';" style="width: 100%; background: #FFFBEB; color: #92400E; border: 1.5px dashed #F59E0B; border-radius: 8px; padding: 8px 10px; font-weight: 800; font-size: 0.75rem; cursor: pointer; text-align: left;">
+                    ✂️ Descontar producto para el barbero (a su rol)
+                </button>
+                <div id="pwaCompraBarberoCitaBox" style="display: none; background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 8px; padding: 8px; margin-top: 6px;">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <select name="compra_barbero_producto_id" onchange="const opt=this.options[this.selectedIndex]; const p=parseFloat(opt?.dataset?.precio||'0'); document.getElementById('pwaCbCitaPrecio').value=p>0?p.toFixed(2):'';" style="flex: 2; min-width: 140px; padding: 8px; border-radius: 6px; border: 1px solid #FCD34D; font-size: 0.78rem; background: #FFF;">
+                            <option value="" data-precio="0">Ninguno...</option>
+                            <?php foreach ($inventarioList as $item): ?>
+                                <option value="<?php echo $item['id']; ?>" data-precio="<?php echo number_format($item['precio'], 2, '.', ''); ?>">
+                                    <?php echo htmlspecialchars($item['producto']); ?> (PVP $<?php echo number_format($item['precio'], 2); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="number" name="compra_barbero_cantidad" min="1" value="1" style="width: 55px; padding: 8px 4px; border-radius: 6px; border: 1px solid #FCD34D; font-size: 0.78rem; text-align: center; background: #FFF;">
+                        <input type="number" step="0.01" min="0" name="compra_barbero_precio" id="pwaCbCitaPrecio" placeholder="Precio $" style="width: 80px; padding: 8px; border-radius: 6px; border: 1px solid #F59E0B; font-weight: 800; font-size: 0.78rem; color: #92400E; background: #FFF;">
                     </div>
                 </div>
             </div>
@@ -8402,7 +8445,9 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+<?php include 'includes/modal_compra_barbero.php'; ?>
 <script src="js/ventas-vendedor.js" defer></script>
 <script src="js/historial-ventas.js?v=20261119-2" defer></script>
+<script src="js/compras-barberos.js?v=20261126-1" defer></script>
 </body>
 </html>

@@ -56,7 +56,7 @@ try {
         copy($origen . '/api/' . $nombre, $destino);
         $archivos[] = $destino;
     }
-    foreach (['webpush_helper.php', 'webpush_encrypt.php', 'exportar_tablas.php', 'finanzas.php'] as $nombre) {
+    foreach (['webpush_helper.php', 'webpush_encrypt.php', 'exportar_tablas.php', 'finanzas.php', 'ventas_productos.php', 'insumos_barberos.php'] as $nombre) {
         $destino = $temporal . '/includes/' . $nombre;
         copy($origen . '/includes/' . $nombre, $destino);
         $archivos[] = $destino;

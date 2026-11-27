@@ -37,13 +37,17 @@ include 'includes/header.php';
 <div class="kortzen-filtros" role="tablist" aria-label="Inventario">
     <button type="button" class="btn-secondary" data-inventario-tab="stock" aria-selected="true">Productos y stock</button>
     <button type="button" class="btn-secondary" data-inventario-tab="historial" aria-selected="false">Historial de Ventas de Productos</button>
+    <button type="button" class="btn-secondary" data-inventario-tab="compras_barberos" aria-selected="false">Compras de Barberos</button>
 </div>
 <div data-inventario-panel="stock">
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
     <h1 class="page-title">Inventario de Materiales</h1>
-    <?php if (!$isBarber): ?>
-        <button onclick="window.location.href='inventario_crear.php'" class="btn btn-primary">+ AÑADIR PRODUCTO</button>
-    <?php endif; ?>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" data-abrir-venta-barbero class="btn btn-secondary" style="background: #1E293B; color: #FFF; border: none; font-weight: 800;">Venta a Barbero / Personal</button>
+        <?php if (!$isBarber): ?>
+            <button onclick="window.location.href='inventario_crear.php'" class="btn btn-primary">+ AÑADIR PRODUCTO</button>
+        <?php endif; ?>
+    </div>
 </div>
 
 <!-- Buscador Predictivo de Inventario -->
@@ -536,6 +540,9 @@ include 'includes/header.php';
 
 </div>
 <div data-inventario-panel="historial" hidden><?php include 'includes/historial_ventas.php'; ?></div>
+<div data-inventario-panel="compras_barberos" hidden><?php include 'includes/compras_barberos.php'; ?></div>
 </div>
+<?php include 'includes/modal_compra_barbero.php'; ?>
 <script src="js/historial-ventas.js?v=20261119-2" defer></script>
+<script src="js/compras-barberos.js?v=20261126-1" defer></script>
 <?php include 'includes/footer.php'; ?>

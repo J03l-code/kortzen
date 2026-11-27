@@ -880,32 +880,82 @@ function toggleFiltroHoy() {
                 <span style="font-size: 0.72rem; color: #B45309; margin-top: 4px; display: block;">100% de la propina se transfiere al barbero en un rubro independiente.</span>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: nowrap;">
-                <p style="margin: 0; color: #4B5563; font-weight: 700; font-size: 0.76rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
-                    <i class="fas fa-boxes" style="color: #6B7280;"></i>
-                    <span>Productos consumidos (opcional):</span>
-                </p>
-                <span style="font-size: 0.68rem; color: #10B981; font-weight: 700; white-space: nowrap; flex-shrink: 0;">Precio editable con descuento</span>
+            <!-- CASILLA 1: Producto Vendido al Cliente -->
+            <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: nowrap;">
+                    <p style="margin: 0; color: #166534; font-weight: 800; font-size: 0.76rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
+                        <i class="fas fa-shopping-bag" style="color: #16A34A;"></i>
+                        <span>1. Producto Vendido al Cliente (opcional):</span>
+                    </p>
+                    <span style="font-size: 0.68rem; color: #15803D; font-weight: 700; white-space: nowrap; flex-shrink: 0;">Suma ingresos y comisión</span>
+                </div>
+                <div id="materialesList" style="width: 100%;">
+                    <div class="material-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; width: 100%; box-sizing: border-box;">
+                        <select name="materiales[]" class="filter-select" style="flex: 1 1 0%; min-width: 0; width: 0; text-overflow: ellipsis; padding: 9px 8px; font-size: 0.82rem;" onchange="actualizarPrecioMaterialFila(this)">
+                            <option value="">Seleccionar producto para vender al cliente...</option>
+                            <?php foreach ($inventario as $item): ?>
+                                <option value="<?php echo $item['id']; ?>" data-precio="<?php echo $item['precio']; ?>">
+                                    <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' ($' . number_format($item['precio'], 2) . ')'; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 58px; min-width: 48px; flex: 0 0 58px; text-align: center; padding: 9px 4px; font-size: 0.82rem;" min="1" step="1" oninput="recalcularTotalesTerminar()">
+                        <div style="position: relative; width: 92px; min-width: 82px; flex: 0 0 92px;">
+                            <span style="position: absolute; left: 8px; top: 9px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
+                            <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; box-sizing: border-box; padding: 9px 6px 9px 18px; font-weight: 800; font-size: 0.82rem; color: #10B981; text-align: right;" title="Precio unitario cobrado (editable si aplicas descuento)" oninput="recalcularTotalesTerminar()">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" onclick="agregarFilaMaterial()" class="btn-secondary" style="margin-top: 4px; width: 100%; font-size: 0.78rem; padding: 6px; background: #FFF;">+ Agregar otro producto vendido</button>
             </div>
-            <div id="materialesList" style="width: 100%;">
-                <div class="material-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; width: 100%; box-sizing: border-box;">
-                    <select name="materiales[]" class="filter-select" style="flex: 1 1 0%; min-width: 0; width: 0; text-overflow: ellipsis; padding: 9px 8px; font-size: 0.82rem;" onchange="actualizarPrecioMaterialFila(this)">
-                        <option value="">Seleccionar producto / material...</option>
-                        <?php foreach ($inventario as $item): ?>
-                            <option value="<?php echo $item['id']; ?>" data-precio="<?php echo $item['precio']; ?>">
-                                <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' ($' . number_format($item['precio'], 2) . ')'; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <input type="number" name="cantidades[]" placeholder="Cant." value="1" class="filter-select" style="width: 58px; min-width: 48px; flex: 0 0 58px; text-align: center; padding: 9px 4px; font-size: 0.82rem;" min="1" step="1" oninput="recalcularTotalesTerminar()">
-                    <div style="position: relative; width: 92px; min-width: 82px; flex: 0 0 92px;">
-                        <span style="position: absolute; left: 8px; top: 9px; font-size: 0.8rem; font-weight: 800; color: #10B981;">$</span>
-                        <input type="number" step="0.01" min="0" name="precios_materiales[]" placeholder="Cobrado" class="filter-select" style="width: 100%; box-sizing: border-box; padding: 9px 6px 9px 18px; font-weight: 800; font-size: 0.82rem; color: #10B981; text-align: right;" title="Precio unitario cobrado (editable si aplicas descuento)" oninput="recalcularTotalesTerminar()">
+
+            <!-- CASILLA 2: Insumo / Gasto Interno del Barbero -->
+            <div style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: nowrap;">
+                    <p style="margin: 0; color: #334155; font-weight: 800; font-size: 0.76rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
+                        <i class="fas fa-tools" style="color: #64748B;"></i>
+                        <span>2. Insumo / Gasto Interno (opcional):</span>
+                    </p>
+                    <span style="font-size: 0.68rem; color: #64748B; font-weight: 700; white-space: nowrap; flex-shrink: 0;">Sin cobro al cliente</span>
+                </div>
+                <div id="insumosInternosList" style="width: 100%;">
+                    <div class="material-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; width: 100%; box-sizing: border-box;">
+                        <select name="insumos[]" class="filter-select" style="flex: 1 1 0%; min-width: 0; width: 0; text-overflow: ellipsis; padding: 9px 8px; font-size: 0.82rem;">
+                            <option value="">Seleccionar insumo interno (cuchilla, toalla...)...</option>
+                            <?php foreach ($inventario as $item): ?>
+                                <option value="<?php echo $item['id']; ?>">
+                                    <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' (Stock: ' . intval($item['cantidad']) . ')'; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="number" name="cantidades_insumos[]" placeholder="Cant." value="1" class="filter-select" style="width: 68px; min-width: 58px; flex: 0 0 68px; text-align: center; padding: 9px 4px; font-size: 0.82rem;" min="1" step="1">
+                    </div>
+                </div>
+                <button type="button" onclick="agregarFilaInsumo()" class="btn-secondary" style="margin-top: 4px; width: 100%; font-size: 0.78rem; padding: 6px; background: #FFF;">+ Agregar otro insumo interno</button>
+            </div>
+
+            <!-- CASILLA 3: Descontar producto al barbero (para su rol) -->
+            <div style="margin-bottom: 10px;">
+                <button type="button" onclick="toggleCompraBarberoEnCita()" style="width: 100%; background: #FFFBEB; color: #92400E; border: 1.5px dashed #F59E0B; border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 0.78rem; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+                    <span>✂️ Descontar producto para el barbero (a su rol)</span>
+                    <span id="compraBarberoCitaChevron">+ Abrir</span>
+                </button>
+                <div id="compraBarberoCitaBox" style="display: none; background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 10px; padding: 10px; margin-top: 6px;">
+                    <div style="font-size: 0.72rem; color: #92400E; font-weight: 700; margin-bottom: 6px;">Rebaja el stock y se carga al rol del barbero con su precio especial (no se cobra al cliente).</div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <select name="compra_barbero_producto_id" id="cbCitaProducto" onchange="actualizarPrecioCbCita(this)" class="filter-select" style="flex: 2; min-width: 150px; padding: 8px; font-size: 0.8rem;">
+                            <option value="" data-precio="0">Ningún producto para barbero...</option>
+                            <?php foreach ($inventario as $item): ?>
+                                <option value="<?php echo $item['id']; ?>" data-precio="<?php echo $item['precio']; ?>">
+                                    <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' (PVP $' . number_format($item['precio'], 2) . ')'; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="number" name="compra_barbero_cantidad" value="1" min="1" step="1" class="filter-select" style="width: 60px; text-align: center; padding: 8px 4px; font-size: 0.8rem;" title="Cantidad">
+                        <input type="number" step="0.01" min="0" name="compra_barbero_precio" id="cbCitaPrecio" placeholder="Precio $" class="filter-select" style="width: 90px; padding: 8px; font-weight: 800; color: #92400E; font-size: 0.8rem;" title="Precio especial de barbero">
                     </div>
                 </div>
             </div>
-
-            <button type="button" onclick="agregarFilaMaterial()" class="btn-secondary" style="margin-top: 6px; width: 100%; font-size: 0.8rem; padding: 7px;">+ Agregar otro producto / material</button>
 
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button type="button" onclick="cerrarModal()" class="btn-secondary" style="flex: 1; padding: 11px;">Cancelar</button>
@@ -1502,6 +1552,41 @@ function toggleFiltroHoy() {
             <button type="button" onclick="this.parentElement.remove(); recalcularTotalesTerminar(); actualizarVendedorCobro(document.getElementById('formTerminar'));" style="background: #FEE2E2; color: #DC2626; border: none; width: 26px; height: 26px; min-width: 26px; flex: 0 0 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
         `;
         document.getElementById('materialesList').appendChild(div);
+    }
+
+    function agregarFilaInsumo() {
+        const div = document.createElement('div');
+        div.className = 'material-row';
+        div.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px; width: 100%; box-sizing: border-box;';
+        div.innerHTML = `
+            <select name="insumos[]" class="filter-select" style="flex: 1 1 0%; min-width: 0; width: 0; text-overflow: ellipsis; padding: 9px 8px; font-size: 0.82rem;">
+                <option value="">Seleccionar insumo interno...</option>
+                <?php foreach ($inventario as $item): ?>
+                    <option value="<?php echo $item['id']; ?>">
+                        <?php echo htmlspecialchars($item['producto']) . ' - ' . htmlspecialchars($item['sucursal']) . ' (Stock: ' . intval($item['cantidad']) . ')'; ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <input type="number" name="cantidades_insumos[]" placeholder="Cant." value="1" class="filter-select" style="width: 68px; min-width: 58px; flex: 0 0 68px; text-align: center; padding: 9px 4px; font-size: 0.82rem;" min="1" step="1">
+            <button type="button" onclick="this.parentElement.remove()" style="background: #FEE2E2; color: #DC2626; border: none; width: 26px; height: 26px; min-width: 26px; flex: 0 0 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>
+        `;
+        document.getElementById('insumosInternosList').appendChild(div);
+    }
+
+    function toggleCompraBarberoEnCita() {
+        const box = document.getElementById('compraBarberoCitaBox');
+        const chev = document.getElementById('compraBarberoCitaChevron');
+        if (!box) return;
+        const abrir = box.style.display === 'none';
+        box.style.display = abrir ? 'block' : 'none';
+        if (chev) chev.textContent = abrir ? '− Cerrar' : '+ Abrir';
+    }
+
+    function actualizarPrecioCbCita(sel) {
+        const opt = sel.options[sel.selectedIndex];
+        const pvp = parseFloat(opt?.dataset?.precio || '0') || 0;
+        const inp = document.getElementById('cbCitaPrecio');
+        if (inp) inp.value = pvp > 0 ? pvp.toFixed(2) : '';
     }
 
     function prepararGuardarEstadoCitas(id) {
