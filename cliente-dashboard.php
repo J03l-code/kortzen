@@ -117,7 +117,7 @@ if ($cliente_id) {
     <link rel="shortcut icon" href="/assets/icons/favicon.png?v=10">
     <script src="/js/pwa.js?v=26200" defer></script>
     <script src="/js/calendar-helper.js?v=1"></script>
-    <script src="/js/branch-selector.js?v=26000"></script>
+    <script src="/js/branch-selector.js?v=26300"></script>
 </head>
 
 <body class="pwa-app-mode">
@@ -299,6 +299,29 @@ if ($cliente_id) {
             </a>
         </div>
 
+        <!-- Banner Card Ubicación de la Barbería -->
+        <div class="pwa-banner-card">
+            <div class="pwa-banner-card__left">
+                <div class="pwa-banner-card__icon-box">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                </div>
+                <div>
+                    <div class="pwa-banner-card__title">Ubicación de la barbería</div>
+                    <div class="pwa-banner-card__desc" data-branch-dynamic="name">KORTZEN Llano Chico</div>
+                </div>
+            </div>
+            <a href="https://www.google.com/maps?cid=3888137608205569271&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF"
+               target="_blank"
+               rel="noopener noreferrer"
+               data-branch-dynamic="map-link"
+               class="pwa-banner-card__link">
+                Cómo llegar <span>→</span>
+            </a>
+        </div>
+
         <?php if ($proxima_cita): 
             $ts_cita = strtotime($proxima_cita['fecha_hora']);
         ?>
@@ -314,17 +337,17 @@ if ($cliente_id) {
                 <div class="pwa-upcoming-info">
                     <div class="pwa-upcoming-service"><?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte de Autor'); ?></div>
                     <div class="pwa-upcoming-detail">con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Master Barber'); ?></div>
-                    <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', $ts_cita); ?> • KORTZEN Llano Chico</div>
+                    <div class="pwa-upcoming-detail">🕒 <?php echo date('H:i', $ts_cita); ?> • <?php echo htmlspecialchars($proxima_cita['sucursal_nombre'] ?? 'KORTZEN'); ?></div>
                 </div>
             </div>
             
             <!-- Calendar buttons -->
             <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
-                <button type="button" class="pwa-btn-secondary" style="flex: 1; text-align: center; font-size: 0.75rem; display:inline-flex; align-items:center; justify-content:center; gap:5px;" onclick="KortzenCalendar.addToGoogleCalendar('Cita en KORTZEN: <?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte'); ?>', 'Cita agendada con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Barbero'); ?>', 'KORTZEN Llano Chico, Quito', '<?php echo $proxima_cita['fecha_hora']; ?>')">
+                <button type="button" class="pwa-btn-secondary" style="flex: 1; text-align: center; font-size: 0.75rem; display:inline-flex; align-items:center; justify-content:center; gap:5px;" onclick="KortzenCalendar.addToGoogleCalendar('Cita en KORTZEN: <?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte'); ?>', 'Cita agendada con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Barbero'); ?>', '<?php echo htmlspecialchars(($proxima_cita['sucursal_nombre'] ?? 'KORTZEN') . ', Quito', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo $proxima_cita['fecha_hora']; ?>')">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                     <span>GOOGLE CALENDAR</span>
                 </button>
-                <button type="button" class="pwa-btn-secondary" style="flex: 1; text-align: center; font-size: 0.75rem; display:inline-flex; align-items:center; justify-content:center; gap:5px;" onclick="KortzenCalendar.downloadIcs('Cita en KORTZEN: <?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte'); ?>', 'Cita agendada con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Barbero'); ?>', 'KORTZEN Llano Chico, Quito', '<?php echo $proxima_cita['fecha_hora']; ?>')">
+                <button type="button" class="pwa-btn-secondary" style="flex: 1; text-align: center; font-size: 0.75rem; display:inline-flex; align-items:center; justify-content:center; gap:5px;" onclick="KortzenCalendar.downloadIcs('Cita en KORTZEN: <?php echo htmlspecialchars($proxima_cita['servicio_nombre'] ?? 'Corte'); ?>', 'Cita agendada con <?php echo htmlspecialchars($proxima_cita['barbero_nombre'] ?? 'Barbero'); ?>', '<?php echo htmlspecialchars(($proxima_cita['sucursal_nombre'] ?? 'KORTZEN') . ', Quito', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo $proxima_cita['fecha_hora']; ?>')">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
                     <span>APPLE / ICS</span>
                 </button>

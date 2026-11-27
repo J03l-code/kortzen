@@ -77,7 +77,7 @@ if (empty($barberos)) {
     <meta name="apple-mobile-web-app-title" content="KORTZEN">
     <link rel="apple-touch-icon" href="/assets/icons/favicon.png">
     <script src="/js/pwa.js?v=26200" defer></script>
-    <script src="/js/branch-selector.js?v=26000"></script>
+    <script src="/js/branch-selector.js?v=26300"></script>
 
     <style>
         .pwa-barber-profile-card {

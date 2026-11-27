@@ -222,7 +222,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     </div>
 </div>
 
-<script src="/js/branch-selector.js?v=26000"></script>
+<script src="/js/branch-selector.js?v=26300"></script>
 <script>
     function toggleDesktopMenu() {
         const menu = document.getElementById('pwaCollapsibleMenu');

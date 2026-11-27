@@ -38,7 +38,7 @@ $politicaRequiereCheck = ($systemConfigs['politica_reserva_requiere_check'] ?? '
     <link rel="shortcut icon" href="/assets/icons/favicon.png?v=10">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/favicon.png?v=10">
     <script src="/js/pwa.js?v=26200" defer></script>
-    <script src="/js/branch-selector.js?v=26000"></script>
+    <script src="/js/branch-selector.js?v=26300"></script>
     <style>
         /* ANTI-ZOOM MOBILE RULE */
         input, select, textarea, .flatpickr-input {

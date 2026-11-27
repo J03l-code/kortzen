@@ -219,7 +219,7 @@ if (empty($servicios_por_cat)) {
             letter-spacing: 0.04em;
         }
     </style>
-    <script src="/js/branch-selector.js?v=26000"></script>
+    <script src="/js/branch-selector.js?v=26300"></script>
 </head>
 
 <body class="pwa-app-mode">

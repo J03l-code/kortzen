@@ -54,6 +54,16 @@ async function fetchBranches() {
             closeTime: "20:00",
             isProximamente: false,
             estado: "activo"
+        },
+        {
+            id: 2,
+            name: "KORTZEN Laureles",
+            address: "Laureles, Quito",
+            phone: "+593 098 842 2770",
+            openTime: "10:00",
+            closeTime: "20:00",
+            isProximamente: false,
+            estado: "activo"
         }
     ];
     return cachedBranches;
@@ -109,7 +119,10 @@ function setSelectedBranch(branchId) {
     localStorage.setItem(BRANCH_STORAGE_KEY, branch.id);
     localStorage.setItem('kortzen_selected_branch_name', branchName);
     document.cookie = "kortzen_selected_branch=" + encodeURIComponent(branch.id) + "; path=/; max-age=31536000; SameSite=Lax";
-    updateBranchInfoBar();
+    const isDashboardPage = window.location.pathname.includes('barber-dashboard') || document.body.classList.contains('pwa-app-mode');
+    if (!isDashboardPage) {
+        updateBranchInfoBar();
+    }
     updateGlobalFooter(branch);
 
     // Emitir evento personalizado para recalcular barberos y servicios en reservar.php / nosotros.html
@@ -449,6 +462,15 @@ function updateGlobalFooter(branch) {
         el.textContent = branchName;
     });
 
+    // 1b. Enlace directo a Google Maps según sucursal
+    const isLaureles = Number(branch.id) === 2 || branchName.toLowerCase().includes('laureles');
+    const googleMapsDirectUrl = isLaureles
+        ? 'https://maps.app.goo.gl/N3GAsiae6Biu5QzP8?g_st=iw'
+        : 'https://www.google.com/maps?cid=3888137608205569271&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF';
+    document.querySelectorAll('[data-branch-dynamic="map-link"]').forEach(el => {
+        el.href = googleMapsDirectUrl;
+    });
+
     // 2. Dirección en Footer y Contacto
     const addressElems = document.querySelectorAll('[data-branch-dynamic="address"], .footer__branch-address');
     addressElems.forEach(el => {
@@ -497,6 +519,12 @@ function updateGlobalFooter(branch) {
  * Inicializar selector de sucursales
  */
 async function initBranchSelector() {
+    // Aplicar de inmediato la sucursal guardada para evitar parpadeos en PWA y web
+    const initialSelected = getSelectedBranch();
+    if (initialSelected) {
+        updateGlobalFooter(initialSelected);
+    }
+
     await fetchBranches();
     
     // Obtener sucursal activa
@@ -511,10 +539,12 @@ async function initBranchSelector() {
         }, 300);
     }
 
-    // Actualizar la barra superior e información del footer
+    // Actualizar la barra superior en web y los datos dinámicos en web + PWA
     if (!isDashboardPage) {
         updateBranchInfoBar();
-        if (selected) updateGlobalFooter(selected);
+    }
+    if (selected) {
+        updateGlobalFooter(selected);
     }
 
     // Emitir evento para notificar a team-loader y reservar.php con los datos completos de la sucursal activa
