@@ -25,11 +25,18 @@ try {
     $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $paramsBarberos = [];
     $filtroBarberos = '';
+    $sucursalFiltro = isset($_GET['sucursal_id']) ? (int) $_GET['sucursal_id'] : 0;
     if (!in_array($usuario['rol'], ['admin','administrador','superadmin'], true)) {
         $ids = getUsuarioSucursalesIds($usuario['id']) ?: [0];
+        if ($sucursalFiltro > 0 && in_array($sucursalFiltro, $ids, true)) {
+            $ids = [$sucursalFiltro];
+        }
         $in = implode(',', array_fill(0,count($ids),'?'));
         $filtroBarberos = " AND (u.sucursal_id IN ($in) OR EXISTS (SELECT 1 FROM usuarios_sucursales us WHERE us.usuario_id=u.id AND us.sucursal_id IN ($in)))";
         $paramsBarberos = array_merge($ids,$ids);
+    } elseif ($sucursalFiltro > 0) {
+        $filtroBarberos = " AND (u.sucursal_id = ? OR EXISTS (SELECT 1 FROM usuarios_sucursales us WHERE us.usuario_id=u.id AND us.sucursal_id = ?))";
+        $paramsBarberos = [$sucursalFiltro, $sucursalFiltro];
     }
     if (!esAdministradorCaja($usuario)) { $filtroBarberos .= ' AND u.id = ?'; $paramsBarberos[] = $usuario['id']; }
     $stmt = $pdo->prepare("SELECT u.id,u.nombre FROM usuarios u WHERE u.activo=1 AND u.rol='barbero'" . $filtroBarberos . ' ORDER BY u.nombre');

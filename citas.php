@@ -188,6 +188,7 @@ include 'includes/header.php';
 
     <!-- Formulario de Selectores -->
     <form method="GET" id="filterForm" style="margin: 0;">
+        <input type="hidden" name="vista" id="filtroVista" value="<?php echo htmlspecialchars($_GET['vista'] ?? 'lista'); ?>">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 8px;">
             <!-- Filtro Sucursal -->
             <select name="sucursal_id" class="filter-select" onchange="this.form.submit()" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid #E5E7EB; font-size: 0.78rem; font-weight: 700; background: #FFF; width: 100%; box-sizing: border-box;">
@@ -760,7 +761,14 @@ function toggleFiltroHoy() {
             <?php else: ?>
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                        No hay citas registradas
+                        <div>No hay citas registradas<?php echo !empty($fecha) ? ' para el ' . htmlspecialchars(date('d/m/Y', strtotime($fecha))) : ''; ?>.</div>
+                        <?php if (!empty($fecha)): ?>
+                            <div style="margin-top: 10px;">
+                                <a href="citas.php?fecha=<?php echo (!empty($sucursal_id) ? '&sucursal_id='.urlencode($sucursal_id) : '') . (!empty($barbero_id) ? '&barbero_id='.urlencode($barbero_id) : '') . (!empty($estado) ? '&estado='.urlencode($estado) : ''); ?>" class="btn" style="font-size: 0.78rem; padding: 7px 14px; color: #111827; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 8px; text-decoration: none; font-weight: 700; display: inline-block;">
+                                    Ver todas las fechas
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endif; ?>

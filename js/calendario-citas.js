@@ -32,14 +32,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const lista = document.getElementById('citasVistaLista');
     const cuadricula = root.querySelector('[data-cuadricula-calendario]');
     const fecha = root.querySelector('[data-fecha-calendario]');
-    const fechaLista = fecha.value;
+    const fechaLista = root.dataset.fechaLista ?? fecha.value;
     const estado = root.querySelector('[data-estado-calendario]');
     let version = 0;
+    let vistaActual = new URLSearchParams(location.search).get('vista') === 'calendario' ? 'calendario' : 'lista';
     const nodo = (tipo, texto, clase) => { const el = document.createElement(tipo); if (texto !== undefined) el.textContent = texto; if (clase) el.className = clase; return el; };
+    const irAListaFecha = nuevaFecha => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('fecha', nuevaFecha);
+        url.searchParams.set('vista', 'lista');
+        window.location.assign(url);
+    };
     const cambiarVista = vista => {
+        vistaActual = vista;
+        const filtroVista = document.getElementById('filtroVista');
+        if (filtroVista) filtroVista.value = vista;
         if (vista === 'lista' && fecha.value !== fechaLista) {
-            const url = new URL(window.location.href); url.searchParams.set('fecha',fecha.value); url.searchParams.set('vista','lista');
-            window.location.assign(url); return;
+            irAListaFecha(fecha.value);
+            return;
         }
         cuadricula.hidden = vista !== 'calendario';
         if (lista) lista.hidden = vista !== 'lista';
@@ -154,11 +164,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const m = String(d.getMonth() + 1).padStart(2, '0');
         const diaStr = String(d.getDate()).padStart(2, '0');
         fecha.value = `${y}-${m}-${diaStr}`;
+        if (vistaActual === 'lista') {
+            irAListaFecha(fecha.value);
+            return;
+        }
         cargar();
     };
     root.querySelector('[data-dia-anterior]')?.addEventListener('click', () => moverDia(-1));
     root.querySelector('[data-dia-siguiente]')?.addEventListener('click', () => moverDia(1));
-    fecha.addEventListener('change', cargar);
-    cambiarVista(new URLSearchParams(location.search).get('vista') === 'calendario' ? 'calendario' : 'lista');
+    fecha.addEventListener('change', () => {
+        if (vistaActual === 'lista') {
+            irAListaFecha(fecha.value);
+            return;
+        }
+        cargar();
+    });
+    cambiarVista(vistaActual);
     cargar();
 });

@@ -1,5 +1,5 @@
 <link rel="stylesheet" href="css/gestion-operativa.css">
-<div data-gestion-calendario data-sucursal="<?php echo (int) ($_GET['sucursal_id'] ?? 0); ?>" data-csrf="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
+<div data-gestion-calendario data-sucursal="<?php echo (int) ($_GET['sucursal_id'] ?? 0); ?>" data-fecha-lista="<?php echo htmlspecialchars($fecha ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-csrf="<?php echo htmlspecialchars(generateCSRFToken(), ENT_QUOTES, 'UTF-8'); ?>">
     <div class="kortzen-calendario-toolbar" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;">
         <div class="kortzen-view-switcher" role="tablist">
             <button type="button" data-vista-citas="lista" class="kortzen-view-btn btn-secondary" aria-pressed="true">
