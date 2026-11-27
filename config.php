@@ -1469,69 +1469,145 @@ function checkCronRecordatorios2hAuto() {
 function asegurarIntegridadServiciosSucursalesBarberos($pdo) {
     if (!$pdo) return;
     try {
-        // Asegurar existencia de tablas relacionales
-        $pdo->exec("
-            CREATE TABLE IF NOT EXISTS `servicios_sucursales` (
-                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                `servicio_id` INT UNSIGNED NOT NULL,
-                `sucursal_id` INT UNSIGNED NOT NULL,
-                PRIMARY KEY (`id`),
-                UNIQUE KEY `uk_servicio_sucursal` (`servicio_id`, `sucursal_id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        ");
-        $pdo->exec("
-            CREATE TABLE IF NOT EXISTS `servicios_barberos` (
-                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                `servicio_id` INT UNSIGNED NOT NULL,
-                `barbero_id` INT UNSIGNED NOT NULL,
-                PRIMARY KEY (`id`),
-                UNIQUE KEY `uk_servicio_barbero` (`servicio_id`, `barbero_id`),
-                INDEX `idx_servicio` (`servicio_id`),
-                INDEX `idx_barbero` (`barbero_id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        ");
+        $driver = '';
+        try {
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        } catch (Throwable $t) {}
 
-        // 1. Vincular a todas las sucursales activas cualquier servicio que no tenga asignación en servicios_sucursales
-        $pdo->exec("
-            INSERT IGNORE INTO servicios_sucursales (servicio_id, sucursal_id)
-            SELECT s.id, suc.id 
-            FROM servicios s 
-            CROSS JOIN sucursales suc 
-            WHERE suc.activo = 1 
-            AND NOT EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id)
-        ");
+        if ($driver === 'sqlite') {
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS servicios_sucursales (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    servicio_id INTEGER NOT NULL,
+                    sucursal_id INTEGER NOT NULL,
+                    UNIQUE (servicio_id, sucursal_id)
+                )");
+            } catch (Throwable $t) {}
 
-        // 2. Vincular a todos los barberos activos cualquier servicio que no tenga ningún barbero en servicios_barberos
-        $pdo->exec("
-            INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id)
-            SELECT s.id, u.id 
-            FROM servicios s 
-            CROSS JOIN usuarios u 
-            WHERE u.activo = 1 AND u.rol = 'barbero'
-            AND LOWER(s.nombre) NOT LIKE '%mateo%'
-            AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
-        ");
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS servicios_barberos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    servicio_id INTEGER NOT NULL,
+                    barbero_id INTEGER NOT NULL,
+                    UNIQUE (servicio_id, barbero_id)
+                )");
+            } catch (Throwable $t) {}
 
-        // Si el corte especifica 'Mateo', vincularlo con Mateo (solo perfil barbero)
-        $pdo->exec("
-            INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id)
-            SELECT s.id, u.id 
-            FROM servicios s 
-            CROSS JOIN usuarios u 
-            WHERE u.activo = 1 AND u.rol = 'barbero' AND (LOWER(u.nombre) LIKE '%mateo%' OR LOWER(u.email) LIKE '%mateo%')
-            AND LOWER(s.nombre) LIKE '%mateo%'
-            AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
-        ");
+            try {
+                $sucCols = [];
+                try {
+                    $sucCols = $pdo->query("PRAGMA table_info(sucursales)")->fetchAll(PDO::FETCH_COLUMN, 1);
+                } catch (Throwable $tCols) {}
+                $hasSucActivo = in_array('activo', $sucCols);
+                $whereSuc = $hasSucActivo ? "WHERE suc.activo = 1" : "";
+                $condExists = ($hasSucActivo ? "AND" : "WHERE") . " NOT EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id)";
 
-        // Limpiar asignaciones en servicios_barberos que pertenezcan a perfiles que no son barberos
-        $pdo->exec("
-            DELETE sb FROM servicios_barberos sb
-            JOIN usuarios u ON sb.barbero_id = u.id
-            WHERE u.rol != 'barbero'
-        ");
+                $pdo->exec("
+                    INSERT OR IGNORE INTO servicios_sucursales (servicio_id, sucursal_id)
+                    SELECT s.id, suc.id 
+                    FROM servicios s 
+                    CROSS JOIN sucursales suc 
+                    $whereSuc
+                    $condExists
+                ");
+            } catch (Throwable $t) {}
+
+            try {
+                $pdo->exec("
+                    INSERT OR IGNORE INTO servicios_barberos (servicio_id, barbero_id)
+                    SELECT s.id, u.id 
+                    FROM servicios s 
+                    CROSS JOIN usuarios u 
+                    WHERE u.activo = 1 AND u.rol = 'barbero'
+                    AND LOWER(s.nombre) NOT LIKE '%mateo%'
+                    AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
+                ");
+            } catch (Throwable $t) {}
+
+            try {
+                $pdo->exec("
+                    INSERT OR IGNORE INTO servicios_barberos (servicio_id, barbero_id)
+                    SELECT s.id, u.id 
+                    FROM servicios s 
+                    CROSS JOIN usuarios u 
+                    WHERE u.activo = 1 AND u.rol = 'barbero' AND (LOWER(u.nombre) LIKE '%mateo%' OR LOWER(u.email) LIKE '%mateo%')
+                    AND LOWER(s.nombre) LIKE '%mateo%'
+                    AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
+                ");
+            } catch (Throwable $t) {}
+
+            try {
+                $pdo->exec("
+                    DELETE FROM servicios_barberos 
+                    WHERE barbero_id IN (SELECT id FROM usuarios WHERE rol != 'barbero')
+                ");
+            } catch (Throwable $t) {}
+        } else {
+            // Asegurar existencia de tablas relacionales en MySQL
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS `servicios_sucursales` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `servicio_id` INT UNSIGNED NOT NULL,
+                    `sucursal_id` INT UNSIGNED NOT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_servicio_sucursal` (`servicio_id`, `sucursal_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS `servicios_barberos` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `servicio_id` INT UNSIGNED NOT NULL,
+                    `barbero_id` INT UNSIGNED NOT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_servicio_barbero` (`servicio_id`, `barbero_id`),
+                    INDEX `idx_servicio` (`servicio_id`),
+                    INDEX `idx_barbero` (`barbero_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            // 1. Vincular a todas las sucursales activas cualquier servicio que no tenga asignación en servicios_sucursales
+            $pdo->exec("
+                INSERT IGNORE INTO servicios_sucursales (servicio_id, sucursal_id)
+                SELECT s.id, suc.id 
+                FROM servicios s 
+                CROSS JOIN sucursales suc 
+                WHERE suc.activo = 1 
+                AND NOT EXISTS (SELECT 1 FROM servicios_sucursales ss WHERE ss.servicio_id = s.id)
+            ");
+
+            // 2. Vincular a todos los barberos activos cualquier servicio que no tenga ningún barbero en servicios_barberos
+            $pdo->exec("
+                INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id)
+                SELECT s.id, u.id 
+                FROM servicios s 
+                CROSS JOIN usuarios u 
+                WHERE u.activo = 1 AND u.rol = 'barbero'
+                AND LOWER(s.nombre) NOT LIKE '%mateo%'
+                AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
+            ");
+
+            // Si el corte especifica 'Mateo', vincularlo con Mateo (solo perfil barbero)
+            $pdo->exec("
+                INSERT IGNORE INTO servicios_barberos (servicio_id, barbero_id)
+                SELECT s.id, u.id 
+                FROM servicios s 
+                CROSS JOIN usuarios u 
+                WHERE u.activo = 1 AND u.rol = 'barbero' AND (LOWER(u.nombre) LIKE '%mateo%' OR LOWER(u.email) LIKE '%mateo%')
+                AND LOWER(s.nombre) LIKE '%mateo%'
+                AND NOT EXISTS (SELECT 1 FROM servicios_barberos sb WHERE sb.servicio_id = s.id)
+            ");
+
+            // Limpiar asignaciones en servicios_barberos que pertenezcan a perfiles que no son barberos
+            $pdo->exec("
+                DELETE FROM servicios_barberos 
+                WHERE barbero_id IN (SELECT id FROM usuarios WHERE rol != 'barbero')
+            ");
+        }
 
         // 3. Asegurar que los servicios tengan activo = 1 por defecto si estuvieran en null
-        $pdo->exec("UPDATE servicios SET activo = 1 WHERE activo IS NULL");
+        try {
+            $pdo->exec("UPDATE servicios SET activo = 1 WHERE activo IS NULL");
+        } catch (Throwable $t) {}
     } catch (Throwable $e) {
         error_log("Error asegurando integridad de servicios: " . $e->getMessage());
     }
